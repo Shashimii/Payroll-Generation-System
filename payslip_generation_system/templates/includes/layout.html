@@ -80,13 +80,13 @@
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                     <a href="{% url 'payslip' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_adjustment' %}active{% endif %}">
-                                        <i class="nav-icon fa-solid fa-address-card"></i>
+                                        <i class="far fa-circle nav-icon"></i>
                                         <p>Make Adjustments</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="{% url 'payslip_create' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_generate' %}active{% endif %}">
-                                        <i class="nav-icon fa-solid fa-address-card"></i>
+                                        <i class="far fa-circle nav-icon"></i>
                                         <p>Generate Payslip</p>
                                     </a>
                                 </li>

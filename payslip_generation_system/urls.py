@@ -4,6 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # Index
+    path('', views.login, name='login'),
     # Auth
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
