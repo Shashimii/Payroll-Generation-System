@@ -1,5 +1,6 @@
 from django.db import models
 import os
+from django.contrib.auth.models import User
 
 # Employee
 class Employee(models.Model):
@@ -47,6 +48,8 @@ class Employee(models.Model):
     ]
     tax_declaration = models.CharField(max_length=3, choices=BOOLEAN_CHOICES)
     eligibility = models.CharField(max_length=3, choices=BOOLEAN_CHOICES)
+    # employee account data
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.employee_number} - {self.fullname} - {self.position}"
