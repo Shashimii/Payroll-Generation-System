@@ -10,8 +10,8 @@ from payslip_generation_system.models import UserRole
 def dashboard(request):
     user = request.user
     username = user.username  # Get the username
-    user_role = UserRole.objects.get(user=user)
-
+    user_role = request.session.get('role')
+    
     return render(request, 'dashboard/index.html', {
         'user_role': user_role,
         'username': username,
