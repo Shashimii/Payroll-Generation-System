@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.db import connection
+from django.db import transaction
 from django.http import JsonResponse
 from django.contrib import messages
 from django.utils.dateparse import parse_date
@@ -27,8 +28,17 @@ def create(request):
 
 def store(request):
     if request.method == 'POST':
+        # Formatted
+        fullname = request.POST.get('fullname').replace(" ", "")
+        birthdate = request.POST.get('birthdate')
+
+        # Existing Check
+        if User.objects.filter(username=fullname).exists():
+            messages.error(request, 'A user already exists.')
+            return redirect('employee_create')
+        
         # Employee Profile
-        Employee.objects.create(
+        employee = Employee.objects.create(
             fullname=request.POST.get('fullname'),
             birthdate=request.POST.get('birthdate'),
             address=request.POST.get('address'),
@@ -47,11 +57,16 @@ def store(request):
         )
 
         # Employee Attachment
-
+        uploaded_files = request.FILES.getlist('attachments')
+        # Save each file in the "employee_attachments" folder inside the media directory
+        for f in uploaded_files:
+            # Django will handle saving the file with a random name
+            EmployeeAttachment.objects.create(
+                employee=employee,  # Associate with the employee
+                file=f              # Save the file in the "employee_attachments" folder inside the media directory
+            )
 
         # Employee Account
-        fullname = request.POST.get('fullname').replace(" ", "")
-        birthdate = request.POST.get('birthdate')
         username = fullname
         password =  birthdate.strip() if birthdate else 'defaultpass'
         user = User(username=username)
@@ -63,6 +78,15 @@ def store(request):
             user=user,
             role='employee'
         )
+
+        # admin
+        # checker
+        # preparator_denr
+        # preparator_meo_s = 43
+        # preparator_meo_e = 42
+        # preparator_meo_w = 44
+        # preparator_meo_n = 45
+        # employee (default)
 
         # Redirect
         messages.success(request, 'Employee added successfully!')
