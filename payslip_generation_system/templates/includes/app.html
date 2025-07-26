@@ -9,6 +9,7 @@
         {% block title %}DENR NCR{% endblock %} | PAYGES
     </title>
     {% include 'includes/imports.html' %}
+    {% include 'includes/loader.html' %}
 </head>
 {% block app_content %}
 {% endblock %}
@@ -34,6 +35,27 @@ const csrftoken = getCookie('csrftoken');
 
 $.ajaxSetup({
     headers: { "X-CSRFToken": csrftoken }
+});
+
+// Optimized Loader 
+window.onbeforeunload = function () {
+    setTimeout(function () {
+    $('#loading').show();
+    }, 1000);
+}
+
+$(document).ready(function () {
+    setTimeout(function () {
+    $('#loading').hide();
+    }, 1000);
+});
+
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted || performance.navigation.type === 2) {
+        setTimeout(function () {
+            $('#loading').hide();
+        }, 1000);
+    }
 });
 </script>
 </html>
