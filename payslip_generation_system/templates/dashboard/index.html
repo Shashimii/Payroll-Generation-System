@@ -1,6 +1,30 @@
 {% extends "includes/layout.html" %}
 {% block title %}Dashboard{% endblock title %}
 {% block layout_content %}
-<h2>Welcome, {{ username }}!</h2>
-<p>Your role: {{ user_role }}</p>
+<div class="card card-success card-outline">
+  <div class="card-header">
+    <h3 class="card-title">
+    <span class="text-success">Welcome to the</span> 
+    <strong class="text-primary">Payment Generation System</strong><br>
+    <small class="text-muted">Logged in as: {{ user_role }} <span class="text-dark fw-bold">{{ username }}</span></small>
+    </h3>
+  </div>
+<div class="card-body text-center">
+  <i class="fas fa-wallet fa-3x text-success mb-3"></i>
+  
+  <h4 class="mb-3 fw-bold text-dark">Welcome to the Payment Generation System</h4>
+  
+  <p class="mb-4 text-muted fs-5">
+    Manage <strong>payroll</strong>, <strong>adjustments</strong>, and <strong>generate payslip</strong> with ease.
+  </p>
+
+  <div class="border-top pt-3">
+    <p class="text-muted fs-6">
+      <span class="d-block">📅 {{ current_datetime|date:"l, F d, Y" }}</span>
+      <span class="d-block">⏰ {{ current_datetime|time:"h:i A" }}</span>
+    </p>
+  </div>
+</div>
+
+</div>
 {% endblock %}

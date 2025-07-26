@@ -1,5 +1,5 @@
 {% extends "includes/layout.html" %}
-{% block title %}Dashboard{% endblock title %}
+{% block title %}Generate Payslip{% endblock title %}
 {% load humanize %}
 {% load static %}
 {% block layout_content %}
@@ -8,12 +8,12 @@
     <div class="content">
         <form method="POST" action="{% url 'payslip_generate' %}">
             {% csrf_token %}
-        <div class="section-header">
-            <div>
-                <h2>Generate Payslip</h2>
-                <p>Fill up the form first to generate a payslip.</p>
+            <div class="section-header">
+                <div>
+                    <h2>Generate Payslip</h2>
+                    <p>Fill up the form first to generate a payslip.</p>
+                </div>
             </div>
-        </div>
             <div class="form-container">
                 <div class="form-group">
                     <label for="employeeSelect">Employee</label>
@@ -46,132 +46,6 @@
 
             <button type="submit" class="btn btn-primary btn-block">Generate Payslip</button>
         </form>
-
-        <div class="section-header">
-            <div>
-                <h2>Payslip</h2>
-                <p>Generated payslip based on the adjustments and deductions.</p>
-            </div>
-            
-            <div class="text-center print-button">
-                <button class="btn btn-success" onclick="window.print()">Print Payslip</button>
-            </div>
-        </div>
-
-        <div class="payslip-container">
-            <div class="payslip-header">
-                <div class="logo-container">
-                    <img src="{% static 'images/denr-logo.png' %}" alt="Logo">
-                </div>
-                <div>
-                    <h2>Employee Payslip</h2>
-                    <p>Department of Environment and Natural Resources</p>
-                    <p>National Capital Region</p>
-                </div>
-            </div>
-
-            <div class="payslip-employee">
-                <div class="payslip-employee-primary">
-                    <p class="employee-name-txt">{{ employee_name }}</p>
-                    <p class="employee-position-txt">{{ position }}</p>
-                </div>
-                <div class="payslip-employee-secondary">
-                    <div class="payslip-employee-item">
-                        <p>Employee Number</p>
-                        <p class="employee-number-txt">{{ employee_no }}</p>
-                    </div>
-                    <div class="payslip-employee-item">
-                        <p>Salary Period</p>
-                        <p class="employee-period-txt">{{ salary_period }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="payslip-summary">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th colspan="2" class="text-center">Summary</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Basic Salary Gross ({{ selected_cutoff }} cutoff)</td>
-                            <td>₱{{ basic_salary_cutoff|floatformat:2|intcomma }}</td>
-                        </tr>
-                        <tr>
-                            <td>Net Pay</td>
-                            <td><b>₱{{ net_pay|floatformat:2|intcomma }}</b></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="payslip-deductions">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr><th colspan="2" class="text-center">Deductions</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>TAX</td><td>₱{{ tax_deduction|floatformat:2|intcomma }}</td></tr>
-                        <tr><td>Philhealth</td><td>₱{{ philhealth|floatformat:2|intcomma }}</td></tr>
-                        <tr><td>Late / Absences ({{ late_min_total }} minutes)</td><td>₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
-                        <tr><td>Adjustments 
-                            <ul>
-                                {% for adjustment in all_adjustment_minus %}
-                                    <li>{{ adjustment.name }} - ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
-                                {% empty %}
-                                    <li>No adjustments</li>
-                                {% endfor %}
-                            </ul>
-                        </td><td>₱{{ total_adjustment_amount_minus|floatformat:2|intcomma }}</td></tr>
-                        <tr><td><strong>Total Deductions</strong></td><td><strong>₱{{ total_deductions|floatformat:2|intcomma }}</strong></td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="payslip-adjustments">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr><th colspan="2" class="text-center">Adjustments</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                        <td> 
-                            <ul>
-                                {% for adjustment in all_adjustment_plus %}
-                                    <li>{{ adjustment.name }}</li>
-                                {% empty %}
-                                    <li>No adjustments</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td> 
-                            <ul style='list-style-type: none; margin: 0; padding: 0;'>
-                                {% for adjustment in all_adjustment_plus %}
-                                    <li> ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
-                                {% empty %}
-                                    <li>No adjustments</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                            {% comment %} <td>₱{{ total_adjustment_amount_plus|floatformat:2|intcomma }}</td> {% endcomment %}
-                        </tr>
-                        <tr><td><strong>Total Adjustment</strong></td><td><strong>₱{{ total_add|floatformat:2|intcomma }}</strong></td></tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="payslip-disclaimer">
-                <p><strong>Disclaimer:</strong> This payslip is computer-generated and does not require a signature.</p>
-                <p>The details presented are provisional and intended for internal review purposes only.</p>
-                <p>Final figures are subject to verification and may be revised accordingly.</p>
-            </div>
-
-            <p class="payslip-footer-note">
-                Generated on DENR NCR PayGeS. For any inquiries, please contact the HR Department.
-            </p>
-        </div>
     </div>
 </div>
 

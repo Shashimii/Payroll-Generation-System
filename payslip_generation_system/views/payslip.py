@@ -158,11 +158,9 @@ def generate(request):
             'employee_no': employee.employee_number,
             'employee_name': employee.fullname,
             'position': employee.position,
-            'employee_id': employee.id,
             'salary_period': salary_period,
             'selected_cutoff': selected_cutoff,
             'basic_salary_cutoff': basic_salary_cutoff,
-            'basic_salary_annual': basic_salary_annual,
             'tax_deduction': tax_deduction,
             'philhealth': philhealth,
             'late_amt_total': late_amt_total,
@@ -179,7 +177,7 @@ def generate(request):
             'current_year' : current_year,
         }
 
-    return render(request, 'payslip/create.html', context)
+    return render(request, 'payslip/payslip.html', context)
 
 def adjustment(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
