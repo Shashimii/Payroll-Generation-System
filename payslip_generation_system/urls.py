@@ -22,6 +22,8 @@ urlpatterns = [
     # Payslip
     path('payslip/', views.payslip.index, name='payslip'),
     path('payslip/create', views.payslip.create, name='payslip_create'),
+    path('payslip/employee-data', views.payslip.employee_data, name='payslip_employee_data'),
+    path('payslip/adjustment/<int:emp_id>/', views.payslip.adjustment, name='payslip_adjustment'),
 ]
 
 if settings.DEBUG:
