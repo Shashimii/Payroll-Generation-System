@@ -198,6 +198,14 @@ def destroy(request, emp_id):
         # Delete all adjustments connected to this employee
         # Adjustment.objects.filter(employee=employee).delete()
         
+        # Delete Employee Account
+        if employee.user_id:
+            try:
+                user = User.objects.get(id=employee.user_id)
+                user.delete()
+            except User.DoesNotExist:
+                pass
+
         # Now delete the employee
         employee.delete()
         return JsonResponse({"success": True, "message": "Employee deleted successfully!"})
