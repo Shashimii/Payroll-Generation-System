@@ -1,5 +1,260 @@
 {% extends "includes/layout.html" %}
-{% block title %}Dashboard{% endblock title %}
+{% block title %}Adjustments{% endblock title %}
+{% load humanize %}
 {% block layout_content %}
-    <h2>A</h2>
+
+<div class="card card-outline card-success">
+  <div class="card-header">
+    <h3 class="card-title mb-0">💼 Make Adjustments | Employee information</h3>
+  </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <strong>Name:</strong> <span class="text-muted">{{ employee.fullname }}</span>
+        </div>
+        <div class="mb-3">
+            <strong>Position:</strong> <span class="text-muted">{{ employee.position }}</span>
+        </div>
+        <div>
+            <strong>Salary:</strong>
+            <span class="text-success font-weight-bold">₱{{ employee.salary|floatformat:2|intcomma }}</span>
+        </div>
+    </div>
+
+    <div class="card-footer text-right">
+        <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addAdjustmentModal">
+            <i class="fas fa-plus-circle"></i> Add Adjustment
+        </button>
+        <button type="button" class="btn btn-warning mb-3" data-bs-toggle="modal" data-bs-target="#addLateModal">
+            <i class="fas fa-history"></i> Add Late/Absences
+        </button>
+    </div>
+</div>
+
+
+
+<div class="card card-outline card-success">
+  <div class="card-header">
+    <h3 class="card-title mb-0">💼 Make Adjustments | Adjustments List</h3>
+  </div>
+    <div class="card-body">
+        <table id="adjustmentTable" class="table table-responsive table-striped table-bordered table-sm" cellspacing="0" width="100%" >
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Details</th>
+                    <th>Cutoff</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <!-- Data -->
+        </table>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="addAdjustmentModal" tabindex="-1" aria-labelledby="addAdjustmentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'adjustment_add' employee.id %}">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="addAdjustmentLabel">Add Adjustment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="month" class="form-label">Month</label>
+                            <select name="month" class="form-control" required>
+                                <option value="">-- Select Month --</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="cutoff" class="form-label">Cutoff</label>
+                            <select name="cutoff" class="form-control" required>
+                                <option value="1st">1st</option>
+                                <option value="2nd">2nd</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select name="type" class="form-control" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Income">Income</option>
+                                <option value="Deduction">Deduction</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="number" name="amount" step="0.01" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" class="form-control">
+                                <option value="Approved">Approved</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Archived">Archived</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="details" class="form-label">Details</label>
+                            <textarea name="details" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addLateModal" tabindex="-1" aria-labelledby="addAdjustmentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'adjustment_add' employee.id %}">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="addAdjustmentLabel">Add Late/Absent</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="month" class="form-label">Month</label>
+                            <select name="month" class="form-control" required>
+                                <option value="">-- Select Month --</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="cutoff" class="form-label">Cutoff</label>
+                            <select name="cutoff" class="form-control" required>
+                                <option value="1st">1st</option>
+                                <option value="2nd">2nd</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" value="Late" readonly required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select name="type" class="form-control" disabled required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Income">Income</option>
+                                <option value="Deduction" selected>Deduction</option>
+                            </select>
+                            <input type="hidden" name="type" value="Deduction">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="number" name="amount" step="0.01" class="form-control" readonly>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="details" class="form-label">No of Minutes</label>
+                            <input type="number" name="details" step="0.01" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" class="form-control">
+                                <option value="Approved">Approved</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Archived">Archived</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+$(document).ready(function() {
+    $('#adjustmentTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: "{% url 'adjustment_data' employee.id %}",
+        columns: [
+            { data: 'name' },
+            { data: 'type' },
+            { data: 'amount' },
+            { data: 'details' },
+            { data: 'cutoff_month' }, // Ensure this matches the key in the response
+            { data: 'status' },
+            { data: 'remarks' },
+            { data: 'created_at' }
+        ]
+    });
+});
+</script>
 {% endblock %}
