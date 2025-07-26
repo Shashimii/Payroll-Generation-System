@@ -1,5 +1,392 @@
 {% extends "includes/layout.html" %}
 {% block title %}Dashboard{% endblock title %}
+{% load humanize %}
+{% load static %}
 {% block layout_content %}
-    <h2></h2>
+
+<div class="main-container">
+    <div class="content">
+        <form method="POST" action="{% url 'payslip_generate' %}">
+            {% csrf_token %}
+        <div class="section-header">
+            <div>
+                <h2>Generate Payslip</h2>
+                <p>Fill up the form first to generate a payslip.</p>
+            </div>
+        </div>
+            <div class="form-container">
+                <div class="form-group">
+                    <label for="employeeSelect">Employee</label>
+                    <select class="form-select" id="employeeSelect" name="employee" required>
+                        <option value="" disabled selected>-- Select Employee --</option>
+                        {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.fullname }} - {{ employee.position }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="monthSelect">Month</label>
+                    <select class="form-select" id="monthSelect" name="month" required>
+                        <option value="" disabled selected>-- Select Month --</option>
+                        {% for month, month_name in month_choices %}
+                            <option value="{{ month }}" {% if month == current_month %}selected{% endif %}>{{ month_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cutoffSelect">Cutoff</label>
+                    <select class="form-select" id="cutoffSelect" name="cutoff" required>
+                        <option value="1st">1st</option>
+                        <option value="2nd">2nd</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Generate Payslip</button>
+        </form>
+
+        <div class="section-header">
+            <div>
+                <h2>Payslip</h2>
+                <p>Generated payslip based on the adjustments and deductions.</p>
+            </div>
+            
+            <div class="text-center print-button">
+                <button class="btn btn-success" onclick="window.print()">Print Payslip</button>
+            </div>
+        </div>
+
+        <div class="payslip-container">
+            <div class="payslip-header">
+                <div class="logo-container">
+                    <img src="{% static 'images/denr-logo.png' %}" alt="Logo">
+                </div>
+                <div>
+                    <h2>Employee Payslip</h2>
+                    <p>Department of Environment and Natural Resources</p>
+                    <p>National Capital Region</p>
+                </div>
+            </div>
+
+            <div class="payslip-employee">
+                <div class="payslip-employee-primary">
+                    <p class="employee-name-txt">{{ employee_name }}</p>
+                    <p class="employee-position-txt">{{ position }}</p>
+                </div>
+                <div class="payslip-employee-secondary">
+                    <div class="payslip-employee-item">
+                        <p>Employee Number</p>
+                        <p class="employee-number-txt">{{ employee_no }}</p>
+                    </div>
+                    <div class="payslip-employee-item">
+                        <p>Salary Period</p>
+                        <p class="employee-period-txt">{{ salary_period }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payslip-summary">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th colspan="2" class="text-center">Summary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Basic Salary Gross ({{ selected_cutoff }} cutoff)</td>
+                            <td>₱{{ basic_salary_cutoff|floatformat:2|intcomma }}</td>
+                        </tr>
+                        <tr>
+                            <td>Net Pay</td>
+                            <td><b>₱{{ net_pay|floatformat:2|intcomma }}</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="payslip-deductions">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr><th colspan="2" class="text-center">Deductions</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>TAX</td><td>₱{{ tax_deduction|floatformat:2|intcomma }}</td></tr>
+                        <tr><td>Philhealth</td><td>₱{{ philhealth|floatformat:2|intcomma }}</td></tr>
+                        <tr><td>Late / Absences ({{ late_min_total }} minutes)</td><td>₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
+                        <tr><td>Adjustments 
+                            <ul>
+                                {% for adjustment in all_adjustment_minus %}
+                                    <li>{{ adjustment.name }} - ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
+                                {% empty %}
+                                    <li>No adjustments</li>
+                                {% endfor %}
+                            </ul>
+                        </td><td>₱{{ total_adjustment_amount_minus|floatformat:2|intcomma }}</td></tr>
+                        <tr><td><strong>Total Deductions</strong></td><td><strong>₱{{ total_deductions|floatformat:2|intcomma }}</strong></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="payslip-adjustments">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr><th colspan="2" class="text-center">Adjustments</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                        <td> 
+                            <ul>
+                                {% for adjustment in all_adjustment_plus %}
+                                    <li>{{ adjustment.name }}</li>
+                                {% empty %}
+                                    <li>No adjustments</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td> 
+                            <ul style='list-style-type: none; margin: 0; padding: 0;'>
+                                {% for adjustment in all_adjustment_plus %}
+                                    <li> ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
+                                {% empty %}
+                                    <li>No adjustments</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                            {% comment %} <td>₱{{ total_adjustment_amount_plus|floatformat:2|intcomma }}</td> {% endcomment %}
+                        </tr>
+                        <tr><td><strong>Total Adjustment</strong></td><td><strong>₱{{ total_add|floatformat:2|intcomma }}</strong></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="payslip-disclaimer">
+                <p><strong>Disclaimer:</strong> This payslip is computer-generated and does not require a signature.</p>
+                <p>The details presented are provisional and intended for internal review purposes only.</p>
+                <p>Final figures are subject to verification and may be revised accordingly.</p>
+            </div>
+
+            <p class="payslip-footer-note">
+                Generated on DENR NCR PayGeS. For any inquiries, please contact the HR Department.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-container {
+        display:flex;
+        justify-content: center;
+    }
+
+    .content {
+        flex: 1;
+        max-width: 60rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .section-header {
+        margin-top: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .form-container {
+        margin: 20px auto;
+        padding: 20px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-select:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 3px rgba(52, 152, 219, 0.3);
+    }
+
+    .logo-container {
+        margin: 10px 0;     
+    }
+
+    .logo-container img {
+        max-width: 6rem;  
+        height: auto;     
+        display: inline-block;
+        border-radius: 4px; 
+    }
+
+    .payslip-container {
+        width: 100%;
+        margin: 0 auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+
+    .payslip-header {
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .payslip-header h2 {
+        margin-bottom: 0;
+    }
+
+    .payslip-header p {
+        margin: 0;
+        font-size: 14px;
+        color: gray;
+    }
+
+    .payslip-employee {
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .payslip-employee-primary {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    .payslip-employee-secondary {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        gap: 1rem;
+    }
+
+    .payslip-employee-item {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-text: center;
+    }
+
+    .table th {
+        background-color: #f1f1f1;
+    }
+
+    .table td, .table th {
+        padding: 10px;
+        white-space: nowrap;
+    }
+
+    .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: gray;
+    }
+
+    .employee-name-txt {
+        font-weight: 800;
+        font-size: 1.5rem;
+    }
+
+    .employee-position-txt {
+        font-weight: 800;
+        font-size: 1.2rem;
+    }
+
+    .employee-number-txt {
+        font-weight: 800;
+        font-size: 1.2rem;
+    }
+
+    .employee-period-txt {
+        font-weight: 800;
+        font-size: 1.2rem;
+    }
+
+    .payslip-footer-note {
+        margin-top: 1rem;
+        font-size: 0.85rem;
+        text-align: center;
+        color: #777;
+        font-style: italic;
+    }
+
+    .payslip-disclaimer {
+        margin-top: 1rem;
+        padding: 0px 1rem;
+        background-color: #f9f9f9;
+        border-left: 4px solid #3498db;
+        font-size: 0.8rem;
+        color: #555;
+        line-height: 1.5;
+    }
+
+    .payslip-disclaimer p {
+        margin: 0;
+    }
+
+    .payslip-disclaimer b {
+        color: #333;
+    }
+
+    @media print {
+        @page {
+            size: 297mm 290mm;
+        }
+
+        body {
+            -webkit-print-color-adjust: exact;
+            overflow: hidden !important;
+        }
+
+        .payslip-container {
+            width: 100%;
+            {% comment %} height: 50vh; /* Half-page */ {% endcomment %}
+            page-break-after: always;
+            overflow: hidden;
+        }
+
+        .content {
+            max-width: 100rem;
+        }
+
+        .btn, form, .form-group, button,
+        .print-button, .footer, .no-print, .section-header {
+            display: none !important;
+        }
+    }
+</style>
 {% endblock %}

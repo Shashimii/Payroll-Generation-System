@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from decimal import Decimal
+from datetime import datetime
 from payslip_generation_system.models import Employee, Adjustment
 from django.contrib.auth.models import User
 
@@ -16,7 +17,169 @@ def index(request):
     return render(request, 'payslip/index.html')
 
 def create(request):
-    return render(request, 'payslip/create.html')
+    if request.session.get('user_type') == 'employee':
+        # Get only the employee that matches the logged-in user's ID
+        fullname = request.session.get('fullname')
+        employees = Employee.objects.filter(fullname=fullname)
+    else:
+        employees = Employee.objects.all()
+    
+    month_choices = [
+        ('January', 'January'),
+        ('February', 'February'),
+        ('March', 'March'),
+        ('April', 'April'),
+        ('May', 'May'),
+        ('June', 'June'),
+        ('July', 'July'),
+        ('August', 'August'),
+        ('September', 'September'),
+        ('October', 'October'),
+        ('November', 'November'),
+        ('December', 'December'),
+    ]
+
+    current_month = datetime.now().strftime('%B')
+    # current_year = datetime.now().strftime('%Y')
+    
+    return render(request, 'payslip/create.html', {
+        'employees': employees,
+        'month_choices': month_choices,
+        'current_month': current_month,
+    })
+
+def generate(request):
+    month_choices = [
+        ('January', 'January'),
+        ('February', 'February'),
+        ('March', 'March'),
+        ('April', 'April'),
+        ('May', 'May'),
+        ('June', 'June'),
+        ('July', 'July'),
+        ('August', 'August'),
+        ('September', 'September'),
+        ('October', 'October'),
+        ('November', 'November'),
+        ('December', 'December'),
+    ]
+    current_month = datetime.now().strftime('%B')
+    current_year = datetime.now().strftime('%Y')
+
+    if request.method == 'POST':
+        # Get form data
+        employee_id = request.POST.get('employee')
+        selected_month = request.POST.get('month')
+        selected_cutoff = request.POST.get('cutoff')
+
+        # Fetch employee data
+        employee = Employee.objects.get(id=employee_id)
+
+        has_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            month=selected_month,
+            cutoff=selected_cutoff,
+            status="Approved"
+        ).exists()
+
+        if not has_adjustments:
+            messages.error(request, 'Payslip in process.')
+            return redirect('payslip_create')
+        
+        # Basic Salary
+        basic_salary = employee.salary
+        # Annual Salary
+        basic_salary_annual = basic_salary * 12
+        # Cutoff Salary
+        basic_salary_cutoff = basic_salary / 2  
+
+        # Deduction Conditions
+        # Salary
+        if (employee.tax_declaration == "Yes"):
+                tax_deduction = Decimal('0.00')
+        else:
+            if (basic_salary_annual >= 250000):
+                tax_deduction = basic_salary_cutoff * Decimal('0.027')
+            else:
+                tax_deduction = basic_salary_cutoff * Decimal('0.00')
+        
+        # Philhealth 
+        if (basic_salary_cutoff > 9999):
+            philhealth = basic_salary_cutoff * Decimal('0.05')
+        else:
+            philhealth = basic_salary_cutoff - 500
+        
+        #late
+        late_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="Late",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            status="Approved"
+            # Adjusted condition to match selected month
+        )
+        
+        late_amt_total = late_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        late_min_total = late_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00') 
+        
+        # Format the salary period
+        salary_period = f"{selected_month} {current_year} - {selected_cutoff} Cutoff"
+        
+        #adjustment_minus
+        all_adjustment_minus = Adjustment.objects.filter(
+            employee=employee,
+            type="Deduction",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            status="Approved"
+            # Adjusted condition to match selected month
+        ).exclude(name="Late")
+        
+        # Sum the amount for all adjustments
+        total_adjustment_amount_minus = all_adjustment_minus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        total_deductions = tax_deduction + philhealth + late_amt_total + total_adjustment_amount_minus
+
+        #adjustment_plus
+        all_adjustment_plus = Adjustment.objects.filter(
+            employee=employee,
+            type="Income",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            status="Approved"
+            # Adjusted condition to match selected month
+        )
+        
+        # Sum the amount for all adjustments
+        total_adjustment_amount_plus = all_adjustment_plus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        
+        total_add = total_adjustment_amount_plus
+        
+        context = {
+            'employee_no': employee.employee_number,
+            'employee_name': employee.fullname,
+            'position': employee.position,
+            'employee_id': employee.id,
+            'salary_period': salary_period,
+            'selected_cutoff': selected_cutoff,
+            'basic_salary_cutoff': basic_salary_cutoff,
+            'basic_salary_annual': basic_salary_annual,
+            'tax_deduction': tax_deduction,
+            'philhealth': philhealth,
+            'late_amt_total': late_amt_total,
+            'late_min_total': late_min_total,
+            'total_adjustment_amount_minus': total_adjustment_amount_minus,
+            'all_adjustment_minus': all_adjustment_minus,
+            'total_adjustment_amount_plus': total_adjustment_amount_plus,
+            'all_adjustment_plus': all_adjustment_plus,
+            'total_deductions' : total_deductions,
+            'total_add': total_add,
+            'net_pay': basic_salary_cutoff - total_deductions + total_add,
+            'month_choices': month_choices,
+            'current_month': current_month,
+            'current_year' : current_year,
+        }
+
+    return render(request, 'payslip/create.html', context)
 
 def adjustment(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
@@ -145,7 +308,6 @@ def employee_data(request):
         'recordsFiltered': total_records,
         'data': data
     })
-
 
 def safe_int(value, default=0):
     try:
