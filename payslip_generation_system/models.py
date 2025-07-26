@@ -1,3 +1,3 @@
 from django.db import models
 
-# Create your models here.
+# ! models/migrations nested on views folder to maintain and scale easily !
