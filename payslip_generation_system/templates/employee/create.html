@@ -1,0 +1,231 @@
+{% extends "includes/layout.html" %}
+{% block title %}Dashboard{% endblock title %}
+{% block layout_content %}
+
+
+    <form action="{% url 'employee_store' %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="card card-success">
+        <div class="card-header">
+            <h3 class="card-title">Employee Profile Form | Personal Info</h3>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="fullname">Full Name</label>
+                        <input type="text" class="form-control" name="fullname" id="fullname" placeholder="Enter full name" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="birthdate">Birthdate</label>
+                        <input type="date" class="form-control" name="birthdate" id="birthdate" placeholder="Enter birthdate" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="address">Permanent Address</label>
+                        <input type="text" class="form-control" name="address" id="address" placeholder="Enter address">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="contact">Contact Number</label>
+                        <input type="text" class="form-control" name="contact" id="contact" placeholder="Enter contact number">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="education">Educational Attainment</label>
+                        <select class="form-control" name="education" id="education" required>
+                            <option value="" disabled selected> Select </option>
+                            <option value="High School">High School</option>
+                            <option value="Vocational">Vocational</option>
+                            <option value="Post Graduate">Post Graduate</option>
+                            <option value="College">College</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select class="form-control" name="gender" id="gender" required>
+                            <option value="" disabled selected> Select </option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card card-success">
+        <div class="card-header">
+            <h3 class="card-title">Employee Profile | Employment Details</h3>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="employee_number">Employee Number</label>
+                        <input type="text" class="form-control" name="employee_number" id="employee_number" placeholder="Enter employee number" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="position">Position</label>
+                        <input type="text" class="form-control" name="position" id="position" placeholder="Enter position" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="date_hired">Date Hired</label>
+                        <input type="date" class="form-control" name="date_hired" id="date_hired" placeholder="Enter date_hired">
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="division">Division</label>
+                        <select class="form-control" name="division" id="division" required>
+                            <option value="" disabled selected> Select </option>
+                            {% for division in divisions %}
+                                <option value="{{ division.0 }}">{{ division.3 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="section">Section</label>
+                        <select class="form-control" name="section" id="section" required>
+                            <option value="" disabled selected> Select </option>
+
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card card-success">
+        <div class="card-header">
+            <h3 class="card-title">Employee Profile | Employee Salary Details</h3>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="fund_source">Fund Source</label>
+                        <select class="form-control" name="fund_source" id="fund_source" required>
+                            <option value="" disabled selected> Select </option>
+                            <option value="regular"> Regular </option>
+                            <option value="prcmo"> PRCMO </option>
+                            <option value="manila_bay"> Manila Bay </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="salary">Salary (₱)</label>
+                        <input type="number" class="form-control" id="salary" name="salary" min="0" step="0.01" placeholder="Employee Salary" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="tax_declaration">Tax Declared ?</label>
+                        <select class="form-control" name="tax_declaration" id="tax_declaration" required>
+                            <option value="" selected disabled> Select </option>
+                            <option value="yes"> Yes </option>
+                            <option value="no"> No </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="eligibility">CSC Eligibility</label>
+                        <select class="form-control" name="eligibility" id="eligibility" required>
+                            <option value="" selected disabled> Select </option>
+                            <option value="yes"> Yes </option>
+                            <option value="no"> No </option>
+                        </select>
+                    </div>
+                </div>
+
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="attachments" class="form-label font-weight-bold">Attachments (optional)</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="attachments" name="attachments" multiple>
+                            <label class="custom-file-label" for="attachments" id="fileLabel">📁 Upload Files</label>
+                        </div>
+                        <small id="fileNames" class="form-text text-muted">No files selected</small>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end">
+            <a href="{% url 'employee' %}" class="btn btn-secondary mr-2">Cancel</a>
+            <button type="submit" class="btn btn-success">Add Employee Profile</button>
+        </div>
+    </div>
+</form>
+
+<script>
+// Show the Section when there is Division Selected
+document.getElementById('division').addEventListener('change', function () {
+    var selectedDivisionId = this.value;
+    var sectionSelect = document.getElementById('section');
+
+    // Clear all current options
+    sectionSelect.innerHTML = '<option value="">Select</option>';
+
+    // Get all section options from a hidden template or initial data
+    {% for section in sections %}
+        var divisionId = "{{ section.1 }}";
+        if (divisionId === selectedDivisionId) {
+            var opt = document.createElement('option');
+            opt.value = "{{ section.0 }}";
+            opt.text = "{{ section.3 }}";
+            sectionSelect.appendChild(opt);
+        }
+    {% endfor %}
+});
+
+// Attachment Input Field
+document.querySelector('#attachments').addEventListener('change', function(e) {
+    const input = e.target;
+    const label = document.getElementById('fileLabel');
+    const fileNames = document.getElementById('fileNames');
+
+    const files = input.files;
+    if (files.length === 0) {
+        label.innerText = '📁 Upload Files';
+        fileNames.innerText = 'No files selected';
+    } else if (files.length === 1) {
+        label.innerText = files[0].name;
+        fileNames.innerText = files[0].name;
+    } else {
+        label.innerText = `${files.length} files selected`;
+        let names = Array.from(files).map(file => file.name).join(', ');
+        fileNames.innerText = names;
+    }
+});
+</script>
+
+{% endblock %}
