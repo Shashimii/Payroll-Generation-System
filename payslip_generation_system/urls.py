@@ -29,6 +29,10 @@ urlpatterns = [
     path('payslip/adjustment/<int:emp_id>/', views.payslip.adjustment, name='payslip_adjustment'),
     path('payslip/adjustment/add/<int:emp_id>/', views.payslip.adjustment_add, name='adjustment_add'),
     path('payslip/adjustments/data/<int:emp_id>/', views.payslip.adjustment_data, name='adjustment_data'),
+    path('payslip/adjustments/approve/<int:adj_id>/', views.payslip.adjustment_approve, name='adjustment_approve'),
+    path('payslip/adjustments/reject/<int:adj_id>/', views.payslip.adjustment_reject, name='adjustment_reject'),
+    path('payslip/adjustments/archive/<int:adj_id>/', views.payslip.adjustment_archive, name='adjustment_archive'),
+    path('payslip/adjustments/unarchive/<int:adj_id>/', views.payslip.adjustment_unarchive, name='adjustment_unarchive'),
 ]
 
 if settings.DEBUG:

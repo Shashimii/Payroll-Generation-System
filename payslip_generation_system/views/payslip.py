@@ -361,6 +361,20 @@ def adjustment_data(request, emp_id):
             else f"<span style='color:green'>₱{adj.amount:,.2f}</span>"
         )
 
+        if adj.status.lower() == "pending":
+            buttons = f"""
+                <button class="btn btn-sm btn-success" data-id="{adj.id}" onclick="approveAdjustment({adj.id})">Approve</button>
+                <button class="btn btn-sm btn-warning" data-id="{adj.id}" onclick="rejectAdjustment({adj.id})">Reject</button>
+            """
+        elif adj.status.lower() == "approved":
+            buttons = f"""
+                <button class="btn btn-sm btn-secondary" data-id="{adj.id}" onclick="archiveAdjustment({adj.id})">Archive</button>
+            """
+        elif adj.status.lower() == "rejected":
+            buttons = "Rejected"
+        else:
+            buttons = "Archived"
+
         data.append({
             "name": adj.name,
             "type": adj.type,
@@ -370,7 +384,9 @@ def adjustment_data(request, emp_id):
             "status": adj.status,
             "remarks": adj.remarks,
             "created_at": adj.created_at.strftime('%Y-%m-%d %H:%M'),
+            "action": buttons,
         })
+
 
     return JsonResponse({
         "draw": draw,
@@ -378,3 +394,42 @@ def adjustment_data(request, emp_id):
         "recordsFiltered": filtered_records,
         "data": data
     })
+
+def adjustment_approve(request, adj_id):
+    adjustment = get_object_or_404(Adjustment, id=adj_id)
+
+    if request.method == "POST":
+        adjustment.status = "Approved"
+        adjustment.save()
+
+        return JsonResponse({"success": True, "message": "Adjustment approved successfully!"})
+    
+def adjustment_reject(request, adj_id):
+    adjustment = get_object_or_404(Adjustment, id=adj_id)
+
+    if request.method == "POST":
+        adjustment.status = "Rejected"
+        adjustment.save()
+
+        return JsonResponse({"success": True, "message": "Adjustment rejected successfully!"})
+    return
+
+def adjustment_archive(request, adj_id):
+    adjustment = get_object_or_404(Adjustment, id=adj_id)
+
+    if request.method == "POST":
+        adjustment.status = "Archived"
+        adjustment.save()
+
+        return JsonResponse({"success": True, "message": "Adjustment archived successfully!"})
+    return
+
+def adjustment_unarchive(request, adj_id):
+    adjustment = get_object_or_404(Adjustment, id=adj_id)
+
+    if request.method == "POST":
+        adjustment.status = "Pending"
+        adjustment.save()
+
+        return JsonResponse({"success": True, "message": "Adjustment Unarchived successfully!"})
+    return

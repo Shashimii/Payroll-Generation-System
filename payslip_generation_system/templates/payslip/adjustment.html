@@ -48,6 +48,7 @@
                     <th>Status</th>
                     <th>Remarks</th>
                     <th>Created</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <!-- Data -->
@@ -249,12 +250,200 @@ $(document).ready(function() {
             { data: 'type' },
             { data: 'amount' },
             { data: 'details' },
-            { data: 'cutoff_month' }, // Ensure this matches the key in the response
+            { data: 'cutoff_month' },
             { data: 'status' },
             { data: 'remarks' },
-            { data: 'created_at' }
+            { data: 'created_at' },
+            { data: 'action' }
         ]
     });
 });
+
+
+function approveAdjustment(adjId) {
+    Swal.fire({
+        title: 'Approve Adjustment?',
+        text: 'Are you sure you want to approve this adjustment?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, approve it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "adjustment_approve" 0 %}'.replace('0', adjId),
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire(
+                            'Approved!',
+                            response.message,
+                            'success'
+                        ).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error!',
+                            response.message || 'Approval failed.',
+                            'error'
+                        );
+                    }
+                },
+                error: function() {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error while approving the adjustment.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+
+function rejectAdjustment(adjId) {
+    Swal.fire({
+        title: 'Reject Adjustment?',
+        text: 'Are you sure you want to reject this adjustment?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#FF0000',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, reject it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "adjustment_reject" 0 %}'.replace('0', adjId),
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire(
+                            'Rejected!',
+                            response.message,
+                            'success'
+                        ).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error!',
+                            response.message || 'Reject failed.',
+                            'error'
+                        );
+                    }
+                },
+                error: function() {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error while rejecting the adjustment.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+
+function archiveAdjustment(adjId) {
+    Swal.fire({
+        title: 'Archive Adjustment?',
+        text: 'Are you sure you want to archive this adjustment?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0055FF',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, archive it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "adjustment_archive" 0 %}'.replace('0', adjId),
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire(
+                            'Archived!',
+                            response.message,
+                            'success'
+                        ).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error!',
+                            response.message || 'Archive failed.',
+                            'error'
+                        );
+                    }
+                },
+                error: function() {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error while archiving the adjustment.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+
+function unarchiveAdjustment(adjId) {
+    Swal.fire({
+        title: 'Unarchive Adjustment?',
+        text: 'Are you sure you want to unarchive this adjustment?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#FF9900',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, archive it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "adjustment_unarchive" 0 %}'.replace('0', adjId),
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire(
+                            'Unarchived!',
+                            response.message,
+                            'success'
+                        ).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error!',
+                            response.message || 'Unarchive failed.',
+                            'error'
+                        );
+                    }
+                },
+                error: function() {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error while unarchiving the adjustment.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+
+
 </script>
 {% endblock %}

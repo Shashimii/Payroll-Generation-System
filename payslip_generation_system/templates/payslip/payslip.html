@@ -95,27 +95,30 @@
                     </thead>
                     <tbody>
                         <tr>
-                        <td> 
-                            <ul>
-                                {% for adjustment in all_adjustment_plus %}
-                                    <li>{{ adjustment.name }}</li>
-                                {% empty %}
-                                    <li>No adjustments</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                        <td> 
-                            <ul style='list-style-type: none; margin: 0; padding: 0;'>
-                                {% for adjustment in all_adjustment_plus %}
-                                    <li> ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
-                                {% empty %}
-                                    <li>No adjustments</li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                            {% comment %} <td>₱{{ total_adjustment_amount_plus|floatformat:2|intcomma }}</td> {% endcomment %}
+                            <td> 
+                                <ul>
+                                    {% for adjustment in all_adjustment_plus %}
+                                        <li>{{ adjustment.name }}</li>
+                                    {% empty %}
+                                        <li>No adjustments</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td> 
+                                <ul style='list-style-type: none; margin: 0; padding: 0;'>
+                                    {% for adjustment in all_adjustment_plus %}
+                                        <li> ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
+                                    {% empty %}
+                                        <li>No adjustments</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
                         </tr>
-                        <tr><td><strong>Total Adjustment</strong></td><td><strong>₱{{ total_add|floatformat:2|intcomma }}</strong></td></tr>
+                        <tr>
+                            <td>
+                                <strong>Total Adjustment</strong></td><td><strong>₱{{ total_add|floatformat:2|intcomma }}</strong>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
