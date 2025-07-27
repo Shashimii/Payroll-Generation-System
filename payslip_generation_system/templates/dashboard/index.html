@@ -9,21 +9,95 @@
     <small class="text-muted">Logged in as: {{ user_role }} <span class="text-dark fw-bold">{{ username }}</span></small>
     </h3>
   </div>
-<div class="card-body text-center">
-  <i class="fa-solid fa-file-invoice fa-3x text-success mb-3"></i>
-  <h4 class="mb-3 fw-bold text-dark">Welcome to the Payslip Generation System</h4>
-  
-  <p class="mb-4 text-muted fs-5">
-    Manage <strong>payroll</strong>, <strong>adjustments</strong>, and <strong>generate payslip</strong> with ease.
-  </p>
-
-  <div class="border-top pt-3">
-    <p class="text-muted fs-6">
-      <span class="d-block">📅 {{ current_datetime|date:"l, F d, Y" }}</span>
-      <span class="d-block">⏰ {{ current_datetime|time:"h:i A" }}</span>
+  <div class="card-body text-center">
+    <i class="fa-solid fa-file-invoice fa-3x text-success mb-3"></i>
+    <h4 class="mb-3 fw-bold text-dark">Welcome to the Payslip Generation System</h4>
+    
+    <p class="mb-4 text-muted fs-5">
+      Manage <strong>payroll</strong>, <strong>adjustments</strong>, and <strong>generate payslip</strong> with ease.
     </p>
   </div>
 </div>
 
+<div class="row g-3">
+  <div class="col-xl-4 col-md-6 col-sm-6 col-12">
+    <div class="small-box bg-success position-relative">
+      <div class="inner">
+        <h3>{{ current_datetime|date:"F j, Y" }}</h3>
+        <p>{{ current_datetime|time:"h:i A" }}</p>
+      </div>
+      <div class="icon" style="opacity: 0.3;">
+        <i class="fas fa-clock fa-5x"></i>
+      </div>
+      {% if request.session.role != 'employee' %}
+      <span class="small-box-footer">Current Date & Time</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-4 col-md-6 col-sm-6 col-12">
+    <div class="small-box bg-info position-relative">
+      <div class="inner">
+        <h3>{{ employee_count }}</h3>
+        <p>Total Employees</p>
+      </div>
+      <div class="icon" style="opacity: 0.3;">
+        <i class="fas fa-users fa-5x"></i>
+      </div>
+      {% if request.session.role != 'employee' %}
+      <a href="{% url 'employee' %}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if request.session.role != 'employee' %}
+  <div class="col-xl-4 col-md-6 col-sm-6 col-12">
+    <div class="small-box bg-primary position-relative">
+      <div class="inner">
+        <h3>Manage Employees</h3>
+        <p>Add employee profiles</p>
+      </div>
+      <div class="icon" style="opacity: 0.3;">
+        <i class="fa-solid fa-pen-to-square fa-5x"></i>
+      </div>
+      <a href="{% url 'employee' %}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-xl-4 col-md-6 col-sm-6 col-12">
+    <div class="small-box bg-fuchsia position-relative">
+      <div class="inner">
+        <h3>Make Adjustments</h3>
+        <p>Before generating a payslip</p>
+      </div>
+      <div class="icon" style="opacity: 0.3;">
+        <i class="fa-solid fa-pen-to-square fa-5x"></i>
+      </div>
+      <a href="{% url 'payslip' %}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-xl-4 col-md-6 col-sm-6 col-12">
+    <div class="small-box bg-olive position-relative">
+      <div class="inner">
+        <h3>Generate Payslip</h3>
+        <p>Available when adjustments are made</p>
+      </div>
+      <div class="icon" style="opacity: 0.3;">
+        <i class="fa-regular fa-file fa-5x"></i>
+      </div>
+      <a href="{% url 'payslip_create' %}" class="small-box-footer">
+        More info <i class="fas fa-arrow-circle-right"></i>
+      </a>
+    </div>
+  </div>
 </div>
+
 {% endblock %}
