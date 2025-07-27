@@ -9,15 +9,9 @@ from django.contrib.auth.decorators import login_required
 
 @login_required
 def dashboard(request):
-    user = request.user
-    username = user.username
-    user_role = request.session.get('role')
-    current_datetime = datetime.now()
+
     employee_count = Employee.objects.count()
 
     return render(request, 'dashboard/index.html', {
-        'user_role': user_role,
-        'username': username,
-        'current_datetime': current_datetime,
         'employee_count': employee_count
     })
