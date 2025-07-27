@@ -315,7 +315,6 @@ def employee_data(request):
         'data': data
     })
 
-@login_required
 def safe_int(value, default=0):
     try:
         return int(value)
@@ -337,12 +336,11 @@ def adjustment_data(request, emp_id):
         queryset = queryset.filter(
             Q(name__icontains=search_value) |
             Q(type__icontains=search_value) |
-            Q(details__icontains=search_value) |
-            Q(computation__icontains=search_value) |
-            Q(cutoff__icontains=search_value) |
+            Q(amount__icontains=search_value) |
             Q(month__icontains=search_value) |
             Q(status__icontains=search_value) |
-            Q(remarks__icontains=search_value)
+            Q(remarks__icontains=search_value) |
+            Q(created_at__icontains=search_value)
         )
 
     total_records = Adjustment.objects.filter(employee=employee).count()
@@ -371,16 +369,33 @@ def adjustment_data(request, emp_id):
 
     for adj in queryset:
         details = f"{int(adj.details)} minutes" if adj.name == "Late" and adj.details.isdigit() else adj.details
+
+        if adj.type.lower() == "income":
+            adjustment_type = "<span style='color:green; font-weight:bold;'>Income</span>"
+        else:
+            adjustment_type = "<span style='color:red; font-weight:bold;'>Deduction</span>"
+
         amount = (
-            f"<span style='color:red'>(₱{adj.amount:,.2f})</span>"
+            f"<span style='color:red; font-weight:bold;'>(₱{adj.amount:,.2f})</span>"
             if adj.type == "Deduction"
-            else f"<span style='color:green'>₱{adj.amount:,.2f}</span>"
+            else f"<span style='color:green; font-weight:bold;'>₱{adj.amount:,.2f}</span>"
         )
 
+        if adj.status.lower() == "approved":
+            status_display = "<span style='color:green; font-weight:bold;'>Approved</span>"
+        elif adj.status.lower() == "rejected":
+            status_display = "<span style='color:red; font-weight:bold;'>Rejected</span>"
+        elif adj.status.lower() == "archived":
+            status_display = "<span style='color:gray; font-weight:bold;'>Archived</span>"
+        elif adj.status.lower() == "pending":
+            status_display = "<span style='color:orange; font-weight:bold;'>Pending</span>"
+        else:
+            status_display = f"<span style='font-weight:bold;'>{adj.status}</span>"
+
         if adj.status.lower() == "rejected":
-            buttons = "Rejected"
-        elif adj.status.lower() == "approved":
-            buttons = "Archived"
+            buttons = "<span style='color:red; font-weight:bold;'>Rejected</span>"
+        elif adj.status.lower() == "archived":
+            buttons = "<span style='color:gray; font-weight:bold;'>Archived</span>"
         else:
             buttons = 'Checking'
 
@@ -397,13 +412,13 @@ def adjustment_data(request, emp_id):
 
         data.append({
             "name": adj.name,
-            "type": adj.type,
+            "type": adjustment_type,
             "amount": amount,
             "details": details,
             "cutoff_month": f"{adj.month} - {adj.cutoff}",
-            "status": adj.status,
+            "status": status_display,
             "remarks": adj.remarks,
-            "created_at": adj.created_at.strftime('%Y-%m-%d %H:%M'),
+            "created_at": adj.created_at.strftime('%Y-%m-%d %I:%M %p'),
             "action": buttons,
         })
 

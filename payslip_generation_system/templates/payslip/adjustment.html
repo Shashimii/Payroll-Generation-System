@@ -9,10 +9,10 @@
   </div>
     <div class="card-body">
         <div class="mb-3">
-            <strong>Name:</strong> <span class="text-muted">{{ employee.fullname }}</span>
+            <strong>Name:</strong> <strong>{{ employee.fullname }}</strong>
         </div>
         <div class="mb-3">
-            <strong>Position:</strong> <span class="text-muted">{{ employee.position }}</span>
+            <strong>Position:</strong> <strong>{{ employee.position }}</strong>
         </div>
         <div>
             <strong>Salary:</strong>
@@ -248,6 +248,7 @@ $(document).ready(function() {
         processing: true,
         serverSide: true,
         ajax: "{% url 'adjustment_data' employee.id %}",
+        order: [[7, 'desc']],
         columns: [
             { data: 'name' },
             { data: 'type' },
