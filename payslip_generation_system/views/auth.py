@@ -35,6 +35,7 @@ def login(request):
     
     return render(request, 'auth/login.html')
 
+@login_required
 def logout(request):
     auth_logout(request)
     return redirect('login')

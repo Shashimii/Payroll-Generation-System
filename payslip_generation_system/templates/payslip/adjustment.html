@@ -20,15 +20,18 @@
         </div>
     </div>
 
-    <div class="card-footer text-right">
-        <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addAdjustmentModal">
-            <i class="fas fa-plus-circle"></i> Add Adjustment
-        </button>
-        <button type="button" class="btn btn-warning mb-3" data-bs-toggle="modal" data-bs-target="#addLateModal">
-            <i class="fas fa-history"></i> Add Late/Absences
-        </button>
-    </div>
+    {% if request.session.role|lower != 'checker' and request.session.role|lower != 'employee' %}
+        <div class="card-footer text-right">
+            <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addAdjustmentModal">
+                <i class="fas fa-plus-circle"></i> Add Adjustment
+            </button>
+            <button type="button" class="btn btn-warning mb-3" data-bs-toggle="modal" data-bs-target="#addLateModal">
+                <i class="fas fa-history"></i> Add Late/Absences
+            </button>
+        </div>
+    {% endif %}
 </div>
+
 
 
 

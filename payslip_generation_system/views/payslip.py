@@ -9,13 +9,17 @@ from django.db.models import Q, Sum
 from decimal import Decimal
 from datetime import datetime
 from payslip_generation_system.models import Employee, Adjustment
+from payslip_generation_system.decorators import restrict_roles
 from django.contrib.auth.models import User
 
 from django.contrib.auth.decorators import login_required
+
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def index(request):
     return render(request, 'payslip/index.html')
 
+@login_required
 def create(request):
     if request.session.get('user_type') == 'employee':
         # Get only the employee that matches the logged-in user's ID
@@ -23,7 +27,7 @@ def create(request):
         employees = Employee.objects.filter(fullname=fullname)
     else:
         employees = Employee.objects.all()
-    
+
     month_choices = [
         ('January', 'January'),
         ('February', 'February'),
@@ -48,6 +52,7 @@ def create(request):
         'current_month': current_month,
     })
 
+@login_required
 def generate(request):
     month_choices = [
         ('January', 'January'),
@@ -179,13 +184,14 @@ def generate(request):
 
     return render(request, 'payslip/payslip.html', context)
 
+@login_required
 def adjustment(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
-
     return render(request, 'payslip/adjustment.html', {
         'employee': employee
     })
 
+@login_required
 def adjustment_add(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
     if request.method == 'POST':
@@ -221,6 +227,7 @@ def adjustment_add(request, emp_id):
         messages.success(request, 'Adjustment successfully added.')
         return redirect('payslip_adjustment', emp_id=employee.id)
 
+@login_required
 def employee_data(request):
     user_role = request.session.get('role')
 
@@ -235,19 +242,20 @@ def employee_data(request):
     # Fields to retrieve
     fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility']
 
-    # Section map
-    section_map = {
-        'preparator_meo_s': 43,
-        'preparator_meo_e': 42,
-        'preparator_meo_w': 44,
-        'preparator_meo_n': 45
-    }
+    # FILTER THE EMPLOYEE DATA BASED ON THE PREPARATOR RELATED DIVISIONS
+    # NEED PREPARATOR ROLES
+    # DIVISION IDENTIFIER
+    
+    # Preparator Map
+    preparator_roles = ['preparator_denr', '42', '43', '44', '45']
+
+    preparator_denr = ['1', '8', '7'] 
 
     # Base queryset
-    if user_role == 'admin':
+    if user_role in ['admin', 'checker']:
         queryset = Employee.objects.values(*fields)
-    elif user_role in section_map:
-        queryset = Employee.objects.filter(section=section_map[user_role]).values(*fields)
+    # elif user_role in preparator_roles:
+    #     queryset = Employee.objects.filter(section=preparator_denr[]).values(*fields)
     else:
         return JsonResponse({
             'draw': draw,
@@ -307,12 +315,14 @@ def employee_data(request):
         'data': data
     })
 
+@login_required
 def safe_int(value, default=0):
     try:
         return int(value)
     except (ValueError, TypeError):
         return default
 
+@login_required
 def adjustment_data(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
 
@@ -353,6 +363,12 @@ def adjustment_data(request, emp_id):
     queryset = queryset.order_by(order_column)[start:start + length]
 
     data = []
+
+    user_role = str(request.session.get('role', '')).lower()
+
+    # List of roles that should NOT see buttons
+    restricted_roles = ['preparator_denr', '42', '43', '44', '45']
+
     for adj in queryset:
         details = f"{int(adj.details)} minutes" if adj.name == "Late" and adj.details.isdigit() else adj.details
         amount = (
@@ -361,19 +377,23 @@ def adjustment_data(request, emp_id):
             else f"<span style='color:green'>₱{adj.amount:,.2f}</span>"
         )
 
-        if adj.status.lower() == "pending":
-            buttons = f"""
-                <button class="btn btn-sm btn-success" data-id="{adj.id}" onclick="approveAdjustment({adj.id})">Approve</button>
-                <button class="btn btn-sm btn-warning" data-id="{adj.id}" onclick="rejectAdjustment({adj.id})">Reject</button>
-            """
-        elif adj.status.lower() == "approved":
-            buttons = f"""
-                <button class="btn btn-sm btn-secondary" data-id="{adj.id}" onclick="archiveAdjustment({adj.id})">Archive</button>
-            """
-        elif adj.status.lower() == "rejected":
+        if adj.status.lower() == "rejected":
             buttons = "Rejected"
-        else:
+        elif adj.status.lower() == "approved":
             buttons = "Archived"
+        else:
+            buttons = 'Checking'
+
+        if (user_role not in restricted_roles):
+            if adj.status.lower() == "pending":
+                buttons = f"""
+                    <button class="btn btn-sm btn-success" data-id="{adj.id}" onclick="approveAdjustment({adj.id})">Approve</button>
+                    <button class="btn btn-sm btn-warning" data-id="{adj.id}" onclick="rejectAdjustment({adj.id})">Reject</button>
+                """
+            elif adj.status.lower() == "approved":
+                buttons = f"""
+                    <button class="btn btn-sm btn-secondary" data-id="{adj.id}" onclick="archiveAdjustment({adj.id})">Archive</button>
+                """
 
         data.append({
             "name": adj.name,
@@ -395,6 +415,7 @@ def adjustment_data(request, emp_id):
         "data": data
     })
 
+@login_required
 def adjustment_approve(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
@@ -403,7 +424,8 @@ def adjustment_approve(request, adj_id):
         adjustment.save()
 
         return JsonResponse({"success": True, "message": "Adjustment approved successfully!"})
-    
+
+@login_required
 def adjustment_reject(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
@@ -414,6 +436,7 @@ def adjustment_reject(request, adj_id):
         return JsonResponse({"success": True, "message": "Adjustment rejected successfully!"})
     return
 
+@login_required
 def adjustment_archive(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
@@ -424,6 +447,7 @@ def adjustment_archive(request, adj_id):
         return JsonResponse({"success": True, "message": "Adjustment archived successfully!"})
     return
 
+@login_required
 def adjustment_unarchive(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 

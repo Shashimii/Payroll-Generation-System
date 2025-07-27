@@ -7,14 +7,18 @@ from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from payslip_generation_system.models import Employee, EmployeeAttachment, UserRole
+from payslip_generation_system.decorators import restrict_roles
 from django.contrib.auth.models import User
 
 from django.contrib.auth.decorators import login_required
 
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def index(request):
     return render(request, 'employee/index.html')
-    
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def create(request):
     with connection.cursor() as cursor:
         cursor.execute('SELECT * FROM systems_division')
@@ -29,6 +33,8 @@ def create(request):
         'sections': sections,
     })
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def store(request):
     if request.method == 'POST':
         # Formatted
@@ -98,6 +104,8 @@ def store(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def edit(request, emp_id):
     with connection.cursor() as cursor:
         cursor.execute('SELECT * FROM systems_division')
@@ -117,6 +125,8 @@ def edit(request, emp_id):
         'attachments': attachments,
     })
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def update(request, emp_id):    
     if request.method == "POST":
         employee = get_object_or_404(Employee, id=emp_id)
@@ -187,6 +197,8 @@ def update(request, emp_id):
         messages.success(request, "Employee details updated successfully.")
     return redirect('dashboard')
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def destroy(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
 
@@ -212,6 +224,8 @@ def destroy(request, emp_id):
 
     return JsonResponse({"success": False, "message": "Invalid request method!"})
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def attachment_delete(request, attachment_id):
     if request.method == "POST":
         attachment = get_object_or_404(EmployeeAttachment, id=attachment_id)
@@ -219,6 +233,8 @@ def attachment_delete(request, attachment_id):
         return JsonResponse({"success": True, "message": "Attachment deleted."})
     return JsonResponse({"success": False, "message": "Invalid request."})
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def data(request):
     user_role = request.session.get('role')
 
@@ -311,6 +327,8 @@ def data(request):
         'data': data
     })
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def show(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
     attachments = EmployeeAttachment.objects.filter(employee=employee)

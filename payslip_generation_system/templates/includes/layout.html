@@ -42,6 +42,7 @@
                             </a>
                         </li>
 
+                        {% if request.session.role != 'employee' %}
                         <!-- Employee Menu -->
                         <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' %}menu-open{% endif %}">
                             <a href="#" class="nav-link {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' %}active{% endif %}">
@@ -67,6 +68,8 @@
                                 </li>
                             </ul>
                         </li>
+                        {% endif %}
+
 
                         <!-- Payslip Menu -->
                         <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_adjustment' or request.resolver_match.url_name == 'payslip_generate' %}menu-open{% endif %}">
@@ -78,12 +81,14 @@
                                 </p>
                             </a>
                             <ul class="nav nav-treeview">
+                                {% if request.session.role != 'employee' %}
                                 <li class="nav-item">
                                     <a href="{% url 'payslip' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_adjustment' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Make Adjustments</p>
                                     </a>
                                 </li>
+                                {% endif %}
                                 <li class="nav-item">
                                     <a href="{% url 'payslip_create' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_generate' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
