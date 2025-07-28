@@ -70,7 +70,8 @@ def store(request):
             fund_source=request.POST.get('fund_source'),
             salary=request.POST.get('salary'),
             tax_declaration=request.POST.get('tax_declaration'),
-            eligibility=request.POST.get('eligibility')
+            eligibility=request.POST.get('eligibility'),
+            assigned_office=request.POST('assigned_office'),
         )
 
         # Employee Attachment
@@ -86,10 +87,11 @@ def store(request):
         # Employee Role
         UserRole.objects.create(
             user=user,
-            role='employee'
+            role='employee' # New accounts default role
         )
 
-        # admin
+        # Change it on the database using this roles
+        # admin (System IT only)
         # checker
         # preparator_denr
         # preparator_meo_s = 43
@@ -249,26 +251,22 @@ def data(request):
     # Fields to retrieve
     fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility']
 
-    # Section map
-    section_map = {
-        'preparator_meo_s': 43,
-        'preparator_meo_e': 42,
-        'preparator_meo_w': 44,
-        'preparator_meo_n': 45
-    }
-
-    # Base queryset
-    if user_role == 'admin':
-        queryset = Employee.objects.values(*fields)
-    elif user_role in section_map:
-        queryset = Employee.objects.filter(section=section_map[user_role]).values(*fields)
-    else:
-        return JsonResponse({
-            'draw': draw,
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-            'data': []
-        })
+    # Roles
+    role = request.session.get('role')
+    
+    # Data
+    match role:
+        case "admin":
+            queryset = Employee.objects.values(*fields)
+        case "checker":
+            queryset = Employee.objects.values(*fields)
+        case _:
+            return JsonResponse({
+                'draw': draw,
+                'recordsTotal': 0,
+                'recordsFiltered': 0,
+                'data': []
+            })
 
     # Search filter
     if search_value:

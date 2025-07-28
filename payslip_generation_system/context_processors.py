@@ -1,10 +1,18 @@
 from .models import Employee
 from datetime import datetime
 
+# Global Variables
 def global_user_context(request):
     username = request.user.username
     user_role = request.session.get('role', '')
     current_datetime = datetime.now()
+    restricted_roles = [
+        'employee',
+        'preparator_meo_s',
+        'preparator_meo_e',
+        'preparator_meo_w',
+        'preparator_meo_n'
+    ]
 
     try:
         if request.user.is_authenticated:
@@ -17,4 +25,6 @@ def global_user_context(request):
         'username': username,
         'user_role': user_role,
         'current_datetime': current_datetime,
+        'restricted_roles': restricted_roles
     }
+

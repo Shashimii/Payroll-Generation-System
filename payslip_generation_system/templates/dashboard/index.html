@@ -93,9 +93,11 @@
       <div class="icon" style="opacity: 0.3;">
         <i class="fa-regular fa-file fa-5x"></i>
       </div>
+      {% if request.session.role != 'employee' %}
       <a href="{% url 'payslip_create' %}" class="small-box-footer">
         More info <i class="fas fa-arrow-circle-right"></i>
       </a>
+      {% endif %}
     </div>
   </div>
 </div>

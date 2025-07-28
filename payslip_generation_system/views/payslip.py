@@ -242,27 +242,39 @@ def employee_data(request):
     # Fields to retrieve
     fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility']
 
-    # FILTER THE EMPLOYEE DATA BASED ON THE PREPARATOR RELATED DIVISIONS
-    # NEED PREPARATOR ROLES
-    # DIVISION IDENTIFIER
+    # Roles
+    role = request.session.get('role')
     
-    # Preparator Map
-    preparator_roles = ['preparator_denr', '42', '43', '44', '45']
-
-    preparator_denr = ['1', '8', '7'] 
-
-    # Base queryset
-    if user_role in ['admin', 'checker']:
-        queryset = Employee.objects.values(*fields)
-    # elif user_role in preparator_roles:
-    #     queryset = Employee.objects.filter(section=preparator_denr[]).values(*fields)
-    else:
-        return JsonResponse({
-            'draw': draw,
-            'recordsTotal': 0,
-            'recordsFiltered': 0,
-            'data': []
-        })
+    # Offices
+    denrncrnec = 'denr_ncr_nec'
+    meos = 'meo_s'
+    meoe = 'meo_e'
+    meow = 'moe_w'
+    meon = 'meo_n'
+    
+    # Data
+    match role:
+        case "admin":
+            queryset = Employee.objects.values(*fields)
+        case "checker":
+            queryset = Employee.objects.values(*fields)
+        case "preparator_denr_nec":
+            queryset = Employee.objects.filter(assigned_office=denrncrnec).values(*fields)
+        case "preparator_meo_s":
+            queryset = Employee.objects.filter(assigned_office=meos).values(*fields)
+        case "preparator_meo_e":
+            queryset = Employee.objects.filter(assigned_office=meoe).values(*fields)
+        case "preparator_meo_w":
+            queryset = Employee.objects.filter(assigned_office=meow).values(*fields)
+        case "preparator_meo_n":
+            queryset = Employee.objects.filter(assigned_office=meon).values(*fields)
+        case _:
+            return JsonResponse({
+                'draw': draw,
+                'recordsTotal': 0,
+                'recordsFiltered': 0,
+                'data': []
+            })
 
     # Search filter
     if search_value:

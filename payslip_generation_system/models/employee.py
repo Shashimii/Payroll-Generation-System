@@ -51,6 +51,16 @@ class Employee(models.Model):
     # employee account data
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
+    ASSIGNED_OFFICE_CHOICES = [
+        ('denr_ncr_nec', 'DENR NCR NEC'),
+        ('meo_s', 'MEO WEST'),
+        ('meo_e', 'MEO EAST'),
+        ('meo_w', 'MEO WEST'),
+        ('meo_n', 'MEO NORTH')
+    ]
+
+    assigned_office = models.CharField(max_length=100, choices=ASSIGNED_OFFICE_CHOICES, blank=True, null=True)
+
     def __str__(self):
         return f"{self.employee_number} - {self.fullname} - {self.position}"
     

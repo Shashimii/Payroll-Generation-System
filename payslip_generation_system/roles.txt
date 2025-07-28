@@ -1,0 +1,22 @@
+## Roles should be setted on the Database Table ##
+
+# Database Table name
+- payslip_generation_system_userrole
+
+# Role List
+- admin (System IT)
+- checker (Finance)
+- preparator_denr_nec (DENR NCR NEC)
+- preparator_meo_s (MEO South)
+- preparator_meo_e (MEO East)
+- preparator_meo_w (MEO West)
+- preparator_meo_n (MEO North)
+
+## Employee Data is based on their Assigned Office
+
+# Offices
+- DENR NCR National Ecology Center (NEC)
+- Metropolitan Enviromental Office South (MEO South)
+- Metropolitan Enviromental Office East (MEO East)
+- Metropolitan Enviromental Office West (MEO West)
+- Metropolitan Enviromental Office North (MEO North)
