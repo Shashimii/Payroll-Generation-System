@@ -21,12 +21,39 @@ def index(request):
 
 @login_required
 def create(request):
-    if request.session.get('user_type') == 'employee':
-        # Get only the employee that matches the logged-in user's ID
-        fullname = request.session.get('fullname')
-        employees = Employee.objects.filter(fullname=fullname)
-    else:
-        employees = Employee.objects.all()
+    # Role
+    role = request.session.get('role')
+
+    # logged user id
+    current_user_id = request.user.id
+
+    # Offices
+    denrncrnec = 'denr_ncr_nec'
+    meos = 'meo_s'
+    meoe = 'meo_e'
+    meow = 'moe_w'
+    meon = 'meo_n'
+
+    # Data
+    match role:
+        case "admin":
+            employees = Employee.objects.all()
+        case "checker":
+            employees = Employee.objects.all()
+        case "preparator_denr_nec":
+            employees = Employee.objects.filter(assigned_office=denrncrnec).all()
+        case "preparator_meo_s":
+            employees = Employee.objects.filter(assigned_office=meos).all()
+        case "preparator_meo_e":
+            employees = Employee.objects.filter(assigned_office=meoe).all()
+        case "preparator_meo_w":
+            employees = Employee.objects.filter(assigned_office=meow).all()
+        case "preparator_meo_n":
+            employees = Employee.objects.filter(assigned_office=meon).all()
+        case "employee":
+            employees = Employee.objects.filter(user_id=current_user_id)
+        case _:
+            employees = Employee.objects.filter(user_id=current_user_id)
 
     month_choices = [
         ('January', 'January'),
@@ -251,7 +278,7 @@ def employee_data(request):
     meoe = 'meo_e'
     meow = 'moe_w'
     meon = 'meo_n'
-    
+
     # Data
     match role:
         case "admin":
