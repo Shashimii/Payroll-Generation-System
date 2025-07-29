@@ -17,10 +17,10 @@
             <div class="form-container">
                 <div class="form-group">
                     <label for="employeeSelect">Employee</label>
-                    <select class="form-select" id="employeeSelect" name="employee" required>
-                        <option value="" disabled selected>-- Select Employee --</option>
+                    <select class="form-select" id="employeeSelect" name="employee" {% if user_role == 'employee' %} disabled{% endif %} required>
+                        <option value="" disabled {% if user_role != 'employee' %} selected{% endif %}>Select Employee</option>
                         {% for employee in employees %}
-                            <option value="{{ employee.id }}">{{ employee.fullname }} - {{ employee.position }}</option>
+                            <option value="{{ employee.id }}" {% if user_role == 'employee' %} selected{% endif %}>{{ employee.fullname }} - {{ employee.position }}</option>
                         {% endfor %}
                     </select>
                 </div>
