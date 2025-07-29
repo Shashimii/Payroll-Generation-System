@@ -3,11 +3,17 @@
 {% block layout_content %}
 <div class="card card-success card-outline">
   <div class="card-header">
-    <h3 class="card-title">
-    <span class="text-success">Welcome to the</span> 
-    <strong class="text-primary">Payslip Generation System</strong><br>
-    <small class="text-muted">Logged in as: {{ user_role }} <span class="text-dark fw-bold">{{ username }}</span></small>
-    </h3>
+    <div class="card-title">
+      <h4 class="mb-1">
+        <span class="text-success">Welcome to the</span> 
+        <strong class="text-primary">Payslip Generation System</strong>
+      </h4>
+      <small class="text-muted">
+        Logged in as: 
+        <span class="text-capitalize">{{ formatted_user_role }}</span> 
+        <span class="text-dark fw-bold" style="font-weight: 600">{{ username }}</span>
+      </small>
+    </div>
   </div>
   <div class="card-body text-center">
     <i class="fa-solid fa-file-invoice fa-3x text-success mb-3"></i>
@@ -29,7 +35,7 @@
       <div class="icon" style="opacity: 0.3;">
         <i class="fas fa-clock fa-5x"></i>
       </div>
-      {% if request.session.role != 'employee' %}
+      {% if user_role != 'employee' %}
       <span class="small-box-footer">Current Date & Time</span>
       {% endif %}
     </div>
@@ -44,7 +50,7 @@
       <div class="icon" style="opacity: 0.3;">
         <i class="fas fa-users fa-5x"></i>
       </div>
-      {% if request.session.role != 'employee' %}
+      {% if user_role != 'employee' %}
       <a href="{% url 'employee' %}" class="small-box-footer">
         More info <i class="fas fa-arrow-circle-right"></i>
       </a>
@@ -69,7 +75,7 @@
   </div>
   {% endif %}
 
-  {% if user_role != employee %}
+  {% if user_role != 'employee' %}
   <div class="col-xl-4 col-md-6 col-sm-6 col-12">
     <div class="small-box bg-fuchsia position-relative">
       <div class="inner">
@@ -95,7 +101,7 @@
       <div class="icon" style="opacity: 0.3;">
         <i class="fa-regular fa-file fa-5x"></i>
       </div>
-      {% if request.session.role != 'employee' %}
+      {% if user_role != 'employee' %}
       <a href="{% url 'payslip_create' %}" class="small-box-footer">
         More info <i class="fas fa-arrow-circle-right"></i>
       </a>
