@@ -3,6 +3,11 @@
 {% load humanize %}
 {% block layout_content %}
 
+<button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'payslip' %}'">
+    <i class="fa-solid fa-arrow-left"></i>
+    Back
+</button>
+
 <div class="card card-outline card-success">
   <div class="card-header">
     <h3 class="card-title mb-0">💼 Make Adjustments | Employee information</h3>
@@ -26,13 +31,11 @@
                 <i class="fas fa-plus-circle"></i> Add Adjustment
             </button>
             <button type="button" class="btn btn-warning mb-3" data-bs-toggle="modal" data-bs-target="#addLateModal">
-                <i class="fas fa-history"></i> Add Late/Absences
+                <i class="fas fa-history"></i> Add Late
             </button>
         </div>
     {% endif %}
 </div>
-
-
 
 
 <div class="card card-outline card-success">
@@ -58,8 +61,6 @@
         </table>
     </div>
 </div>
-
-
 
 <div class="modal fade" id="addAdjustmentModal" tabindex="-1" aria-labelledby="addAdjustmentLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">

@@ -2,6 +2,10 @@
 {% block title %}Add Employee{% endblock title %}
 {% block layout_content %}
 
+<button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'employee' %}'">
+    <i class="fa-solid fa-arrow-left"></i>
+    Back
+</button>
 
 <form action="{% url 'employee_store' %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}

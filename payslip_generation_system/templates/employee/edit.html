@@ -1,6 +1,12 @@
 {% extends "includes/layout.html" %}
 {% block title %}Dashboard{% endblock title %}
 {% block layout_content %}
+
+<button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'payslip' %}'">
+    <i class="fa-solid fa-arrow-left"></i>
+    Back
+</button>
+
 <form action="{% url 'employee_update' employee.id %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="card card-success">
