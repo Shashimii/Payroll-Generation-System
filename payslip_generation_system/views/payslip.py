@@ -140,7 +140,7 @@ def generate(request):
         if (basic_salary_cutoff > 9999):
             philhealth = basic_salary_cutoff * Decimal('0.05')
         else:
-            philhealth = basic_salary_cutoff - 500
+            philhealth = 500
         
         #late
         late_adjustments = Adjustment.objects.filter(
