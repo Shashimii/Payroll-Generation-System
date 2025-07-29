@@ -336,6 +336,100 @@
     </div>
 </div>
 
+<div class="modal fade" id="editLateModal" tabindex="-1" aria-labelledby="addAdjustmentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'adjustment_add' employee.id %}">
+                {% csrf_token %}
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="addAdjustmentLabel">Add Late/Absent</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="month" class="form-label">Month</label>
+                            <select name="month" class="form-control" required>
+                                <option value="">-- Select Month --</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="cutoff" class="form-label">Cutoff</label>
+                            <select name="cutoff" class="form-control" required>
+                                <option value="1st">1st</option>
+                                <option value="2nd">2nd</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" value="Late" readonly required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select name="type" class="form-control" disabled required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Income">Income</option>
+                                <option value="Deduction" selected>Deduction</option>
+                            </select>
+                            <input type="hidden" name="type" value="Deduction">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="number" name="amount" step="0.01" class="form-control" readonly>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="details" class="form-label">No of Minutes</label>
+                            <input type="number" name="details" step="0.01" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" class="form-control" {% if user_role in restricted_roles %} disabled{% endif %}>
+                                {% if user_role != 'checker' %}
+                                    <option value="Pending" {% if user_role in restricted_roles %} selected{% endif %}>Pending</option>
+                                {% endif %}
+
+                                {% if user_role not in restricted_roles %}
+                                    <option value="Approved">Approved</option>
+                                    <option value="Returned">Returned</option>
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <script>
 $(document).ready(function() {
@@ -472,6 +566,38 @@ function editAdjustment(button) {
   modal.querySelector('select[name="type"]').value = type;
   modal.querySelector('input[name="amount"]').value = amount;
   modal.querySelector('textarea[name="details"]').value = details;
+  modal.querySelector('textarea[name="remarks"]').value = remarks;
+
+  // Update form action URL if needed
+  const form = modal.querySelector('form');
+  form.action = `/payslip/adjustment/edit/${employee_id}/${id}/`;
+
+  // Show the modal using Bootstrap's Modal API
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+}
+
+function editAdjustmentLate(button) {
+  // Row data from button
+  const id = button.getAttribute('data-id');
+  const month = button.getAttribute('data-month');
+  const cutoff = button.getAttribute('data-cutoff');
+  const name = button.getAttribute('data-name');
+  const type = button.getAttribute('data-type');
+  const amount = button.getAttribute('data-amount');
+  const details = button.getAttribute('data-details');
+  const remarks = button.getAttribute('data-remarks');
+  const employee_id = button.getAttribute('data-employee_id');
+
+  const modal = document.getElementById('editLateModal');
+
+  // Set form values
+  modal.querySelector('select[name="month"]').value = month;
+  modal.querySelector('select[name="cutoff"]').value = cutoff;
+  modal.querySelector('input[name="name"]').value = name;
+  modal.querySelector('select[name="type"]').value = type;
+  modal.querySelector('input[name="amount"]').value = amount;
+  modal.querySelector('input[name="details"]').value = details;
   modal.querySelector('textarea[name="remarks"]').value = remarks;
 
   // Update form action URL if needed

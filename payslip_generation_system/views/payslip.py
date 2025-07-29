@@ -489,8 +489,24 @@ def adjustment_data(request, emp_id):
                     <button class="btn btn-sm btn-warning" data-id="{adj.id}" onclick="returnAdjustment({adj.id})">Return</button>
                 """
         
-        if (user_role in restricted_roles):
-            if adj.status.lower() == "returned":
+        if user_role in restricted_roles:
+            if adj.status.lower() == "returned" and adj.name.lower() == "late":
+                buttons = f"""
+                <button class="btn btn-sm btn-info"
+                    data-id="{ adj.id }"
+                    data-month="{ adj.month }"
+                    data-cutoff="{ adj.cutoff }"
+                    data-name="{ adj.name }"
+                    data-type="{ adj.type }"
+                    data-amount="{ adj.amount }"
+                    data-details="{ adj.details }"
+                    data-remarks="{ adj.remarks }"
+                    data-employee_id="{adj.employee_id}"
+                    onclick="editAdjustmentLate(this)">
+                        Edit Late Adjustment
+                </button>
+                """
+            elif adj.status.lower() == "returned":
                 buttons = f"""
                 <button class="btn btn-sm btn-info"
                     data-id="{ adj.id }"
@@ -503,9 +519,10 @@ def adjustment_data(request, emp_id):
                     data-remarks="{ adj.remarks }"
                     data-employee_id="{adj.employee_id}"
                     onclick="editAdjustment(this)">
-                        Edit
+                        Edit Adjustment
                 </button>
-                """
+        """
+
 
         data.append({
             "name": adj.name,
