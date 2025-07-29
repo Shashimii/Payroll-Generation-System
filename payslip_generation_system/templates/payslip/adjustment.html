@@ -121,11 +121,15 @@
 
                         <div class="col-md-6 mb-3">
                             <label for="status" class="form-label">Status</label>
-                            <select name="status" class="form-control">
-                                <option value="Approved">Approved</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Rejected">Rejected</option>
-                                <option value="Archived">Archived</option>
+                            <select name="status" class="form-control" {% if user_role in restricted_roles %} disabled{% endif %}>
+                                {% if user_role != 'checker' %}
+                                    <option value="Pending" {% if user_role in restricted_roles %} selected{% endif %}>Pending</option>
+                                {% endif %}
+
+                                {% if user_role not in restricted_roles %}
+                                    <option value="Approved">Approved</option>
+                                    <option value="Returned">Returned</option>
+                                {% endif %}
                             </select>
                         </div>
 
@@ -142,8 +146,8 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </form>
 
@@ -217,11 +221,15 @@
 
                         <div class="col-md-6 mb-3">
                             <label for="status" class="form-label">Status</label>
-                            <select name="status" class="form-control">
-                                <option value="Approved">Approved</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Rejected">Rejected</option>
-                                <option value="Archived">Archived</option>
+                            <select name="status" class="form-control" {% if user_role in restricted_roles %} disabled{% endif %}>
+                                {% if user_role != 'checker' %}
+                                    <option value="Pending" {% if user_role in restricted_roles %} selected{% endif %}>Pending</option>
+                                {% endif %}
+
+                                {% if user_role not in restricted_roles %}
+                                    <option value="Approved">Approved</option>
+                                    <option value="Returned">Returned</option>
+                                {% endif %}
                             </select>
                         </div>
 
@@ -233,10 +241,97 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editReturnedModal" tabindex="-1" aria-labelledby="addAdjustmentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="addAdjustmentLabel">Add Adjustment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="month" class="form-label">Month</label>
+                            <select name="month" class="form-control" required>
+                                <option value="">-- Select Month --</option>
+                                <option value="January">January</option>
+                                <option value="February">February</option>
+                                <option value="March">March</option>
+                                <option value="April">April</option>
+                                <option value="May">May</option>
+                                <option value="June">June</option>
+                                <option value="July">July</option>
+                                <option value="August">August</option>
+                                <option value="September">September</option>
+                                <option value="October">October</option>
+                                <option value="November">November</option>
+                                <option value="December">December</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="cutoff" class="form-label">Cutoff</label>
+                            <select name="cutoff" class="form-control" required>
+                                <option value="1st">1st</option>
+                                <option value="2nd">2nd</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select name="type" class="form-control" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="Income">Income</option>
+                                <option value="Deduction">Deduction</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Amount</label>
+                            <input type="number" name="amount" step="0.01" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" class="form-control" {% if user_role in restricted_roles %} disabled{% endif %}>
+                                <option value="Pending" selected>Pending</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="details" class="form-label">Details</label>
+                            <textarea name="details" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="remarks" class="form-label">Remarks</label>
+                            <textarea name="remarks" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save Adjustment</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+
         </div>
     </div>
 </div>
@@ -310,27 +405,27 @@ function approveAdjustment(adjId) {
     });
 }
 
-function rejectAdjustment(adjId) {
+function returnAdjustment(adjId) {
     Swal.fire({
-        title: 'Reject Adjustment?',
-        text: 'Are you sure you want to reject this adjustment?',
+        title: 'Return Adjustment?',
+        text: 'Are you sure you want to return this adjustment?',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#FF0000',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, reject it!'
+        confirmButtonText: 'Yes, return it!'
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
                 type: 'POST',
-                url: '{% url "adjustment_reject" 0 %}'.replace('0', adjId),
+                url: '{% url "adjustment_return" 0 %}'.replace('0', adjId),
                 data: {
                     csrfmiddlewaretoken: '{{ csrf_token }}'
                 },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire(
-                            'Rejected!',
+                            'Returned!',
                             response.message,
                             'success'
                         ).then(() => {
@@ -339,7 +434,7 @@ function rejectAdjustment(adjId) {
                     } else {
                         Swal.fire(
                             'Error!',
-                            response.message || 'Reject failed.',
+                            response.message || 'Return failed.',
                             'error'
                         );
                     }
@@ -347,7 +442,7 @@ function rejectAdjustment(adjId) {
                 error: function() {
                     Swal.fire(
                         'Error!',
-                        'There was an error while rejecting the adjustment.',
+                        'There was an error while returning the adjustment.',
                         'error'
                     );
                 }
@@ -356,7 +451,39 @@ function rejectAdjustment(adjId) {
     });
 }
 
-function archiveAdjustment(adjId) {
+function editAdjustment(button) {
+  // Row data from button
+  const id = button.getAttribute('data-id');
+  const month = button.getAttribute('data-month');
+  const cutoff = button.getAttribute('data-cutoff');
+  const name = button.getAttribute('data-name');
+  const type = button.getAttribute('data-type');
+  const amount = button.getAttribute('data-amount');
+  const details = button.getAttribute('data-details');
+  const remarks = button.getAttribute('data-remarks');
+  const employee_id = button.getAttribute('data-employee_id');
+
+  const modal = document.getElementById('editReturnedModal');
+
+  // Set form values
+  modal.querySelector('select[name="month"]').value = month;
+  modal.querySelector('select[name="cutoff"]').value = cutoff;
+  modal.querySelector('input[name="name"]').value = name;
+  modal.querySelector('select[name="type"]').value = type;
+  modal.querySelector('input[name="amount"]').value = amount;
+  modal.querySelector('textarea[name="details"]').value = details;
+  modal.querySelector('textarea[name="remarks"]').value = remarks;
+
+  // Update form action URL if needed
+  const form = modal.querySelector('form');
+  form.action = `/payslip/adjustment/edit/${employee_id}/${id}/`;
+
+  // Show the modal using Bootstrap's Modal API
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+}
+
+{% comment %} function archiveAdjustment(adjId) {
     Swal.fire({
         title: 'Archive Adjustment?',
         text: 'Are you sure you want to archive this adjustment?',
@@ -446,7 +573,7 @@ function unarchiveAdjustment(adjId) {
             });
         }
     });
-}
+} {% endcomment %}
 
 
 </script>

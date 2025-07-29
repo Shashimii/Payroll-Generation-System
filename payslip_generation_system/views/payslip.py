@@ -253,6 +253,42 @@ def adjustment_add(request, emp_id):
         )
         messages.success(request, 'Adjustment successfully added.')
         return redirect('payslip_adjustment', emp_id=employee.id)
+    
+@login_required
+def adjustment_edit(request, emp_id, adj_id):
+    employee = get_object_or_404(Employee, id=emp_id)
+    adjustment = get_object_or_404(Adjustment, id=adj_id, employee=employee)
+
+    if request.method == 'POST':
+        name = request.POST['name']
+        raw_amount = request.POST['amount']
+        raw_amount_details = request.POST['details']
+
+        # Compute amount if the adjustment is for "Late"
+        if name == 'Late':
+            try:
+                minutes_late = float(raw_amount_details)
+                daily_rate = float(employee.salary) / 22
+                per_minute_rate = daily_rate / (8 * 60)
+                computed_amount = round(per_minute_rate * minutes_late, 2)
+            except Exception:
+                computed_amount = Decimal('0.00')
+        else:
+            computed_amount = raw_amount  # use as is
+
+        # Update the adjustment record
+        adjustment.name = name
+        adjustment.type = request.POST['type']
+        adjustment.amount = computed_amount
+        adjustment.details = request.POST.get('details', '')
+        adjustment.month = request.POST.get('month')
+        adjustment.cutoff = request.POST.get('cutoff')
+        adjustment.status = request.POST.get('status', 'Pending')
+        adjustment.remarks = request.POST.get('remarks', '')
+        adjustment.save()
+
+        messages.success(request, 'Adjustment successfully updated.')
+        return redirect('payslip_adjustment', emp_id=employee.id)
 
 @login_required
 def employee_data(request):
@@ -404,7 +440,13 @@ def adjustment_data(request, emp_id):
     user_role = str(request.session.get('role', '')).lower()
 
     # List of roles that should NOT see buttons
-    restricted_roles = ['preparator_denr', '42', '43', '44', '45']
+    restricted_roles = [
+        'employee',
+        'preparator_meo_s',
+        'preparator_meo_e',
+        'preparator_meo_w',
+        'preparator_meo_n'
+    ]
 
     for adj in queryset:
         details = f"{int(adj.details)} minutes" if adj.name == "Late" and adj.details.isdigit() else adj.details
@@ -422,8 +464,8 @@ def adjustment_data(request, emp_id):
 
         if adj.status.lower() == "approved":
             status_display = "<span style='color:green; font-weight:bold;'>Approved</span>"
-        elif adj.status.lower() == "rejected":
-            status_display = "<span style='color:red; font-weight:bold;'>Rejected</span>"
+        elif adj.status.lower() == "returned":
+            status_display = "<span style='color:red; font-weight:bold;'>Returned</span>"
         elif adj.status.lower() == "archived":
             status_display = "<span style='color:gray; font-weight:bold;'>Archived</span>"
         elif adj.status.lower() == "pending":
@@ -431,10 +473,12 @@ def adjustment_data(request, emp_id):
         else:
             status_display = f"<span style='font-weight:bold;'>{adj.status}</span>"
 
-        if adj.status.lower() == "rejected":
-            buttons = "<span style='color:red; font-weight:bold;'>Rejected</span>"
+        if adj.status.lower() == "returned":
+            buttons = "<span style='color:red; font-weight:bold;'>Returned</span>"
         elif adj.status.lower() == "archived":
             buttons = "<span style='color:gray; font-weight:bold;'>Archived</span>"
+        elif adj.status.lower() == "approved":
+                buttons = "<span style='color:green; font-weight:bold;'>Approved</span>"
         else:
             buttons = 'Checking'
 
@@ -442,11 +486,25 @@ def adjustment_data(request, emp_id):
             if adj.status.lower() == "pending":
                 buttons = f"""
                     <button class="btn btn-sm btn-success" data-id="{adj.id}" onclick="approveAdjustment({adj.id})">Approve</button>
-                    <button class="btn btn-sm btn-warning" data-id="{adj.id}" onclick="rejectAdjustment({adj.id})">Reject</button>
+                    <button class="btn btn-sm btn-warning" data-id="{adj.id}" onclick="returnAdjustment({adj.id})">Return</button>
                 """
-            elif adj.status.lower() == "approved":
+        
+        if (user_role in restricted_roles):
+            if adj.status.lower() == "returned":
                 buttons = f"""
-                    <button class="btn btn-sm btn-secondary" data-id="{adj.id}" onclick="archiveAdjustment({adj.id})">Archive</button>
+                <button class="btn btn-sm btn-info"
+                    data-id="{ adj.id }"
+                    data-month="{ adj.month }"
+                    data-cutoff="{ adj.cutoff }"
+                    data-name="{ adj.name }"
+                    data-type="{ adj.type }"
+                    data-amount="{ adj.amount }"
+                    data-details="{ adj.details }"
+                    data-remarks="{ adj.remarks }"
+                    data-employee_id="{adj.employee_id}"
+                    onclick="editAdjustment(this)">
+                        Edit
+                </button>
                 """
 
         data.append({
@@ -480,34 +538,35 @@ def adjustment_approve(request, adj_id):
         return JsonResponse({"success": True, "message": "Adjustment approved successfully!"})
 
 @login_required
-def adjustment_reject(request, adj_id):
+def adjustment_return(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
     if request.method == "POST":
-        adjustment.status = "Rejected"
+        adjustment.status = "Returned"
         adjustment.save()
 
-        return JsonResponse({"success": True, "message": "Adjustment rejected successfully!"})
+        return JsonResponse({"success": True, "message": "Adjustment returned successfully!"})
     return
 
-@login_required
-def adjustment_archive(request, adj_id):
-    adjustment = get_object_or_404(Adjustment, id=adj_id)
+# Removed the Archiving Function for now
+# @login_required
+# def adjustment_archive(request, adj_id):
+#     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
-    if request.method == "POST":
-        adjustment.status = "Archived"
-        adjustment.save()
+#     if request.method == "POST":
+#         adjustment.status = "Archived"
+#         adjustment.save()
 
-        return JsonResponse({"success": True, "message": "Adjustment archived successfully!"})
-    return
+#         return JsonResponse({"success": True, "message": "Adjustment archived successfully!"})
+#     return
 
-@login_required
-def adjustment_unarchive(request, adj_id):
-    adjustment = get_object_or_404(Adjustment, id=adj_id)
+# @login_required
+# def adjustment_unarchive(request, adj_id):
+#     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
-    if request.method == "POST":
-        adjustment.status = "Pending"
-        adjustment.save()
+#     if request.method == "POST":
+#         adjustment.status = "Pending"
+#         adjustment.save()
 
-        return JsonResponse({"success": True, "message": "Adjustment Unarchived successfully!"})
-    return
+#         return JsonResponse({"success": True, "message": "Adjustment Unarchived successfully!"})
+#     return
