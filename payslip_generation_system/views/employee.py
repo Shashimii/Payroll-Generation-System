@@ -71,7 +71,7 @@ def store(request):
             salary=request.POST.get('salary'),
             tax_declaration=request.POST.get('tax_declaration'),
             eligibility=request.POST.get('eligibility'),
-            assigned_office=request.POST('assigned_office'),
+            assigned_office=request.POST.get('assigned_office'),
         )
 
         # Employee Attachment
