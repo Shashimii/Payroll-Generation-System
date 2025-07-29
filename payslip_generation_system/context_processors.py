@@ -9,16 +9,17 @@ def global_user_context(request):
 
     restricted_roles = [
         'employee',
+        'preparator_denr_nec',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
-        'preparator_meo_n'
+        'preparator_meo_n',
     ]
 
     ROLE_FORMAT = {
         'admin': 'System Admin',
         'checker': 'Checker',
-        'preparator_denr_ncr': 'Preparator: DENR NCR NEC',
+        'preparator_denr_nec': 'Preparator: DENR NCR NEC',
         'preparator_meo_s': 'Preparator: MEO South',
         'preparator_meo_e': 'Preparator: MEO East',
         'preparator_meo_w': 'Preparator: MEO West',

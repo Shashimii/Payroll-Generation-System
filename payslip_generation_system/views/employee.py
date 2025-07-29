@@ -93,7 +93,7 @@ def store(request):
         # Change it on the database using this roles
         # admin (System IT only)
         # checker
-        # preparator_denr
+        # preparator_denr_nec
         # preparator_meo_s = 43
         # preparator_meo_e = 42
         # preparator_meo_w = 44
