@@ -39,15 +39,17 @@ class Adjustment(models.Model):
         ('December', 'December')
     ], null=True) 
     
-     # To store Month (January - December)
+     # Store Month (January - December)
     cutoff = models.CharField(max_length=10, choices=[('1st', '1st'), ('2nd', '2nd')])  # Cutoff (1st or 2nd)
 
-    
-    # Status of the adjustment (e.g., Pending, Approved, Rejected)
+    # Store Year
+    cutoff_year = models.CharField(max_length=50)
+
+    # Status Pending / Approved / Returned
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
-        ('Rejected', 'Rejected'),
+        ('Returned', 'Returned'),
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     

@@ -111,6 +111,7 @@ def generate(request):
             employee=employee,
             month=selected_month,
             cutoff=selected_cutoff,
+            cutoff_year=current_year,
             status="Approved"
         ).exists()
 
@@ -378,7 +379,7 @@ def employee_data(request):
             emp.get('eligibility', ''),
             f"""
             <button class='adjustments-btn btn btn-warning btn-sm view-btn' title='Adjustments' data-id='{emp['id']}'>
-                <i class="fas fa-list"></i>
+                <i class="fa-solid fa-sliders"></i> Make Adjustments
             </button> 
             """
         ])
@@ -529,7 +530,7 @@ def adjustment_data(request, emp_id):
             "type": adjustment_type,
             "amount": amount,
             "details": details,
-            "cutoff_month": f"{adj.month} - {adj.cutoff}",
+            "cutoff_month": f"{adj.month} - {adj.cutoff} - {adj.cutoff_year}",
             "status": status_display,
             "remarks": adj.remarks,
             "created_at": adj.created_at.strftime('%Y-%m-%d %I:%M %p'),
