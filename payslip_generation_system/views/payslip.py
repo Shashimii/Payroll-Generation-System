@@ -558,7 +558,7 @@ def adjustment_data(request, emp_id):
         else:
             buttons = ''
 
-        if (user_role not in restricted_roles):
+        if user_role not in restricted_roles and user_role != 'accounting':
             if adj.status.lower() == "pending":
                 buttons = f"""
                     <button class="btn btn-sm btn-success" data-id="{adj.id}" onclick="approveAdjustment({adj.id})">Approve</button>
