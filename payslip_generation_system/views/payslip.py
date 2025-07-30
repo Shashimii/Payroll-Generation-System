@@ -135,8 +135,22 @@ def generate(request):
             ).exists()
 
         if not has_adjustments:
-            messages.error(request, 'Payslip in process.')
-            return redirect('payslip_create')
+            if role in ['admin', 'checker', 'accounting']:
+                has_adjustments = Adjustment.objects.filter(
+                    employee=employee,
+                    month=selected_month,
+                    cutoff=selected_cutoff,
+                    cutoff_year=current_year,
+                    status="Credited"
+                ).exists()
+
+                if has_adjustments:
+                    messages.error(request, 'Payslip already generated.')
+                    return redirect('payslip_create')
+            else:
+                messages.warning(request, 'Payslip in process.')
+                return redirect('payslip_create')
+
 
         # Basic Salary
         basic_salary = employee.salary
