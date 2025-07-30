@@ -324,7 +324,7 @@ def employee_data(request):
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
     # Fields to retrieve
-    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility']
+    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'assigned_office', 'tax_declaration', 'eligibility']
 
     # Roles
     role = request.session.get('role')
@@ -335,6 +335,15 @@ def employee_data(request):
     meoe = 'meo_e'
     meow = 'moe_w'
     meon = 'meo_n'
+
+    OFFICE_NAME_MAP = {
+        'denr_ncr_nec': 'DENR NCR NEC',
+        'meo_e': 'MEO East',
+        'meo_s': 'MEO South',
+        'meo_w': 'MEO West',
+        'meo_n': 'MEO North',
+    }
+
 
     # Data
     match role:
@@ -361,17 +370,32 @@ def employee_data(request):
                 'recordsFiltered': 0,
                 'data': []
             })
+        
+    SEARCH_OFFICE_NAME_MAP = {
+        'DENR NCR NEC': 'denr_ncr_nec',
+        'MEO East': 'meo_e',
+        'MEO South': 'meo_s',
+        'MEO West': 'meo_w',
+        'MEO North': 'meo_n',
+    }
+
 
     # Search filter
     if search_value:
-        queryset = queryset.filter(
-            Q(employee_number__icontains=search_value) |
-            Q(fullname__icontains=search_value) |
-            Q(position__icontains=search_value) |
-            Q(fund_source__icontains=search_value) |
-            Q(tax_declaration__icontains=search_value) |
-            Q(eligibility__icontains=search_value)
-        )
+        filters = Q(employee_number__icontains=search_value) | \
+                Q(fullname__icontains=search_value) | \
+                Q(position__icontains=search_value) | \
+                Q(fund_source__icontains=search_value) | \
+                Q(tax_declaration__icontains=search_value) | \
+                Q(eligibility__icontains=search_value)
+
+        # Direct exact match from search input to the map
+        if search_value in SEARCH_OFFICE_NAME_MAP:
+            filters |= Q(assigned_office__iexact=SEARCH_OFFICE_NAME_MAP[search_value])
+        else:
+            filters |= Q(assigned_office__icontains=search_value.lower())
+
+        queryset = queryset.filter(filters)
 
     total_records = queryset.count()
 
@@ -397,6 +421,7 @@ def employee_data(request):
             emp.get('position', ''),
             emp.get('fund_source', ''),
             salary,
+            OFFICE_NAME_MAP.get(emp.get('assigned_office', '')),
             emp.get('tax_declaration', ''),
             emp.get('eligibility', ''),
             f"""

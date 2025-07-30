@@ -102,7 +102,7 @@ def store(request):
 
         # Redirect
         messages.success(request, 'Employee added successfully!')
-        return redirect('dashboard')
+        return redirect('employee')
     
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
@@ -249,7 +249,7 @@ def data(request):
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
     # Fields to retrieve
-    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility']
+    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility', 'section', 'division', 'assigned_office']
 
     # Roles
     role = request.session.get('role')
@@ -268,15 +268,33 @@ def data(request):
                 'data': []
             })
 
+    SEARCH_OFFICE_NAME_MAP = {
+        'DENR NCR NEC': 'denr_ncr_nec',
+        'MEO East': 'meo_e',
+        'MEO South': 'meo_s',
+        'MEO West': 'meo_w',
+        'MEO North': 'meo_n',
+    }
+
     # Search filter
     if search_value:
+        search_value = search_value.strip()
+
+        # Check if the search value matches a formatted office name
+        mapped_office = SEARCH_OFFICE_NAME_MAP.get(search_value)
+
         queryset = queryset.filter(
             Q(employee_number__icontains=search_value) |
             Q(fullname__icontains=search_value) |
             Q(position__icontains=search_value) |
             Q(fund_source__icontains=search_value) |
             Q(tax_declaration__icontains=search_value) |
-            Q(eligibility__icontains=search_value)
+            Q(eligibility__icontains=search_value) |
+            (
+                Q(assigned_office__iexact=mapped_office)
+                if mapped_office
+                else Q(assigned_office__icontains=search_value.lower())
+            )
         )
 
     total_records = queryset.count()
@@ -293,6 +311,14 @@ def data(request):
     page_number = (start // length) + 1
     page = paginator.get_page(page_number)
 
+    OFFICE_NAME_MAP = {
+        'denr_ncr_nec': 'DENR NCR NEC',
+        'meo_e': 'MEO East',
+        'meo_s': 'MEO South',
+        'meo_w': 'MEO West',
+        'meo_n': 'MEO North',
+    }
+
     data = []
     for emp in page:
         salary = f"₱{emp['salary']:,.2f}" if emp.get('salary') else ""
@@ -303,6 +329,7 @@ def data(request):
             emp.get('position', ''),
             emp.get('fund_source', ''),
             salary,
+            OFFICE_NAME_MAP.get(emp.get('assigned_office', '')),
             emp.get('tax_declaration', ''),
             emp.get('eligibility', ''),
             f"""
