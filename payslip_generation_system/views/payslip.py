@@ -51,9 +51,10 @@ def create(request):
         case "preparator_meo_n":
             employees = Employee.objects.filter(assigned_office=meon).all()
         case "employee":
-            employees = Employee.objects.filter(user_id=current_user_id)
+            current_employee = Employee.objects.get(user_id=current_user_id)
+            employees = Employee.objects.none()
         case _:
-            employees = Employee.objects.filter(user_id=current_user_id)
+            employees = Employee.objects.get(user_id=current_user_id)
 
     month_choices = [
         ('January', 'January'),
@@ -74,6 +75,7 @@ def create(request):
     # current_year = datetime.now().strftime('%Y')
     
     return render(request, 'payslip/create.html', {
+        'current_employee': current_employee,
         'employees': employees,
         'month_choices': month_choices,
         'current_month': current_month,

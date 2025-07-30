@@ -17,13 +17,29 @@
             <div class="form-container">
                 <div class="form-group">
                     <label for="employeeSelect">Employee</label>
-                    <select class="form-select" id="employeeSelect" name="employee" {% if user_role == 'employee' %} disabled{% endif %} required>
-                        <option value="" disabled {% if user_role != 'employee' %} selected{% endif %}>Select Employee</option>
-                        {% for employee in employees %}
-                            <option value="{{ employee.id }}" {% if user_role == 'employee' %} selected{% endif %}>{{ employee.fullname }} - {{ employee.position }}</option>
-                        {% endfor %}
+
+                    <select class="form-select" id="employeeSelect" name="employee"
+                        {% if user_role == 'employee' %} disabled {% endif %} required>
+
+                        {% if user_role != 'employee' %}
+                            <option value="" disabled selected>Select Employee</option>
+                            {% for employee in employees %}
+                                <option value="{{ employee.id }}">{{ employee.fullname }} - {{ employee.position }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="{{ current_employee.id }}" selected>
+                                {{ current_employee.fullname }} - {{ current_employee.position }}
+                            </option>
+                        {% endif %}
+
                     </select>
+
+                    {% if user_role == 'employee' %}
+                        <!-- Hidden field to ensure employee ID is submitted even though select is disabled -->
+                        <input type="hidden" name="employee" value="{{ current_employee.id }}">
+                    {% endif %}
                 </div>
+
                 
                 <div class="form-group">
                     <label for="monthSelect">Month</label>
