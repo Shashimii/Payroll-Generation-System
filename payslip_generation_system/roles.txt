@@ -6,11 +6,13 @@
 # Role List
 - admin (System IT)
 - checker (Finance)
+- accounting (Cashier)
 - preparator_denr_nec (DENR NCR NEC)
 - preparator_meo_s (MEO South)
 - preparator_meo_e (MEO East)
 - preparator_meo_w (MEO West)
 - preparator_meo_n (MEO North)
+- employee
 
 ## Employee Data is based on their Assigned Office
 
