@@ -131,7 +131,7 @@ def generate(request):
                 month=selected_month,
                 cutoff=selected_cutoff,
                 cutoff_year=current_year,
-                status="Approved"
+                status="Pending"
             ).exists()
 
         if not has_adjustments:
