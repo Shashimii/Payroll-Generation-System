@@ -20,6 +20,7 @@ def index(request):
     return render(request, 'payslip/index.html')
 
 @login_required
+@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
 def create(request):
     # Role
     role = request.session.get('role')
@@ -86,6 +87,7 @@ def create(request):
     })
 
 @login_required
+@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
 def generate(request):
     role = request.session.get('role', '').lower()
 
