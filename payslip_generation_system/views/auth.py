@@ -52,8 +52,8 @@ def create(request):
 def store(request):
     if request.method == 'POST':
         # Formatted
-        username = request.POST.get('fullname').replace(" ", "")
-        password = request.POST.get('birthdate')
+        username = request.POST.get('fullname')
+        password = request.POST.get('password')
         role = request.POST.get('role')
 
         # Existing Check
