@@ -230,6 +230,7 @@ def generate(request):
     return render(request, 'payslip/payslip.html', context)
 
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
     return render(request, 'payslip/adjustment.html', {
@@ -237,6 +238,7 @@ def adjustment(request, emp_id):
     })
 
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_add(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
     current_year = datetime.now().strftime('%Y')
@@ -276,6 +278,7 @@ def adjustment_add(request, emp_id):
         return redirect('payslip_adjustment', emp_id=employee.id)
     
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_edit(request, emp_id, adj_id):
     employee = get_object_or_404(Employee, id=emp_id)
     adjustment = get_object_or_404(Adjustment, id=adj_id, employee=employee)
@@ -604,6 +607,7 @@ def adjustment_data(request, emp_id):
     })
 
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_return(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
@@ -615,6 +619,7 @@ def adjustment_return(request, adj_id):
     return
 
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_approve(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
@@ -625,6 +630,7 @@ def adjustment_approve(request, adj_id):
         return JsonResponse({"success": True, "message": "Adjustment Approved successfully!"})
 
 @login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_credit(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
