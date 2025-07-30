@@ -23,6 +23,11 @@ def global_user_context(request):
         'preparator_meo_n',
     ]
 
+    hide_card_roles = [
+        'employee',
+        'accounting',
+    ]
+
     ROLE_FORMAT = {
         'admin': 'System Admin',
         'checker': 'Checker',
@@ -50,6 +55,7 @@ def global_user_context(request):
         'formatted_user_role': formatted_role,
         'current_datetime': current_datetime,
         'preview_only_roles': preview_only_roles,
+        'hide_card_roles': hide_card_roles,
         'restricted_roles': restricted_roles,
     }
 
