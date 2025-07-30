@@ -355,6 +355,14 @@ def data(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def show(request, emp_id):
+    OFFICE_NAME_MAP = {
+    'denr_ncr_nec': 'DENR NCR NEC',
+    'meo_e': 'MEO East',
+    'meo_s': 'MEO South',
+    'meo_w': 'MEO West',
+    'meo_n': 'MEO North',
+}
+
     employee = get_object_or_404(Employee, id=emp_id)
     attachments = EmployeeAttachment.objects.filter(employee=employee)
 
@@ -370,6 +378,7 @@ def show(request, emp_id):
         'fund_source': employee.fund_source,
         'tax_declaration': employee.tax_declaration,
         'salary': f"₱{employee.salary:,.2f}",
+        'assigned_office': OFFICE_NAME_MAP.get(employee.assigned_office, employee.assigned_office),
         'eligibility': employee.eligibility,
         'attachments': [
             {
