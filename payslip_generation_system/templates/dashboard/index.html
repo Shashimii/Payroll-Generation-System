@@ -41,6 +41,7 @@
     </div>
   </div>
 
+  {% if user_role not in restricted_roles %}
   <div class="col-xl-4 col-md-6 col-sm-6 col-12">
     <div class="small-box bg-info position-relative">
       <div class="inner">
@@ -57,7 +58,8 @@
       {% endif %}
     </div>
   </div>
-
+  {% endif %}
+  
   {% if user_role not in restricted_roles %}
   <div class="col-xl-4 col-md-6 col-sm-6 col-12">
     <div class="small-box bg-primary position-relative">
