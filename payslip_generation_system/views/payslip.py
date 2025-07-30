@@ -184,7 +184,7 @@ def generate(request):
             name="Late",
             month=selected_month,
             cutoff=selected_cutoff,
-            status="Approved"
+            status="Pending"
             # Adjusted condition to match selected month
         )
         
@@ -200,7 +200,7 @@ def generate(request):
             type="Deduction",
             month=selected_month,
             cutoff=selected_cutoff,
-            status="Approved"
+            status="Pending"
             # Adjusted condition to match selected month
         ).exclude(name="Late")
         
@@ -214,7 +214,7 @@ def generate(request):
             type="Income",
             month=selected_month,
             cutoff=selected_cutoff,
-            status="Approved"
+            status="Pending"
             # Adjusted condition to match selected month
         )
         
