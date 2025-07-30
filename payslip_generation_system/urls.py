@@ -30,8 +30,9 @@ urlpatterns = [
     path('payslip/adjustment/add/<int:emp_id>/', views.payslip.adjustment_add, name='adjustment_add'),
     path('payslip/adjustment/edit/<int:emp_id>/<int:adj_id>/', views.payslip.adjustment_edit, name='adjustment_edit'),
     path('payslip/adjustments/data/<int:emp_id>/', views.payslip.adjustment_data, name='adjustment_data'),
-    path('payslip/adjustments/approve/<int:adj_id>/', views.payslip.adjustment_approve, name='adjustment_approve'),
     path('payslip/adjustments/return/<int:adj_id>/', views.payslip.adjustment_return, name='adjustment_return'),
+    path('payslip/adjustments/approve/<int:adj_id>/', views.payslip.adjustment_approve, name='adjustment_approve'),
+    path('payslip/adjustments/credit/<int:adj_id>/', views.payslip.adjustment_credit, name='adjustment_credit'),
     # path('payslip/adjustments/archive/<int:adj_id>/', views.payslip.adjustment_archive, name='adjustment_archive'),
     # path('payslip/adjustments/unarchive/<int:adj_id>/', views.payslip.adjustment_unarchive, name='adjustment_unarchive'),
 ]

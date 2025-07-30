@@ -500,6 +500,52 @@ function approveAdjustment(adjId) {
     });
 }
 
+function creditAdjustment(adjId) {
+    Swal.fire({
+        title: 'Credit Adjustment?',
+        text: 'Are you sure you want to credit this adjustment?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, credit it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                type: 'POST',
+                url: '{% url "adjustment_credit" 0 %}'.replace('0', adjId),
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire(
+                            'Credited!',
+                            response.message,
+                            'success'
+                        ).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire(
+                            'Error!',
+                            response.message || 'Crediting failed.',
+                            'error'
+                        );
+                    }
+                },
+                error: function() {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error while credting the adjustment.',
+                        'error'
+                    );
+                }
+            });
+        }
+    });
+}
+
 function returnAdjustment(adjId) {
     Swal.fire({
         title: 'Return Adjustment?',

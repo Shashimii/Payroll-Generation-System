@@ -44,6 +44,8 @@ def create(request):
             employees = Employee.objects.all()
         case "checker":
             employees = Employee.objects.all()
+        case "accounting":
+            employees = Employee.objects.all()
         case "preparator_denr_nec":
             employees = Employee.objects.filter(assigned_office=denrncrnec).all()
         case "preparator_meo_s":
@@ -86,6 +88,8 @@ def create(request):
 
 @login_required
 def generate(request):
+    role = request.session.get('role', '').lower()
+
     month_choices = [
         ('January', 'January'),
         ('February', 'February'),
@@ -112,13 +116,22 @@ def generate(request):
         # Fetch employee data
         employee = Employee.objects.get(id=employee_id)
 
-        has_adjustments = Adjustment.objects.filter(
-            employee=employee,
-            month=selected_month,
-            cutoff=selected_cutoff,
-            cutoff_year=current_year,
-            status="Approved"
-        ).exists()
+        if role == "employee":
+            has_adjustments = Adjustment.objects.filter(
+                employee=employee,
+                month=selected_month,
+                cutoff=selected_cutoff,
+                cutoff_year=current_year,
+                status="Credited"
+            ).exists()
+        elif role in ['admin', 'checker', 'accounting']:
+            has_adjustments = Adjustment.objects.filter(
+                employee=employee,
+                month=selected_month,
+                cutoff=selected_cutoff,
+                cutoff_year=current_year,
+                status="Approved"
+            ).exists()
 
         if not has_adjustments:
             messages.error(request, 'Payslip in process.')
@@ -327,6 +340,8 @@ def employee_data(request):
             queryset = Employee.objects.values(*fields)
         case "checker":
             queryset = Employee.objects.values(*fields)
+        case "accounting":
+            queryset = Employee.objects.values(*fields)
         case "preparator_denr_nec":
             queryset = Employee.objects.filter(assigned_office=denrncrnec).values(*fields)
         case "preparator_meo_s":
@@ -483,10 +498,14 @@ def adjustment_data(request, emp_id):
             buttons = "<span style='color:red; font-weight:bold;'>Returned</span>"
         elif adj.status.lower() == "archived":
             buttons = "<span style='color:gray; font-weight:bold;'>Archived</span>"
-        elif adj.status.lower() == "approved":
+        elif user_role != "accounting" and adj.status.lower() == "approved":
                 buttons = "<span style='color:green; font-weight:bold;'>Approved</span>"
-        else:
+        elif adj.status.lower() == "credited":
+                buttons = "<span style='color:green; font-weight:bold;'>Credited</span>"
+        elif user_role != "accounting":
             buttons = 'Checking'
+        else:
+            buttons = ''
 
         if (user_role not in restricted_roles):
             if adj.status.lower() == "pending":
@@ -527,7 +546,13 @@ def adjustment_data(request, emp_id):
                     onclick="editAdjustment(this)">
                         Edit Adjustment
                 </button>
-        """
+                """
+        if user_role == "accounting" and adj.status.lower() == "approved":
+            buttons += f"""
+            <button class="btn btn-sm btn-primary" data-id="{adj.id}" onclick="creditAdjustment({adj.id})">
+                Credit Adjustment
+            </button>
+            """
 
 
         data.append({
@@ -551,16 +576,6 @@ def adjustment_data(request, emp_id):
     })
 
 @login_required
-def adjustment_approve(request, adj_id):
-    adjustment = get_object_or_404(Adjustment, id=adj_id)
-
-    if request.method == "POST":
-        adjustment.status = "Approved"
-        adjustment.save()
-
-        return JsonResponse({"success": True, "message": "Adjustment approved successfully!"})
-
-@login_required
 def adjustment_return(request, adj_id):
     adjustment = get_object_or_404(Adjustment, id=adj_id)
 
@@ -568,7 +583,29 @@ def adjustment_return(request, adj_id):
         adjustment.status = "Returned"
         adjustment.save()
 
-        return JsonResponse({"success": True, "message": "Adjustment returned successfully!"})
+        return JsonResponse({"success": True, "message": "Adjustment Returned successfully!"})
+    return
+
+
+@login_required
+def adjustment_approve(request, adj_id):
+    adjustment = get_object_or_404(Adjustment, id=adj_id)
+
+    if request.method == "POST":
+        adjustment.status = "Approved"
+        adjustment.save()
+
+        return JsonResponse({"success": True, "message": "Adjustment Approved successfully!"})
+
+@login_required
+def adjustment_credit(request, adj_id):
+    adjustment = get_object_or_404(Adjustment, id=adj_id)
+
+    if request.method == "POST":
+        adjustment.status = "Credited"
+        adjustment.save()
+
+        return JsonResponse({"success": True, "message": "Adjustment Credited payslip is now available!"})
     return
 
 # Removed the Archiving Function for now

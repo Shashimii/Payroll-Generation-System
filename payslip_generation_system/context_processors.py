@@ -7,7 +7,14 @@ def global_user_context(request):
     user_role = request.session.get('role', '')
     current_datetime = datetime.now()
 
+    preview_only_roles = [
+        'admin',
+        'accounting',
+        'checker',
+    ]
+
     restricted_roles = [
+        'accounting',
         'employee',
         'preparator_denr_nec',
         'preparator_meo_s',
@@ -19,6 +26,7 @@ def global_user_context(request):
     ROLE_FORMAT = {
         'admin': 'System Admin',
         'checker': 'Checker',
+        'accounting': 'Accounting',
         'preparator_denr_nec': 'Preparator: DENR NCR NEC',
         'preparator_meo_s': 'Preparator: MEO South',
         'preparator_meo_e': 'Preparator: MEO East',
@@ -41,6 +49,7 @@ def global_user_context(request):
         'user_role': user_role,
         'formatted_user_role': formatted_role,
         'current_datetime': current_datetime,
-        'restricted_roles': restricted_roles
+        'preview_only_roles': preview_only_roles,
+        'restricted_roles': restricted_roles,
     }
 

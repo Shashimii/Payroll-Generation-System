@@ -3,6 +3,24 @@
 {% load humanize %}
 {% load static %}
 {% block layout_content %}
+
+{% if user_role in preview_only_roles %}
+<div style="
+    background-color: #d50000;
+    color: #fff;
+    padding: 12px 20px;
+    text-align: center;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    position: relative;
+    font-size: 15px;
+    line-height: 1.5;
+">
+    ⚠️ <strong>This is a Preview Only</strong> — the adjustments and deductions shown are from approved adjustments and have <strong>not yet been credited</strong>.
+</div>
+{% endif %}
+
 <div class="main-container">
     <div class="content">
         <div class="section-header">
