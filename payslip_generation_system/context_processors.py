@@ -39,6 +39,14 @@ def global_user_context(request):
         'employee',
     ]
 
+    hide_generate_payslip = [
+        'preparator_denr_nec',
+        'preparator_meo_s',
+        'preparator_meo_e',
+        'preparator_meo_w',
+        'preparator_meo_n',
+    ]
+
     ROLE_FORMAT = {
         'admin': 'System Admin',
         'checker': 'Checker',
@@ -68,6 +76,7 @@ def global_user_context(request):
         'preview_only_roles': preview_only_roles,
         'hide_card_roles': hide_card_roles,
         'hide_admin_options': hide_admin_options,
+        'hide_generate_payslip': hide_generate_payslip,
         'restricted_roles': restricted_roles,
     }
 

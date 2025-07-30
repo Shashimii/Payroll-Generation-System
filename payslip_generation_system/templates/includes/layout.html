@@ -97,12 +97,15 @@
                                     </a>
                                 </li>
                                 {% endif %}
+
+                                {% if user_role not in hide_generate_payslip %}
                                 <li class="nav-item">
                                     <a href="{% url 'payslip_create' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_generate' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Generate Payslip</p>
                                     </a>
                                 </li>
+                                {% endif %}
                             </ul>
                         </li>
 
