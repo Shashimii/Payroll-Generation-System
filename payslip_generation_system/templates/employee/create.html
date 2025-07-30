@@ -2,10 +2,16 @@
 {% block title %}Add Employee{% endblock title %}
 {% block layout_content %}
 
-<button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'employee' %}'">
-    <i class="fa-solid fa-arrow-left"></i>
-    Back
-</button>
+<div style="display: flex; gap: 1rem;">
+    <button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'employee' %}'">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back
+    </button>
+
+    <div class="alert alert-warning" role="alert" style="flex: 1;">
+        ⚠️ <strong>Note:</strong> The employee's username will be their full name without spaces (e.g., <code>JuanDelaCruz</code>), and their default password will be their birthdate (e.g., <code>1990-01-01</code>).
+    </div>
+</div>
 
 <form action="{% url 'employee_store' %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
