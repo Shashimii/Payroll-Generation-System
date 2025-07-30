@@ -26,14 +26,18 @@ def create(request):
 
     # logged user id
     current_user_id = request.user.id
-
+    # Holds data for multiple approach
+    employees = Employee.objects.none()
+    # Holds data for single approach
+    current_employee = Employee.objects.none()
+    
     # Offices
     denrncrnec = 'denr_ncr_nec'
     meos = 'meo_s'
     meoe = 'meo_e'
     meow = 'moe_w'
     meon = 'meo_n'
-
+    
     # Data
     match role:
         case "admin":
@@ -52,7 +56,6 @@ def create(request):
             employees = Employee.objects.filter(assigned_office=meon).all()
         case "employee":
             current_employee = Employee.objects.get(user_id=current_user_id)
-            employees = Employee.objects.none()
         case _:
             employees = Employee.objects.get(user_id=current_user_id)
 
