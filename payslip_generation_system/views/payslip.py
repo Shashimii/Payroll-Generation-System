@@ -131,7 +131,7 @@ def generate(request):
                 month=selected_month,
                 cutoff=selected_cutoff,
                 cutoff_year=current_year,
-                status="Pending"
+                status__in=["Pending", "Approved"]
             ).exists()
 
         if not has_adjustments:
@@ -184,7 +184,7 @@ def generate(request):
             name="Late",
             month=selected_month,
             cutoff=selected_cutoff,
-            status="Pending"
+            status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         )
         
@@ -200,7 +200,7 @@ def generate(request):
             type="Deduction",
             month=selected_month,
             cutoff=selected_cutoff,
-            status="Pending"
+            status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         ).exclude(name="Late")
         
@@ -214,7 +214,7 @@ def generate(request):
             type="Income",
             month=selected_month,
             cutoff=selected_cutoff,
-            status="Pending"
+            status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         )
         
