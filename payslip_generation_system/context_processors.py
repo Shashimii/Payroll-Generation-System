@@ -29,7 +29,7 @@ def global_user_context(request):
     ]
 
     hide_admin_options = [
-        'checker'
+        'checker',
         'accounting',
         'preparator_denr_nec',
         'preparator_meo_s',
