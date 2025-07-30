@@ -161,7 +161,7 @@ def generate(request):
 
         # Deduction Conditions
         # Salary
-        if (employee.tax_declaration == "Yes"):
+        if (employee.tax_declaration == "yes"):
                 tax_deduction = Decimal('0.00')
         else:
             if (basic_salary_annual >= 250000):
@@ -170,11 +170,14 @@ def generate(request):
                 tax_deduction = basic_salary_cutoff * Decimal('0.00')
         
         # Philhealth 
-        if (basic_salary_cutoff > 9999):
-            philhealth = basic_salary_cutoff * Decimal('0.05')
+        if employee.has_philhealth == "yes":
+            if basic_salary_cutoff > Decimal('9999'):
+                philhealth = basic_salary_cutoff * Decimal('0.05')
+            else:
+                philhealth = Decimal('500')
         else:
-            philhealth = 500
-        
+            philhealth = Decimal('0')
+                
         #late
         late_adjustments = Adjustment.objects.filter(
             employee=employee,
@@ -343,7 +346,7 @@ def employee_data(request):
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
     # Fields to retrieve
-    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'assigned_office', 'tax_declaration', 'eligibility']
+    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'assigned_office', 'tax_declaration', 'has_philhealth', 'eligibility']
 
     # Roles
     role = request.session.get('role')
@@ -442,6 +445,7 @@ def employee_data(request):
             salary,
             OFFICE_NAME_MAP.get(emp.get('assigned_office', '')),
             emp.get('tax_declaration', ''),
+            emp.get('has_philhealth', ''),
             emp.get('eligibility', ''),
             f"""
             <button class='adjustments-btn btn btn-warning btn-sm view-btn' title='Adjustments' data-id='{emp['id']}'>

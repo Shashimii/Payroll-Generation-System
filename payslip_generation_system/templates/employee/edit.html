@@ -171,6 +171,17 @@
                 
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label for="philhealth">Has Philhealth ?</label>
+                        <select class="form-control" name="philhealth" id="philhealth" required>
+                            <option value="" selected disabled> Select </option>
+                            <option value="yes" {% if employee.has_philhealth == "yes" %}selected{% endif %}>Yes</option>
+                            <option value="no" {% if employee.has_philhealth == "no" %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label for="attachments" class="form-label font-weight-bold">Add New Attachments (optional)</label>
                         <div class="custom-file">
                             <input type="file" class="custom-file-input" id="attachments" name="attachments" multiple>

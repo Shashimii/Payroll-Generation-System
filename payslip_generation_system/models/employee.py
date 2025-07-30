@@ -61,6 +61,8 @@ class Employee(models.Model):
 
     assigned_office = models.CharField(max_length=100, choices=ASSIGNED_OFFICE_CHOICES, blank=True, null=True)
 
+    has_philhealth = models.CharField(max_length=100, choices=BOOLEAN_CHOICES)
+
     def __str__(self):
         return f"{self.employee_number} - {self.fullname} - {self.position}"
     

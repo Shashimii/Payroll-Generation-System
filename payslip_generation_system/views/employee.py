@@ -71,6 +71,7 @@ def store(request):
             salary=request.POST.get('salary'),
             tax_declaration=request.POST.get('tax_declaration'),
             eligibility=request.POST.get('eligibility'),
+            has_philhealth=request.POST.get('philhealth'),
             assigned_office=request.POST.get('assigned_office'),
         )
 
@@ -169,6 +170,7 @@ def update(request, emp_id):
         fund_source=request.POST.get('fund_source')
         salary=request.POST.get('salary')
         tax_declaration=request.POST.get('tax_declaration')
+        philhealth=request.POST.get('philhealth')
         eligibility=request.POST.get('eligibility')
 
         # Update Data
@@ -186,6 +188,7 @@ def update(request, emp_id):
         employee.fund_source = fund_source
         employee.salary = salary
         employee.tax_declaration = tax_declaration
+        employee.has_philhealth = philhealth
         employee.eligibility = eligibility
         employee.save()
 
@@ -249,7 +252,7 @@ def data(request):
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
     # Fields to retrieve
-    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'eligibility', 'section', 'division', 'assigned_office']
+    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'has_philhealth', 'eligibility', 'section', 'division', 'assigned_office']
 
     # Roles
     role = request.session.get('role')
@@ -331,6 +334,7 @@ def data(request):
             salary,
             OFFICE_NAME_MAP.get(emp.get('assigned_office', '')),
             emp.get('tax_declaration', ''),
+            emp.get('has_philhealth', ''),
             emp.get('eligibility', ''),
             f"""
             <button class='btn btn-info btn-sm view-btn' data-id='{emp['id']}' title='Information' data-toggle='modal' data-target='#viewModal'>
@@ -379,6 +383,7 @@ def show(request, emp_id):
         'tax_declaration': employee.tax_declaration,
         'salary': f"₱{employee.salary:,.2f}",
         'assigned_office': OFFICE_NAME_MAP.get(employee.assigned_office, employee.assigned_office),
+        'has_philhealth': employee.has_philhealth,
         'eligibility': employee.eligibility,
         'attachments': [
             {
