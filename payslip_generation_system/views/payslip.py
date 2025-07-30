@@ -23,7 +23,6 @@ def index(request):
 def create(request):
     # Role
     role = request.session.get('role')
-
     # logged user id
     current_user_id = request.user.id
     # Holds data for multiple approach
@@ -115,7 +114,7 @@ def generate(request):
 
         # Fetch employee data
         employee = Employee.objects.get(id=employee_id)
-
+        
         if role == "employee":
             has_adjustments = Adjustment.objects.filter(
                 employee=employee,
@@ -136,7 +135,7 @@ def generate(request):
         if not has_adjustments:
             messages.error(request, 'Payslip in process.')
             return redirect('payslip_create')
-        
+
         # Basic Salary
         basic_salary = employee.salary
         # Annual Salary
@@ -240,6 +239,8 @@ def adjustment(request, emp_id):
 @login_required
 def adjustment_add(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
+    current_year = datetime.now().strftime('%Y')
+
     if request.method == 'POST':
         
         name = request.POST['name']
@@ -269,6 +270,7 @@ def adjustment_add(request, emp_id):
             cutoff=request.POST.get('cutoff'),
             status=request.POST.get('status', 'Pending'),
             remarks=request.POST.get('remarks', ''),
+            cutoff_year=current_year,
         )
         messages.success(request, 'Adjustment successfully added.')
         return redirect('payslip_adjustment', emp_id=employee.id)
@@ -463,6 +465,7 @@ def adjustment_data(request, emp_id):
     # List of roles that should NOT see buttons
     restricted_roles = [
         'employee',
+        'preparator_denr_nec',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
@@ -585,7 +588,6 @@ def adjustment_return(request, adj_id):
 
         return JsonResponse({"success": True, "message": "Adjustment Returned successfully!"})
     return
-
 
 @login_required
 def adjustment_approve(request, adj_id):

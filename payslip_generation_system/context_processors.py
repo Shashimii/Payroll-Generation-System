@@ -28,6 +28,17 @@ def global_user_context(request):
         'accounting',
     ]
 
+    hide_admin_options = [
+        'checker'
+        'accounting',
+        'preparator_denr_nec',
+        'preparator_meo_s',
+        'preparator_meo_e',
+        'preparator_meo_w',
+        'preparator_meo_n',
+        'employee',
+    ]
+
     ROLE_FORMAT = {
         'admin': 'System Admin',
         'checker': 'Checker',
@@ -56,6 +67,7 @@ def global_user_context(request):
         'current_datetime': current_datetime,
         'preview_only_roles': preview_only_roles,
         'hide_card_roles': hide_card_roles,
+        'hide_admin_options': hide_admin_options,
         'restricted_roles': restricted_roles,
     }
 

@@ -66,12 +66,14 @@
                                         <p>Add Employee Profile</p>
                                     </a>
                                 </li>
+                                {% if user_role not in hide_admin_options %}
                                 <li class="nav-item">
                                     <a href="{% url 'create' %}" class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Create Role Account</p>
                                     </a>
                                 </li>
+                                {% endif %}
                             </ul>
                         </li>
                         {% endif %}
