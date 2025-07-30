@@ -9,6 +9,8 @@ urlpatterns = [
     # Auth
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
+    path('create/', views.create, name='create'),
+    path('store/', views.store, name='store'),
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
     # Employee

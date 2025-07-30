@@ -44,8 +44,8 @@
 
                         {% if user_role not in restricted_roles %}
                         <!-- Employee Menu -->
-                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' %}menu-open{% endif %}">
-                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' %}active{% endif %}">
+                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' or request.resolver_match.url_name == 'create' %}menu-open{% endif %}">
+                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' or request.resolver_match.url_name == 'create' %}active{% endif %}">
                                 <i class="nav-icon fas fa-users"></i>
                                 <p>
                                     Employee
@@ -64,6 +64,12 @@
                                     <a href="{% url 'employee_create' %}" class="nav-link {% if request.resolver_match.url_name == 'employee_create' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Add Employee Profile</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{% url 'create' %}" class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Create Role Account</p>
                                     </a>
                                 </li>
                             </ul>

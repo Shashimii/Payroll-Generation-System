@@ -1,5 +1,7 @@
 from .auth import login
 from .auth import logout
+from .auth import create
+from .auth import store
 from .dashboard import dashboard
 from .employee import index
 from .payslip import index
