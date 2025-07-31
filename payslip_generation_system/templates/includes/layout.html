@@ -42,7 +42,7 @@
                             </a>
                         </li>
 
-                        {% if user_role not in restricted_roles %}
+                        {% if user_role not in hide_card_roles %}
                         <!-- Employee Menu -->
                         <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' or request.resolver_match.url_name == 'create' %}menu-open{% endif %}">
                             <a href="#" class="nav-link {% if request.resolver_match.url_name == 'employee' or request.resolver_match.url_name == 'employee_create' or request.resolver_match.url_name == 'employee_edit' or request.resolver_match.url_name == 'create' %}active{% endif %}">

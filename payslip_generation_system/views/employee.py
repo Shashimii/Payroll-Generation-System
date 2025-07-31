@@ -13,12 +13,12 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def index(request):
     return render(request, 'employee/index.html')
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def create(request):
     with connection.cursor() as cursor:
         cursor.execute('SELECT * FROM systems_division')
@@ -34,7 +34,7 @@ def create(request):
     })
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def store(request):
     if request.method == 'POST':
         # Formatted
@@ -108,7 +108,7 @@ def store(request):
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def edit(request, emp_id):
     with connection.cursor() as cursor:
         cursor.execute('SELECT * FROM systems_division')
@@ -129,7 +129,7 @@ def edit(request, emp_id):
     })
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def update(request, emp_id):    
     if request.method == "POST":
         employee = get_object_or_404(Employee, id=emp_id)
@@ -203,7 +203,7 @@ def update(request, emp_id):
     return redirect('dashboard')
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def destroy(request, emp_id):
     employee = get_object_or_404(Employee, id=emp_id)
 
@@ -230,7 +230,7 @@ def destroy(request, emp_id):
     return JsonResponse({"success": False, "message": "Invalid request method!"})
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def attachment_delete(request, attachment_id):
     if request.method == "POST":
         attachment = get_object_or_404(EmployeeAttachment, id=attachment_id)
@@ -239,7 +239,7 @@ def attachment_delete(request, attachment_id):
     return JsonResponse({"success": False, "message": "Invalid request."})
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def data(request):
     user_role = request.session.get('role')
 
@@ -256,6 +256,13 @@ def data(request):
 
     # Roles
     role = request.session.get('role')
+
+    # Offices
+    denrncrnec = 'denr_ncr_nec'
+    meos = 'meo_s'
+    meoe = 'meo_e'
+    meow = 'moe_w'
+    meon = 'meo_n'
     
     # Data
     match role:
@@ -263,6 +270,18 @@ def data(request):
             queryset = Employee.objects.values(*fields)
         case "checker":
             queryset = Employee.objects.values(*fields)
+        case "accounting":
+            queryset = Employee.objects.values(*fields)
+        case "preparator_denr_nec":
+            queryset = Employee.objects.filter(assigned_office=denrncrnec).values(*fields)
+        case "preparator_meo_s":
+            queryset = Employee.objects.filter(assigned_office=meos).values(*fields)
+        case "preparator_meo_e":
+            queryset = Employee.objects.filter(assigned_office=meoe).values(*fields)
+        case "preparator_meo_w":
+            queryset = Employee.objects.filter(assigned_office=meow).values(*fields)
+        case "preparator_meo_n":
+            queryset = Employee.objects.filter(assigned_office=meon).values(*fields)
         case _:
             return JsonResponse({
                 'draw': draw,
@@ -357,7 +376,7 @@ def data(request):
     })
 
 @login_required
-@restrict_roles(disallowed_roles=['employee', 'accounting', 'preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
 def show(request, emp_id):
     OFFICE_NAME_MAP = {
     'denr_ncr_nec': 'DENR NCR NEC',
