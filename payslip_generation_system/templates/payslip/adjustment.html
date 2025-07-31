@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    {% if request.session.role|lower != 'checker' and request.session.role|lower != 'employee' %}
+    {% if request.session.role|lower != 'checker' and request.session.role|lower != 'employee' and request.session.role|lower != 'accounting' %}
         <div class="card-footer text-right">
             <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addAdjustmentModal">
                 <i class="fas fa-plus-circle"></i> Add Adjustment
