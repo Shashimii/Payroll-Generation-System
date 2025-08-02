@@ -53,7 +53,7 @@ class Employee(models.Model):
 
     ASSIGNED_OFFICE_CHOICES = [
         ('denr_ncr_nec', 'DENR NCR NEC'),
-        ('meo_s', 'MEO WEST'),
+        ('meo_s', 'MEO SOUTH'),
         ('meo_e', 'MEO EAST'),
         ('meo_w', 'MEO WEST'),
         ('meo_n', 'MEO NORTH')
