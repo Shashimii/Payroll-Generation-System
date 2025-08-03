@@ -5,3 +5,4 @@ from .auth import store
 from .dashboard import dashboard
 from .employee import index
 from .payslip import index
+from .payroll import index

@@ -37,7 +37,7 @@ class BatchAssignment(models.Model):
     cutoff_year = models.CharField(max_length=50)  
 
     class Meta:
-        unique_together = ['employee']
+        unique_together = ['employee', 'cutoff', 'cutoff_month', 'cutoff_year']
         ordering = ['cutoff_year', 'cutoff_month', 'cutoff', 'batch_number']
     
     def __str__(self):
