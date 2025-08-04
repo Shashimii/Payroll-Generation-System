@@ -79,8 +79,8 @@
                         {% endif %}
 
                         <!-- Payroll Menu -->
-                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_adjustment' or request.resolver_match.url_name == 'payslip_generate' %}menu-open{% endif %}">
-                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_adjustment' or request.resolver_match.url_name == 'payslip_generate' %}active{% endif %}">
+                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payroll' %}menu-open{% endif %}">
+                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}">
                                 <i class="nav-icon fa-solid fa-address-card"></i>
                                 <p>
                                     Payroll
@@ -90,7 +90,7 @@
                             <ul class="nav nav-treeview">
                                 {% if request.session.role != 'employee' %}
                                 <li class="nav-item">
-                                    <a href="{% url 'payslip' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_adjustment' %}active{% endif %}">
+                                    <a href="{% url 'payroll' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Make Adjustments</p>
                                     </a>
