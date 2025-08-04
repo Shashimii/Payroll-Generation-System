@@ -8,9 +8,10 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Sum
 from decimal import Decimal
 from datetime import datetime
-from payslip_generation_system.models import Employee, BatchAssignment
+from payslip_generation_system.models import Employee, BatchAssignment, Adjustment
 from payslip_generation_system.decorators import restrict_roles
 from django.contrib.auth.models import User
+from django.forms.models import model_to_dict
 
 from django.contrib.auth.decorators import login_required
 
@@ -33,11 +34,18 @@ def index(request):
         'batches': batches,
     })
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def batch_data(request):
-    batch_number = request.GET.get('batch_number', 1)
-    cutoff = request.GET.get('cutoff', '1st')
-    cutoff_month = request.GET.get('cutoff_month', 'January')
-    cutoff_year = request.GET.get('cutoff_year', datetime.now().year)
+    batch_number = request.GET.get('batch_number')
+    cutoff = request.GET.get('cutoff')
+    cutoff_month = request.GET.get('cutoff_month')
+    cutoff_year = request.GET.get('cutoff_year')
+
+    batch_number = int(batch_number) if batch_number else 1
+    cutoff = cutoff if cutoff else '1st'
+    cutoff_month = cutoff_month if cutoff_month else 'January'
+    cutoff_year = int(cutoff_year) if cutoff_year else datetime.now().year
 
     assignments = BatchAssignment.objects.filter(
         batch_number=batch_number,
@@ -46,15 +54,18 @@ def batch_data(request):
         cutoff_year=cutoff_year
     ).select_related('employee')
 
-    employees = [{
-        'employee_number': a.employee.employee_number,
-        'fullname': a.employee.fullname,
-        'position': a.employee.position,
-        'division': a.employee.division,
-    } for a in assignments]
+    employees = [model_to_dict(a.employee) for a in assignments]
 
-    return JsonResponse({'employees': employees})
+    return JsonResponse({
+        'employees': employees,
+        'cutoff': cutoff,
+        'cutoff_month': cutoff_month,
+        'cutoff_year': cutoff_year,
+        'batch_number': batch_number,
+    })
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def batch_create(request, batch_size=15):
     employees = Employee.objects.order_by('fullname')
     cutoff=request.POST.get('cutoff')
@@ -86,3 +97,32 @@ def batch_create(request, batch_size=15):
 
     return JsonResponse({'message': f'Batches successfully created for {cutoff} {cutoff_year} {cutoff_year}.'})
 
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def adjustment_create(request, emp_id):
+    if request.method == 'POST':
+        id = emp_id,
+        absence = request.POST.get('absence')
+        late = request.POST.get('late')
+        income_name = request.POST.get('income_name')
+        income_ammount = request.POST.get('income_ammount')
+        deduction_name = request.POST.get('deduction_name')
+        deduction_ammount = request.POST.get('deduction_ammount')
+
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+
+        ## Conditions here if there is this data
+        ## Make this adjustment and insert to database
+        ## if not
+        ## Skip it dont make that empty adjustment
+        ## Check the next one
+        ## then status of every adjustment is Pending
+
+        return JsonResponse(status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

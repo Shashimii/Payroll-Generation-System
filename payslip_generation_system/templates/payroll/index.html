@@ -4,7 +4,7 @@
 
 <div class="card card-outline card-success">
   <div class="card-header">
-    <h3 class="card-title mb-0">Payroll | Make Adjustments</h3>
+    <h3 class="card-title mb-0">Payroll | Generate Templates</h3>
     <div class="card-tools">
       <button type="button" class="btn btn-tool" data-card-widget="collapse">
         <i class="fas fa-minus"></i>
@@ -14,7 +14,7 @@
 
   <div class="card-body">
     <p class="text-muted mb-4">
-      Generate payroll summary templates by selecting the cutoff period, month, year.
+      Generate payroll summary templates for the selected the cutoff period, month, year.
     </p>
 
     <form id="generateBatchForm" class="row">
@@ -77,10 +77,10 @@
             </div>
 
             <div class="col-auto">
-                <select id="cutoff" class="form-control" name="cutoff">
+                <select id="cutoff_period" class="form-control" name="cutoff_period">
                     <option selected disabled>Cutoff Period</option>
                     <option value="1st">1st Period</option>
-                    <option value="1st">2nd Period</option>
+                    <option value="2nd">2nd Period</option>
                 </select>
             </div>
 
@@ -97,6 +97,8 @@
     </div>
 
   <div class="card-body">
+    <h2>General Payroll DENR-NCR</h2>
+    <h5 id="payrollCutoffInfo" class="text-muted"></h5>
     <table>
         <thead>
             <tr>
@@ -104,6 +106,7 @@
                 <th>Full Name</th>
                 <th>Position</th>
                 <th>Division</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="batchTableBody">
@@ -120,7 +123,126 @@
   </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="showModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Employee Payroll Adjustments</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Make Adjustments | Employee information</h3>
+          </div>
+          <div class="card-body">
+              <div class="mb-3">
+                  <strong>Name:</strong> 
+                  <span id="modalFullname"></span>
+              </div>
+              <div class="mb-3">
+                  <strong>Position:</strong> 
+                  <span id="modalPosition"></span>
+              </div>
+              <div>
+                  <strong>Salary:</strong>
+                  <span class="text-success font-weight-bold" id="modalSalary">₱</span>
+              </div>
+              <input type="hidden" id="modalEmployeeId">
+          </div>
+        </div>
+        
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Make Adjustments | Absence/Late</h3>
+            <div class="card-tools">
+              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
+            </div>
+          </div>
+          <div class="card-body">
+            <form id="payrollAdjustmentAbsenceLate" class="row">
+              <div class="form-group col-md-6">
+                <label for="cutoff">Absence (No. of Days)</label>
+                <input type="number" class="form-control" id="absence" name="absence" placeholder="number of days absent">
+              </div>
+
+              <div class="form-group col-md-6">
+                <label for="cutoff">Late (No. of Minutes)</label>
+                <input type="number" class="form-control" id="late" name="late"  placeholder="number of minutes late">
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Make Adjustments | Income</h3>
+            <div class="card-tools">
+              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
+            </div>
+          </div>
+          <div class="card-body">
+            <form id="payrollAdjustmentIncome" class="row">
+              <div class="form-group col-md-6">
+                <label for="income_name">Income Name</label>
+                <input type="text" class="form-control" id="income_name" name="income_name" placeholder="income name">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="income_ammount">Income Ammount</label>
+                <input type="text" class="form-control" id="income_ammount" name="income_ammount" placeholder="income ammount">
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Make Adjustments | Deduction</h3>
+            <div class="card-tools">
+              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
+            </div>
+          </div>
+          <div class="card-body">
+            <form id="payrollAdjustmentDeduction" class="row">
+              <div class="form-group col-md-6">
+                <label for="deduction_name">Deduction Name</label>
+                <input type="text" class="form-control" id="deduction_name" name="deduction_name" placeholder="deduction name">
+              </div>
+
+              <div class="form-group col-md-6">
+                <label for="deduction_ammount">Late (No. of Minutes)</label>
+                <input type="number" class="form-control" id="deduction_ammount" name="deduction_ammount"  placeholder="deduction ammount">
+              </div>
+            </form>
+          </div>
+          {% if request.session.role|lower != 'checker' and request.session.role|lower != 'employee' and request.session.role|lower != 'accounting' %}
+          <div class="card-footer text-right">
+            <button type="button" id="submitAdjustment" class="btn btn-success mb-3">
+              <i class="fas fa-plus-circle"></i> Submit Adjustment
+            </button>
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+// onLoad
+$(document).ready(function () {
+  sessionStorageLoad();
+  loadBatchData();   
+})
+
+// onSubmit
+const submitGenerateForm = () => {
+  $('#generateBatchForm').submit();
+}
+
 $('#generateBatchForm').on('submit', function (e) {
     e.preventDefault();
 
@@ -144,50 +266,161 @@ $('#generateBatchForm').on('submit', function (e) {
     });
 });
 
-function submitGenerateForm() {
-  $('#generateBatchForm').submit();
-}
-
-$('#batch_number').on('change', function () {
-    const batchNumber = $('#batch_number').val();
-    const cutoff = $('#cutoff').val();
-    const cutoffMonth = $('#cutoff_month').val();
-    const cutoffYear = $('#cutoff_year').val();
-
-    $.ajax({
-        url: '{% url "payroll_batch_data" %}', 
-        method: 'GET',
-        data: {
-            batch_number: batchNumber,
-            cutoff: cutoff,
-            cutoff_month: cutoffMonth,
-            cutoff_year: cutoffYear,
-        },
-        success: function (response) {
-            const tbody = $('#batchTableBody');
-            tbody.empty();
-
-            if (response.employees.length > 0) {
-                response.employees.forEach(emp => {
-                    tbody.append(`
-                        <tr>
-                            <td>${emp.employee_number}</td>
-                            <td>${emp.fullname}</td>
-                            <td>${emp.position}</td>
-                            <td>${emp.division}</td>
-                        </tr>
-                    `);
-                });
-            } else {
-                tbody.html('<tr><td colspan="4" class="text-muted">No employees found for this batch.</td></tr>');
-            }
-        },
-        error: function () {
-            alert('Error loading employees.');
-        }
-    });
+// onChange
+$('#batch_number, #cutoff_period, #cutoff_month, #cutoff_year').on('change', function () {
+  sessionStorageSave();
+  loadBatchData();
 });
 
+// onclick
+$(document).on('click', '.show_employee', function () {
+  const employeeId = $(this).data('id');
+  const cutoff = $(this).data('cutoff');
+  const cutoffMonth = $(this).data('month');
+  const cutoffYear = $(this).data('year');
+  const batchNumber = $(this).data('batch');
+
+  showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
+});
+
+$(document).on('click', '#submitAdjustment', function () {
+  createAdjustment();
+})
+
+// Functions
+function loadBatchData () {
+  const batchNumber = $('#batch_number').val();
+  const cutoff = $('#cutoff_period').val();
+  const cutoffMonth = $('#cutoff_month').val();
+  const cutoffYear = $('#cutoff_year').val();
+
+  $.ajax({
+      url: '{% url "payroll_batch_data" %}', 
+      method: 'GET',
+      data: {
+          batch_number: batchNumber,
+          cutoff: cutoff,
+          cutoff_month: cutoffMonth,
+          cutoff_year: cutoffYear,
+      },
+      success: function (response) {
+          $('#payrollCutoffInfo').text(`${response.cutoff_month} ${response.cutoff} Cutoff ${response.cutoff_year} Batch ${response.batch_number}`);
+          const tbody = $('#batchTableBody');
+          tbody.empty();
+
+          if (response.employees.length > 0) {
+              response.employees.forEach(emp => {
+                  tbody.append(`
+                      <tr>
+                          <td>${emp.employee_number}</td>
+                          <td>${emp.fullname}</td>
+                          <td>${emp.position}</td>
+                          <td>${emp.division}</td>
+                          <td>
+                            <button class='btn btn-info btn-sm show_employee' 
+                              data-id='${emp.id}'
+                              data-cutoff='${response.cutoff}'
+                              data-month='${response.cutoff_month}'
+                              data-year='${response.cutoff_year}'
+                              data-batch='${response.batch_number}'
+                            >
+                              Make Adjustments
+                            </button> 
+                            <button class='btn btn-warning btn-sm show_employee' data-id='${emp.id}'>
+                              Mark as Late
+                            </button> 
+                          </td>
+                      </tr>
+                  `);
+              });
+          } else {
+              tbody.append('<tr><td colspan="5" class="text-muted text-center">Select the Payroll Month, Year, Cutoff Period, Batch Number or Generate the template first.</td></tr>');
+          }
+      },
+      error: function () {
+          alert('Error loading employees.');
+      }
+  })
+}
+
+function showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
+  $.ajax({
+    url: `/employee/show/${employeeId}/`,
+    method: 'GET',
+    success: function (response) {
+      const emp = response.employee;
+      $('#modalEmployeeId').val(employeeId);
+      $('#modalFullname').text(emp.fullname);
+      $('#modalPosition').text(emp.position);
+      $('#modalSalary').text(emp.salary);
+
+      console.log(employeeId)
+
+      // Add cutoff info
+      $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
+
+      $('#showModal').modal('show');
+    },
+    error: function () {
+      alert('Failed to load employee data.');
+    }
+  });
+}
+
+function createAdjustment() {
+  const employeeId = $('#modalEmployeeId').val();
+
+  const data = {
+    // Employee
+    id: $('#modalEmployeeId').val(),
+    // Absence/Late
+    absence: $('#absence').val(),
+    late: $('#late').val(),
+
+    // Income Adjustment
+    income_name: $('#income_name').val(),
+    income_ammount: $('#income_ammount').val(),
+
+    // Deduction Adjustment
+    deduction_name: $('#deduction_name').val(),
+    deduction_ammount: $('#deduction_ammount').val(),
+
+    // Cutoff info
+    cutoff: sessionStorage.getItem('cutoff_period'),
+    cutoff_month: sessionStorage.getItem('cutoff_month'),
+    cutoff_year: sessionStorage.getItem('cutoff_year'),
+    batch_number: sessionStorage.getItem('batch_number'),
+
+    csrfmiddlewaretoken: '{{ csrf_token }}',
+  };
+
+  $.ajax({
+    type: 'POST',
+    url: `/payroll/adjustment/create/${employeeId}/`,
+    data: data,
+    success: function (response) {
+      alert('Adjustment submitted successfully.');
+    },
+    error: function (xhr) {
+      alert('Failed to submit adjustment.');
+      console.log(xhr.responseText);
+    }
+  });
+}
+
+function sessionStorageSave() {
+  sessionStorage.setItem('batch_number', $('#batch_number').val());
+  sessionStorage.setItem('cutoff', $('#cutoff_period').val());
+  sessionStorage.setItem('cutoff_month', $('#cutoff_month').val());
+  sessionStorage.setItem('cutoff_year', $('#cutoff_year').val());
+}
+
+function sessionStorageLoad() {
+  if (sessionStorage.getItem('batch_number')) $('#batch_number').val(sessionStorage.getItem('batch_number'));
+  if (sessionStorage.getItem('cutoff')) $('#cutoff_period').val(sessionStorage.getItem('cutoff'));
+  if (sessionStorage.getItem('cutoff_month')) $('#cutoff_month').val(sessionStorage.getItem('cutoff_month'));
+  if (sessionStorage.getItem('cutoff_year')) $('#cutoff_year').val(sessionStorage.getItem('cutoff_year'));
+}
 </script>
 
 <style>

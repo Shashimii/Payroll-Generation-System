@@ -23,11 +23,12 @@ urlpatterns = [
     path('employee/attachment-delete/<int:attachment_id>/', views.employee.attachment_delete, name='employee_attachment_delete'),
     path('employee/data', views.employee.data, name='employee_data'),
     path('employee/show/<int:emp_id>/', views.employee.show, name='employee_show'),
+
     # Payroll
     path('payroll/', views.payroll.index, name='payroll'),
     path('payroll/batch/data', views.payroll.batch_data, name='payroll_batch_data'),
     path('payroll/batch/create', views.payroll.batch_create, name='payroll_batch_create'),
-
+    path('payroll/adjustment/create/<int:emp_id>/', views.payroll.adjustment_create, name='payroll_adjustment_create'),
 
     # Payslip
     path('payslip/', views.payslip.index, name='payslip'),
