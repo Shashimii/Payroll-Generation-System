@@ -102,19 +102,21 @@ def batch_create(request, batch_size=15):
 @restrict_roles(disallowed_roles=['employee'])
 def adjustment_create(request, emp_id):
     if request.method == 'POST':
-        id = emp_id,
-        absence = request.POST.get('absence')
+        # Form
+        id = emp_id
         late = request.POST.get('late')
+        absence = request.POST.get('absence')
         income_name = request.POST.get('income_name')
         income_ammount = request.POST.get('income_ammount')
         deduction_name = request.POST.get('deduction_name')
         deduction_ammount = request.POST.get('deduction_ammount')
 
+        # Static
+        employee = get_object_or_404(Employee, id=id)
         cutoff = request.POST.get('cutoff')
         cutoff_month = request.POST.get('cutoff_month')
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
-
 
         ## Conditions here if there is this data
         ## Make this adjustment and insert to database
@@ -123,6 +125,83 @@ def adjustment_create(request, emp_id):
         ## Check the next one
         ## then status of every adjustment is Pending
 
-        return JsonResponse(status=200)
+        if late:
+            try:
+                minutes_late = float(late)
+                daily_rate = float(employee.salary) / 22
+                per_minute_rate = daily_rate / (8 * 60)
+                late_amount = round(per_minute_rate * minutes_late, 2)
+            except Exception:
+                late_amount = Decimal('0.00')
+
+            Adjustment.objects.create(
+                employee=employee,
+                name="Late",
+                type="Deduction",
+                amount=late_amount,
+                details=late,
+                month=cutoff_month,
+                cutoff=cutoff,
+                status="Pending",
+                remarks=request.POST.get('remarks', ''),
+                cutoff_year=cutoff_year,
+                batch_number=batch_number,
+            )
+
+        if absence:
+            try:
+                minutes_absent = float(absence) * 480
+                daily_rate = float(employee.salary) / 22
+                per_minute_rate = daily_rate / (8 * 60)
+                absent_amount = round(per_minute_rate * minutes_absent, 2)
+            except Exception:
+                absent_amount = Decimal('0.00')
+
+            Adjustment.objects.create(
+                employee=employee,
+                name="Absent",
+                type="Deduction",
+                amount=absent_amount,
+                details=absence,
+                month=cutoff_month,
+                cutoff=cutoff,
+                status="Pending",
+                remarks=request.POST.get('remarks', ''),
+                cutoff_year=cutoff_year,
+                batch_number=batch_number,
+            )
+
+        if income_name and income_ammount:
+            Adjustment.objects.create(
+                employee=employee,
+                name=income_name,
+                type="Income",
+                amount=income_ammount,
+                details="",
+                month=cutoff_month,
+                cutoff=cutoff,
+                status="Pending",
+                remarks=request.POST.get('remarks', ''),
+                cutoff_year=cutoff_year,
+                batch_number=batch_number,
+            )
+
+        if deduction_name and deduction_ammount:
+            Adjustment.objects.create(
+                employee=employee,
+                name=deduction_name,
+                type="Deduction",
+                amount=deduction_ammount,
+                details="",
+                month=cutoff_month,
+                cutoff=cutoff,
+                status="Pending",
+                remarks=request.POST.get('remarks', ''),
+                cutoff_year=cutoff_year,
+                batch_number=batch_number,
+            )
+
+
+        return JsonResponse({'status': 'OK'}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)

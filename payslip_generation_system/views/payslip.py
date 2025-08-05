@@ -661,25 +661,3 @@ def adjustment_credit(request, adj_id):
         return JsonResponse({"success": True, "message": "Adjustment Credited payslip is now available!"})
     return
 
-# Removed the Archiving Function for now
-# @login_required
-# def adjustment_archive(request, adj_id):
-#     adjustment = get_object_or_404(Adjustment, id=adj_id)
-
-#     if request.method == "POST":
-#         adjustment.status = "Archived"
-#         adjustment.save()
-
-#         return JsonResponse({"success": True, "message": "Adjustment archived successfully!"})
-#     return
-
-# @login_required
-# def adjustment_unarchive(request, adj_id):
-#     adjustment = get_object_or_404(Adjustment, id=adj_id)
-
-#     if request.method == "POST":
-#         adjustment.status = "Pending"
-#         adjustment.save()
-
-#         return JsonResponse({"success": True, "message": "Adjustment Unarchived successfully!"})
-#     return

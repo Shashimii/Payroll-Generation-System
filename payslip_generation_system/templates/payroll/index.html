@@ -150,6 +150,10 @@
                   <strong>Salary:</strong>
                   <span class="text-success font-weight-bold" id="modalSalary">₱</span>
               </div>
+              <input type="hidden" id="modalCutoff">
+              <input type="hidden" id="modalCutoffMonth">
+              <input type="hidden" id="modalCutoffYear">
+              <input type="hidden" id="modalBatchNumber">
               <input type="hidden" id="modalEmployeeId">
           </div>
         </div>
@@ -212,7 +216,7 @@
               </div>
 
               <div class="form-group col-md-6">
-                <label for="deduction_ammount">Late (No. of Minutes)</label>
+                <label for="deduction_ammount">Deduction Ammount</label>
                 <input type="number" class="form-control" id="deduction_ammount" name="deduction_ammount"  placeholder="deduction ammount">
               </div>
             </form>
@@ -349,12 +353,14 @@ function showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
     method: 'GET',
     success: function (response) {
       const emp = response.employee;
+      $('#modalCutoff').val(cutoff);
+      $('#modalCutoffMonth').val(cutoffMonth);
+      $('#modalCutoffYear').val(cutoffYear);
+      $('#modalBatchNumber').val(batchNumber);
       $('#modalEmployeeId').val(employeeId);
       $('#modalFullname').text(emp.fullname);
       $('#modalPosition').text(emp.position);
       $('#modalSalary').text(emp.salary);
-
-      console.log(employeeId)
 
       // Add cutoff info
       $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
@@ -386,10 +392,10 @@ function createAdjustment() {
     deduction_ammount: $('#deduction_ammount').val(),
 
     // Cutoff info
-    cutoff: sessionStorage.getItem('cutoff_period'),
-    cutoff_month: sessionStorage.getItem('cutoff_month'),
-    cutoff_year: sessionStorage.getItem('cutoff_year'),
-    batch_number: sessionStorage.getItem('batch_number'),
+    cutoff: $('#modalCutoff').val(),
+    cutoff_month: $('#modalCutoffMonth').val(),
+    cutoff_year: $('#modalCutoffYear').val(),
+    batch_number: $('#modalBatchNumber').val(),
 
     csrfmiddlewaretoken: '{{ csrf_token }}',
   };

@@ -55,6 +55,9 @@ class Adjustment(models.Model):
     
     # Remarks or notes about the adjustment (e.g., any extra information)
     remarks = models.TextField(null=True, blank=True)
+    
+    # Batch Number
+    batch_number = models.BigIntegerField(null=True, blank=True, default=None)
 
     # Timestamps to track when adjustments were created/updated
     created_at = models.DateTimeField(auto_now_add=True)
