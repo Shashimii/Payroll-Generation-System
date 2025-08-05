@@ -140,21 +140,21 @@
           <div class="card-body">
               <div class="mb-3">
                   <strong>Name:</strong> 
-                  <span id="modalFullname"></span>
+                  <span class="modalFullname"></span>
               </div>
               <div class="mb-3">
                   <strong>Position:</strong> 
-                  <span id="modalPosition"></span>
+                  <span class="modalPosition"></span>
               </div>
               <div>
                   <strong>Salary:</strong>
-                  <span class="text-success font-weight-bold" id="modalSalary">₱</span>
+                  <span class="text-success font-weight-bold modalSalary">₱</span>
               </div>
-              <input type="hidden" id="modalCutoff">
-              <input type="hidden" id="modalCutoffMonth">
-              <input type="hidden" id="modalCutoffYear">
-              <input type="hidden" id="modalBatchNumber">
-              <input type="hidden" id="modalEmployeeId">
+              <input type="hidden" class="modalCutoff">
+              <input type="hidden" class="modalCutoffMonth">
+              <input type="hidden" class="modalCutoffYear">
+              <input type="hidden" class="modalBatchNumber">
+              <input type="hidden" class="modalEmployeeId">
           </div>
         </div>
         
@@ -235,6 +235,56 @@
   </div>
 </div>
 
+<div class="modal fade" id="showAdjustmentModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Employee Payroll Adjustments</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Make Adjustments | Employee information</h3>
+          </div>
+          <div class="card-body">
+              <div class="mb-3">
+                  <strong>Name:</strong> 
+                  <span class="modalFullname"></span>
+              </div>
+              <div class="mb-3">
+                  <strong>Position:</strong> 
+                  <span class="modalPosition"></span>
+              </div>
+              <div>
+                  <strong>Salary:</strong>
+                  <span class="text-success font-weight-bold modalSalary">₱</span>
+              </div>
+              <input type="hidden" class="modalCutoff">
+              <input type="hidden" class="modalCutoffMonth">
+              <input type="hidden" class="modalCutoffYear">
+              <input type="hidden" class="modalBatchNumber">
+              <input type="hidden" class="modalEmployeeId">
+          </div>
+        </div>
+        
+        <div class="card card-outline card-success">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Make Adjustments | Adjustments Made</h3>
+            <div class="card-tools">
+              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
+            </div>
+          </div>
+          <div class="card-body" id="adjustmentsContainer">
+            <!-- Adjustments for this employee Here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // onLoad
 $(document).ready(function () {
@@ -285,6 +335,16 @@ $(document).on('click', '.show_employee', function () {
   const batchNumber = $(this).data('batch');
 
   showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
+});
+
+$(document).on('click', '.show_adjustments', function () {
+  const employeeId = $(this).data('id');
+  const cutoff = $(this).data('cutoff');
+  const cutoffMonth = $(this).data('month');
+  const cutoffYear = $(this).data('year');
+  const batchNumber = $(this).data('batch');
+
+  showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
 });
 
 $(document).on('click', '#addAdjustment', function () {
@@ -406,6 +466,15 @@ function loadBatchData () {
                             >
                               Make Adjustments
                             </button> 
+                            <button class='btn btn-secondary btn-sm show_adjustments' 
+                              data-id='${emp.id}'
+                              data-cutoff='${response.cutoff}'
+                              data-month='${response.cutoff_month}'
+                              data-year='${response.cutoff_year}'
+                              data-batch='${response.batch_number}'
+                            >
+                              Show Adjustments
+                            </button> 
                             ${lateButton}
                             ${unlateButton}
                           </td>
@@ -428,14 +497,14 @@ function showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
     method: 'GET',
     success: function (response) {
       const emp = response.employee;
-      $('#modalCutoff').val(cutoff);
-      $('#modalCutoffMonth').val(cutoffMonth);
-      $('#modalCutoffYear').val(cutoffYear);
-      $('#modalBatchNumber').val(batchNumber);
-      $('#modalEmployeeId').val(employeeId);
-      $('#modalFullname').text(emp.fullname);
-      $('#modalPosition').text(emp.position);
-      $('#modalSalary').text(emp.salary);
+      $('.modalCutoff').val(cutoff);
+      $('.modalCutoffMonth').val(cutoffMonth);
+      $('.modalCutoffYear').val(cutoffYear);
+      $('.modalBatchNumber').val(batchNumber);
+      $('.modalEmployeeId').val(employeeId);
+      $('.modalFullname').text(emp.fullname);
+      $('.modalPosition').text(emp.position);
+      $('.modalSalary').text(emp.salary);
 
       // Add cutoff info
       $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
@@ -447,6 +516,85 @@ function showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
     }
   });
 }
+
+function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
+  // First: Get Employee Info
+  $.ajax({
+    url: `/employee/show/${employeeId}/`,
+    method: 'GET',
+    success: function (response) {
+      const emp = response.employee;
+
+      // Fill modal fields
+      $('.modalCutoff').val(cutoff);
+      $('.modalCutoffMonth').val(cutoffMonth);
+      $('.modalCutoffYear').val(cutoffYear);
+      $('.modalBatchNumber').val(batchNumber);
+      $('.modalEmployeeId').val(employeeId);
+      $('.modalFullname').text(emp.fullname);
+      $('.modalPosition').text(emp.position);
+      $('.modalSalary').text(emp.salary);
+      $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
+
+      // Second: Load adjustments for this employee
+      $.ajax({
+        url: `/payroll/adjustment/show/${employeeId}/`,
+        method: 'GET',
+        data: {
+          cutoff: cutoff,
+          cutoff_month: cutoffMonth,
+          cutoff_year: cutoffYear,
+          batch_number: batchNumber
+        },
+        success: function (res) {
+          const container = $('#showAdjustmentModal .card-body').last();
+          container.empty();
+
+          if (!res.adjustments || res.adjustments.length === 0) {
+            container.html('<p class="text-muted">No adjustments found.</p>');
+            return;
+          }
+
+          // Build adjustments list
+          let html = `<table class="table table-sm table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Details</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>`;
+
+          res.adjustments.forEach(adj => {
+            html += `<tr>
+                      <td>${adj.name}</td>
+                      <td>${adj.type}</td>
+                      <td>₱${parseFloat(adj.amount).toFixed(2)}</td>
+                      <td>${adj.details || ''}</td>
+                      <td>${adj.status}</td>
+                    </tr>`;
+          });
+
+          html += `</tbody></table>`;
+          container.html(html);
+        },
+        error: function () {
+          alert('Failed to load adjustments.');
+        }
+      });
+
+      // Finally, show the modal
+      $('#showAdjustmentModal').modal('show');
+    },
+    error: function () {
+      alert('Failed to load employee data.');
+    }
+  });
+}
+
 
 function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
   $.ajax({
@@ -491,11 +639,11 @@ function unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
 }
 
 function createAdjustment() {
-  const employeeId = $('#modalEmployeeId').val();
+  const employeeId = $('#modalAdjustmentEmployeeId').val();
 
   const data = {
     // Employee
-    id: $('#modalEmployeeId').val(),
+    id: $('#modalAdjustmentEmployeeId').val(),
     // Absence/Late
     absence: $('#absence').val(),
     late: $('#late').val(),
@@ -509,10 +657,10 @@ function createAdjustment() {
     deduction_ammount: $('#deduction_ammount').val(),
 
     // Cutoff info
-    cutoff: $('#modalCutoff').val(),
-    cutoff_month: $('#modalCutoffMonth').val(),
-    cutoff_year: $('#modalCutoffYear').val(),
-    batch_number: $('#modalBatchNumber').val(),
+    cutoff: $('#modalAdjustmentCutoff').val(),
+    cutoff_month: $('#modalAdjustmentCutoffMonth').val(),
+    cutoff_year: $('#modalAdjustmentCutoffYear').val(),
+    batch_number: $('#modalAdjustmentBatchNumber').val(),
 
     csrfmiddlewaretoken: '{{ csrf_token }}',
   };

@@ -378,3 +378,42 @@ def adjustment_create(request, emp_id):
         return JsonResponse({'status': 'OK'}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def adjustment_show(request, emp_id):
+    if request.method == 'GET':
+        batch_number = request.GET.get('batch_number')
+        cutoff = request.GET.get('cutoff')
+        cutoff_month = request.GET.get('cutoff_month')
+        cutoff_year = request.GET.get('cutoff_year')
+
+        adjustments = Adjustment.objects.filter(
+            employee_id=emp_id,
+            batch_number=batch_number,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        if not adjustments.exists():
+            return JsonResponse({
+                'adjustments': None,
+                'cutoff': cutoff,
+                'cutoff_month': cutoff_month,
+                'cutoff_year': cutoff_year,
+                'batch_number': batch_number,
+            }, status=200)
+
+        data = list(adjustments.values())
+
+        return JsonResponse({
+            'adjustments': data,
+            'cutoff': cutoff,
+            'cutoff_month': cutoff_month,
+            'cutoff_year': cutoff_year,
+            'batch_number': batch_number,
+        }, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
