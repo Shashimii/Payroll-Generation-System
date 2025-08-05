@@ -100,6 +100,62 @@ def batch_create(request, batch_size=15):
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
+def batch_late(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_id')
+        employee = get_object_or_404(Employee, id=employee_id)
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+        ## Change the employee batch number for the cutoff, month, year selected
+        ## move it to the last batch if the last batch is not yet 15 employees
+        ## if its already full create a new batch for it 
+
+        # last batch number for the selected payroll period
+        last_batch = (
+            BatchAssignment.objects
+            .filter(cutoff=cutoff, cutoff_month=cutoff_month, cutoff_year=cutoff_year)
+            .order_by('-batch_number') # desc
+            .first()
+        )
+
+        # Count the number of employees on the last batch
+        if last_batch:
+            last_batch_number = last_batch.batch_number # batch_number
+            count = BatchAssignment.objects.filter(
+                cutoff=cutoff,
+                cutoff_month=cutoff_month,
+                cutoff_year=cutoff_year,
+                batch_number=last_batch_number
+            ).count()
+
+            if count <= 15:
+                # if last batch not full reassign to the last batch
+                batch_number = last_batch_number
+            else:
+                # if last batch full create new batch
+                batch_number = last_batch_number + 1
+        else:
+            # create a default to prevent error
+            batch_number = 1
+
+        # Update or create the batch assignment of employee
+        BatchAssignment.objects.update_or_create(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            defaults={'batch_number': batch_number}
+        )
+
+        return JsonResponse({'status': 'OK'}, status=200)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_create(request, emp_id):
     if request.method == 'POST':
         # Form

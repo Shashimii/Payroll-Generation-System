@@ -28,6 +28,7 @@ urlpatterns = [
     path('payroll/', views.payroll.index, name='payroll'),
     path('payroll/batch/data', views.payroll.batch_data, name='payroll_batch_data'),
     path('payroll/batch/create', views.payroll.batch_create, name='payroll_batch_create'),
+    path('payroll/batch/late', views.payroll.batch_late, name='payroll_batch_late'),
     path('payroll/adjustment/create/<int:emp_id>/', views.payroll.adjustment_create, name='payroll_adjustment_create'),
 
     # Payslip
