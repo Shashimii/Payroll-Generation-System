@@ -36,6 +36,40 @@ def index(request):
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
+def submit(request):
+    if request.method == 'POST':
+        # Payroll information
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+        ## Get the id of the employees on the batch
+        ## then change the adjustment statuses of the employees 
+
+        # Employees on the current payroll
+        employee_ids = BatchAssignment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).values_list('employee_id', flat=True)
+
+        # Update their adjustment statuses
+        Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).update(status="Pending")
+
+
+        return JsonResponse({'status': 'OK'}, status=200)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def batch_data(request):
     batch_number = request.GET.get('batch_number')
     cutoff = request.GET.get('cutoff')
@@ -96,7 +130,6 @@ def batch_create(request, batch_size=15):
             batch_number += 1
 
     return JsonResponse({'message': f'Batches successfully created for {cutoff} {cutoff_year} {cutoff_year}.'})
-
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
@@ -198,7 +231,7 @@ def adjustment_create(request, emp_id):
                 details=late,
                 month=cutoff_month,
                 cutoff=cutoff,
-                status="Pending",
+                status="Waiting",
                 remarks=request.POST.get('remarks', ''),
                 cutoff_year=cutoff_year,
                 batch_number=batch_number,
@@ -221,7 +254,7 @@ def adjustment_create(request, emp_id):
                 details=absence,
                 month=cutoff_month,
                 cutoff=cutoff,
-                status="Pending",
+                status="Waiting",
                 remarks=request.POST.get('remarks', ''),
                 cutoff_year=cutoff_year,
                 batch_number=batch_number,
@@ -236,7 +269,7 @@ def adjustment_create(request, emp_id):
                 details="",
                 month=cutoff_month,
                 cutoff=cutoff,
-                status="Pending",
+                status="Waiting",
                 remarks=request.POST.get('remarks', ''),
                 cutoff_year=cutoff_year,
                 batch_number=batch_number,
@@ -251,7 +284,7 @@ def adjustment_create(request, emp_id):
                 details="",
                 month=cutoff_month,
                 cutoff=cutoff,
-                status="Pending",
+                status="Waiting",
                 remarks=request.POST.get('remarks', ''),
                 cutoff_year=cutoff_year,
                 batch_number=batch_number,

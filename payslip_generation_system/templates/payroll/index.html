@@ -117,7 +117,7 @@
   </div>
 
   <div class="card-footer text-right">
-    <button type="submit" form="generateBatchForm" class="btn btn-success" onclick="submitGenerateForm">
+    <button class="btn btn-success" id="submitAdjustment">
       <i class="fas fa-plus-circle mr-1"></i> Submit Adjustments
     </button>
   </div>
@@ -223,8 +223,8 @@
           </div>
           {% if request.session.role|lower != 'checker' and request.session.role|lower != 'employee' and request.session.role|lower != 'accounting' %}
           <div class="card-footer text-right">
-            <button type="button" id="submitAdjustment" class="btn btn-success mb-3">
-              <i class="fas fa-plus-circle"></i> Submit Adjustment
+            <button type="button" id="addAdjustment" class="btn btn-success mb-3">
+              <i class="fas fa-plus-circle"></i> Add Adjustment
             </button>
           </div>
           {% endif %}
@@ -287,8 +287,38 @@ $(document).on('click', '.show_employee', function () {
   showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
 });
 
-$(document).on('click', '#submitAdjustment', function () {
+$(document).on('click', '#addAdjustment', function () {
   createAdjustment();
+})
+
+$(document).on('click', '#submitAdjustment', function () {
+  const cutoff = $(this).attr('data-cutoff');
+  const cutoffMonth = $(this).attr('data-month');
+  const cutoffYear = $(this).attr('data-year');
+  const batchNumber = $(this).attr('data-batch');
+
+  // submit the payroll information using ajax
+  // make a url on the backend routes
+  // handle the changing of the adjustment status
+  // use the payroll information for selective changing
+
+  $.ajax({
+    url: '{% url "payroll_submit" %}', 
+    method: 'POST',
+    data: {
+      batch_number: batchNumber,
+      cutoff: cutoff,
+      cutoff_month: cutoffMonth,
+      cutoff_year: cutoffYear,
+    },
+    success: function (response) {
+      alert('Payroll Submitted.');
+    },
+    error: function () {
+      alert('Error Submitting Payroll.');
+    }
+  })
+
 })
 
 $(document).on('click', '.late_employee', function () {
@@ -319,6 +349,13 @@ function loadBatchData () {
       },
       success: function (response) {
           $('#payrollCutoffInfo').text(`${response.cutoff_month} ${response.cutoff} Cutoff ${response.cutoff_year} Batch ${response.batch_number}`);
+          
+          $('#submitAdjustment')
+          .attr('data-cutoff', response.cutoff)
+          .attr('data-month', response.cutoff_month)
+          .attr('data-year', response.cutoff_year)
+          .attr('data-batch', response.batch_number);
+
           const tbody = $('#batchTableBody');
           tbody.empty();
 

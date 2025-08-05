@@ -26,6 +26,7 @@ urlpatterns = [
 
     # Payroll
     path('payroll/', views.payroll.index, name='payroll'),
+    path('payroll/submit', views.payroll.submit, name='payroll_submit'),
     path('payroll/batch/data', views.payroll.batch_data, name='payroll_batch_data'),
     path('payroll/batch/create', views.payroll.batch_create, name='payroll_batch_create'),
     path('payroll/batch/late', views.payroll.batch_late, name='payroll_batch_late'),
