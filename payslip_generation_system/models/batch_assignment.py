@@ -36,9 +36,17 @@ class BatchAssignment(models.Model):
 
     cutoff_year = models.CharField(max_length=50)  
 
+    BOOLEAN_CHOICES = [
+        ('YES', 'YES'), 
+        ('NO', 'NO')
+    ]
+
+    late_assigned = models.CharField(max_length=10, choices=BOOLEAN_CHOICES, null=True, blank=True, default='NO')
+    previous_batch = models.IntegerField(null=True, blank=True)
+
     class Meta:
         unique_together = ['employee', 'cutoff', 'cutoff_month', 'cutoff_year']
-        ordering = ['cutoff_year', 'cutoff_month', 'cutoff', 'batch_number']
+        ordering = ['cutoff_year', 'cutoff_month', 'cutoff', 'batch_number', 'late_assigned', 'previous_batch']
     
     def __str__(self):
         return f"{self.employee.fullname} - Batch {self.batch_number} ({self.cutoff_month} {self.cutoff}, {self.cutoff_year})"

@@ -88,7 +88,13 @@ def batch_data(request):
         cutoff_year=cutoff_year
     ).select_related('employee')
 
-    employees = [model_to_dict(a.employee) for a in assignments]
+    employees = []
+    for assignment in assignments:
+        emp_data = model_to_dict(assignment.employee, fields=[
+            'id', 'employee_number', 'fullname', 'position', 'division'
+        ])
+        emp_data['late_assigned'] = assignment.late_assigned
+        employees.append(emp_data)
 
     return JsonResponse({
         'employees': employees,
@@ -142,9 +148,18 @@ def batch_late(request):
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
 
+        ## Save the previous batch number update YES to assignment_late
         ## Change the employee batch number for the cutoff, month, year selected
         ## move it to the last batch if the last batch is not yet 15 employees
         ## if its already full create a new batch for it 
+
+        # Get existing batch_number before changing
+        previous_batch = BatchAssignment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+        ).values_list('batch_number', flat=True).first()
 
         # last batch number for the selected payroll period
         last_batch = (
@@ -180,8 +195,77 @@ def batch_late(request):
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
-            defaults={'batch_number': batch_number}
+            defaults={
+                'batch_number': batch_number,
+                'late_assigned': 'YES',
+                'previous_batch': previous_batch,
+            }
         )
+
+        # Check for adjustment if theres any
+        adjustments = Adjustment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        # Adjustment exists update the adjustment batch_number identifier
+        if adjustments.exists():
+            adjustments.update(batch_number=batch_number)
+
+        return JsonResponse({'status': 'OK'}, status=200)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def batch_unlate(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_id')
+        employee = get_object_or_404(Employee, id=employee_id)
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+        ## Get the previous_batch
+        ## Revert the employee batch number for the cutoff, month, year selected
+        ## Use the previous_number to revert the batch_number
+        ## Revert the assigned_late to NO
+
+        # Get the previous_batch
+        previous_batch = BatchAssignment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+        ).values_list('previous_batch', flat=True).first()
+
+        # Update or create the batch assignment of employee
+        BatchAssignment.objects.update_or_create(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            defaults={
+                'batch_number': previous_batch,
+                'late_assigned': 'NO',
+                'previous_batch': None,
+            }
+        )
+
+        # Check for adjustment if theres any
+        adjustments = Adjustment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        # Adjustment exists update the adjustment batch_number identifier
+        if adjustments.exists():
+            adjustments.update(batch_number=previous_batch)
 
         return JsonResponse({'status': 'OK'}, status=200)
     
