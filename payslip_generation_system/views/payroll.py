@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import connection
 from django.db import transaction
@@ -650,6 +651,24 @@ def adjustment_show(request, emp_id):
             'batch_number': batch_number,
         }, status=200)
 
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def adjustment_update(request):
+    if request.method == 'POST':
+        try:
+            adjustments = json.loads(request.POST.get('adjustments', '[]'))
+            for adj in adjustments:
+                Adjustment.objects.filter(id=adj['id']).update(
+                    name=adj['name'],
+                    type=adj['type'],
+                    amount=adj['amount']
+                )
+            return JsonResponse({'status': 'OK'}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required

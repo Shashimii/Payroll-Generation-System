@@ -282,6 +282,9 @@
           <div class="card-body" id="adjustmentsContainer">
             <!-- Adjustments for this employee Here -->
           </div>
+          <div class="card-footer">
+            <button class="btn btn-primary mt-2" id="saveAdjustmentsBtn">Save Adjustments</button>
+          </div>
         </div>
       </div>
     </div>
@@ -292,7 +295,49 @@
 // onLoad
 $(document).ready(function () {
   sessionStorageLoad();
-  loadBatchData();   
+  loadBatchData(); 
+  
+  // Unrefactored
+  $(document).on('click', '#saveAdjustmentsBtn', function () {
+    const adjustments = [];
+
+    $('#adjustmentTable tbody tr').each(function () {
+      const row = $(this);
+      const id = row.data('id');
+
+      const name = row.find('.adj-name').val();
+      const type = row.find('.adj-type').val();
+      const amount = row.find('.adj-amount').val();
+
+      if (id) {  // Ensure id is not null
+        adjustments.push({ id, name, type, amount });
+      }
+    });
+
+    if (adjustments.length === 0) {
+      alert("No adjustments to save.");
+      return;
+    }
+
+    // Debug log
+    console.log("Sending adjustments:", adjustments);
+
+    // Send to server
+    $.ajax({
+      url: '/payroll/adjustments/update/',
+      method: 'POST',
+      data: {
+        adjustments: JSON.stringify(adjustments),
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+      },
+      success: function (res) {
+        alert('Adjustments updated successfully!');
+      },
+      error: function () {
+        alert('Failed to update adjustments.');
+      }
+    });
+  });
 })
 
 // onSubmit
@@ -560,27 +605,31 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
             return;
           }
 
-          // Build adjustments list
-          let html = `<table class="table table-sm table-bordered">
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>`;
-
-          res.adjustments.forEach(adj => {
-            html += `<tr>
-                      <td>${adj.name}</td>
-                      <td class="${adj.type === 'Income' ? 'text-success' : adj.type === 'Deduction' ? 'text-danger' : ''}">
-                        ${adj.type}
-                      </td>
-                      <td class="${adj.type === 'Income' ? 'text-success' : adj.type === 'Deduction' ? 'text-danger' : ''}">
-                        ₱${parseFloat(adj.amount).toFixed(2)}
-                      </td>
-                    </tr>`;
+          let html = `<table id="adjustmentTable" class="table table-sm table-bordered">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+                
+            res.adjustments.forEach(adj => {
+              html += `
+                <tr data-id="${adj.id}">
+                  <td><input type="text" class="form-control form-control-sm adj-name" value="${adj.name}"></td>
+                  <td>
+                    <select class="form-select form-select-sm adj-type">
+                      <option value="Income" ${adj.type === 'Income' ? 'selected' : ''}>Income</option>
+                      <option value="Deduction" ${adj.type === 'Deduction' ? 'selected' : ''}>Deduction</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm adj-amount" value="${parseFloat(adj.amount).toFixed(2)}">
+                  </td>
+                </tr>
+              `;
           });
 
           html += `</tbody></table>`;
@@ -716,6 +765,7 @@ function sessionStorageLoad() {
   if (sessionStorage.getItem('cutoff_month')) $('#cutoff_month').val(sessionStorage.getItem('cutoff_month'));
   if (sessionStorage.getItem('cutoff_year')) $('#cutoff_year').val(sessionStorage.getItem('cutoff_year'));
 }
+
 </script>
 
 <style>
