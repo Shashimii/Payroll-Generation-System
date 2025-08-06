@@ -86,7 +86,7 @@ def batch_data(request):
         cutoff=cutoff,
         cutoff_month=cutoff_month,
         cutoff_year=cutoff_year
-    ).select_related('employee')
+    ).select_related('employee').order_by('employee__fullname')
 
     employees = []
     for assignment in assignments:
