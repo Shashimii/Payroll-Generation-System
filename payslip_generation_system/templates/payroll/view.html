@@ -38,8 +38,42 @@
 <input type="hidden" id="cutoff_year" name="cutoff_year">
 <input type="hidden" id="batch_number" name="batch_number">
 
+<input type="hidden" id="reject_cutoff" name="cutoff">
+<input type="hidden" id="reject_cutoff_month" name="cutoff_month">
+<input type="hidden" id="reject_cutoff_year" name="cutoff_year">
+<input type="hidden" id="reject_batch_number" name="batch_number">
+
 <button id="approvePayrollBtn" class="btn btn-success btn-block">Approve Payroll</button>
-<button class="btn btn-danger btn-block">Return Payroll with Remarks</button>
+<button class="btn btn-danger btn-block" data-bs-toggle="modal" data-bs-target="#remarksModal">
+    Return Payroll with Remarks
+</button>
+
+<div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="rejectForm" method="POST">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="remarksModalLabel">Return Payroll</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="cutoff" id="cutoff" value="{{ cutoff }}">
+          <input type="hidden" name="cutoff_month" id="cutoff_month" value="{{ cutoff_month }}">
+          <input type="hidden" name="cutoff_year" id="cutoff_year" value="{{ cutoff_year }}">
+          <input type="hidden" name="batch_number" id="batch_number" value="{{ batch_number }}">
+          <div class="mb-3">
+            <label for="remarks" class="form-label">Remarks</label>
+            <textarea class="form-control" name="remarks" id="remarks" rows="4" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Submit</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
 $(document).ready(function () {
@@ -57,6 +91,11 @@ $(document).ready(function () {
         $('#cutoff_month').val(response.cutoff_month);
         $('#cutoff_year').val(response.cutoff_year);
         $('#batch_number').val(response.batch_number);
+
+        $('#reject_cutoff').val(response.cutoff);
+        $('#reject_cutoff_month').val(response.cutoff_month);
+        $('#reject_cutoff_year').val(response.cutoff_year);
+        $('#reject_batch_number').val(response.batch_number);
 
         const tbody = $('#employeeTableBody');
         tbody.empty();
@@ -85,6 +124,35 @@ $(document).ready(function () {
         error: function () {
             $('#employeeTableBody').html('<tr><td colspan="5" class="text-danger text-center">Failed to load data.</td></tr>');
         }
+    });
+
+    $('#rejectForm').submit(function (e) {
+        e.preventDefault();
+
+        const formData = {
+            cutoff: $('#reject_cutoff').val(),
+            cutoff_month: $('#reject_cutoff_month').val(),
+            cutoff_year: $('#reject_cutoff_year').val(),
+            batch_number: $('#reject_batch_number').val(),
+            remarks: $('#remarks').val(),
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+        };
+
+        $.ajax({
+            url: "{% url 'payroll_reject' %}",
+            method: "POST",
+            data: formData,
+            success: function (response) {
+                if (response.status === "OK") {
+                    $('#remarksModal').modal('hide'); // hide the modal
+                    alert('Payroll returned with remarks.');
+                    location.href = "{% url 'payroll_pending' %}";
+                }
+            },
+            error: function () {
+                alert("Failed to return payroll. Try again.");
+            }
+        });
     });
 });
 

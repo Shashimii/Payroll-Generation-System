@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q, Count, F, Sum, Case, When, Value, IntegerField, Exists, OuterRef
 from decimal import Decimal
 from datetime import datetime
-from payslip_generation_system.models import Employee, BatchAssignment, Adjustment
+from payslip_generation_system.models import Employee, BatchAssignment, Adjustment, ReturnedAdjustment, ReturnRemark
 from payslip_generation_system.decorators import restrict_roles
 from django.forms.models import model_to_dict
 
@@ -112,6 +112,69 @@ def approve(request):
         return JsonResponse({'status': 'OK'}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def reject(request):
+    if request.method == 'POST':
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+        remarks = request.POST.get('remarks')
+
+        assignments = BatchAssignment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        employee_ids = assignments.values_list('employee_id', flat=True)
+
+        adjustments = Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        # Save to ReturnedAdjustments
+        for adj in adjustments:
+            ReturnedAdjustment.objects.create(
+                employee=adj.employee,
+                name=adj.name,
+                type=adj.type,
+                amount=adj.amount,
+                details=adj.details,
+                month=adj.month,
+                cutoff=adj.cutoff,
+                cutoff_year=adj.cutoff_year,
+                status="Returned",
+            )
+        
+        # Save one remark for the batch
+        ReturnRemark.objects.create(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            remark=remarks
+        )
+
+        # Update the Adjustments
+        Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).update(status="Returned")
+
+
+        return JsonResponse({'status': 'OK'}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])

@@ -37,6 +37,7 @@ urlpatterns = [
     path('payroll/data', views.payroll.data, name='payroll_data'),
     path('payroll/show', views.payroll.show, name='payroll_show'),
     path('payroll/approve', views.payroll.approve, name='payroll_approve'),
+    path('payroll/reject', views.payroll.reject, name='payroll_reject'),
     path('payroll/approved-list', views.payroll.approved_list, name='payroll_approved_list'),
     path('payroll/approve_data', views.payroll.approve_data, name='payroll_approve_data'),
     path('payroll/approve_show', views.payroll.approve_show, name='payroll_approve_show'),
