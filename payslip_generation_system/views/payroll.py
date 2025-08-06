@@ -10,7 +10,7 @@ from decimal import Decimal
 from datetime import datetime
 from payslip_generation_system.models import Employee, BatchAssignment, Adjustment
 from payslip_generation_system.decorators import restrict_roles
-from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Case, When, Value, IntegerField, Exists, OuterRef
 from django.forms.models import model_to_dict
 
 from django.contrib.auth.decorators import login_required
@@ -44,16 +44,33 @@ def submit(request):
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
 
-        ## Get the id of the employees on the batch
-        ## then change the adjustment statuses of the employees 
-
         # Employees on the current payroll
-        employee_ids = BatchAssignment.objects.filter(
+        employee_ids = list(BatchAssignment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year
-        ).values_list('employee_id', flat=True)
+        ).values_list('employee_id', flat=True))
+
+        # Employees who have submitted adjustments
+        adjusted_ids = list(Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).values_list('employee_id', flat=True).distinct())
+
+        # Find employees without adjustments
+        missing_ids = list(set(employee_ids) - set(adjusted_ids))
+
+        if missing_ids:
+            # Optionally get full names
+            missing_employees = Employee.objects.filter(id__in=missing_ids).values('id', 'fullname')
+            return JsonResponse({
+                'status': 'incomplete',
+                'message': f'{len(missing_ids)} employee(s) have not submitted adjustments.',
+                'missing_employees': list(missing_employees)
+            }, status=400)
 
         # Update their adjustment statuses
         Adjustment.objects.filter(
@@ -63,24 +80,18 @@ def submit(request):
             cutoff_year=cutoff_year
         ).update(status="Pending")
 
-
         return JsonResponse({'status': 'OK'}, status=200)
-    
+
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def batch_data(request):
     batch_number = request.GET.get('batch_number')
-    cutoff = request.GET.get('cutoff')
-    cutoff_month = request.GET.get('cutoff_month')
-    cutoff_year = request.GET.get('cutoff_year')
-
-    batch_number = int(batch_number) if batch_number else 1
-    cutoff = cutoff if cutoff else '1st'
-    cutoff_month = cutoff_month if cutoff_month else 'January'
-    cutoff_year = int(cutoff_year) if cutoff_year else datetime.now().year
-
+    cutoff = request.GET.get('cutoff') or '1st'
+    cutoff_month = request.GET.get('cutoff_month') or 'January'
+    cutoff_year = int(request.GET.get('cutoff_year') or datetime.now().year)
+    batch_number = int(batch_number or 1)
 
     assignments = BatchAssignment.objects.filter(
         batch_number=batch_number,
@@ -93,15 +104,25 @@ def batch_data(request):
             When(late_assigned='YES', then=Value(1)),
             default=Value(2),
             output_field=IntegerField()
+        ),
+        has_adjustments=Exists(
+            Adjustment.objects.filter(
+                employee=OuterRef('employee'),
+                batch_number=batch_number,
+                cutoff=cutoff,
+                month=cutoff_month,
+                cutoff_year=cutoff_year
+            )
         )
     ).order_by('late_order', 'employee__fullname')
 
     employees = []
     for assignment in assignments:
         emp_data = model_to_dict(assignment.employee, fields=[
-            'id', 'employee_number', 'fullname', 'position', 'division'
+            'id', 'employee_number', 'fullname', 'position', 'salary', 'tax_declaration'
         ])
         emp_data['late_assigned'] = assignment.late_assigned
+        emp_data['has_adjustments'] = assignment.has_adjustments
         employees.append(emp_data)
 
     return JsonResponse({
@@ -111,6 +132,7 @@ def batch_data(request):
         'cutoff_year': cutoff_year,
         'batch_number': batch_number,
     })
+
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
@@ -425,3 +447,37 @@ def adjustment_show(request, emp_id):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def pending(request):
+
+    return render(request, 'payroll/pending.html')
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def data(request):
+    # Get employees who have pending adjustments
+    pending_employee_ids = Adjustment.objects.filter(
+        status="Pending"
+    ).values_list('employee_id', flat=True).distinct()
+
+    # Get all distinct batches (including cutoff data) for those employees
+    batches = BatchAssignment.objects.filter(
+        employee_id__in=pending_employee_ids
+    ).values(
+        'batch_number',
+        'cutoff',
+        'cutoff_month',
+        'cutoff_year'
+    ).distinct()
+
+    return JsonResponse({'batches': list(batches)}, status=200)
+
+def show(request):
+    context = {
+        'cutoff': request.GET.get('cutoff'),
+        'cutoff_month': request.GET.get('cutoff_month'),
+        'cutoff_year': request.GET.get('cutoff_year'),
+        'batch_number': request.GET.get('batch_number'),
+    }
+    return render(request, 'payroll/view.html', context)
