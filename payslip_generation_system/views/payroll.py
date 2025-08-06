@@ -85,6 +85,37 @@ def submit(request):
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
+def approve(request):
+    if request.method == 'POST':
+        # Payroll information
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+        # Employees on the current payroll
+        employee_ids = list(BatchAssignment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).values_list('employee_id', flat=True))
+
+        # Update their adjustment statuses
+        Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).update(status="Approved")
+
+        return JsonResponse({'status': 'OK'}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def batch_data(request):
     batch_number = request.GET.get('batch_number')
     cutoff = request.GET.get('cutoff') or '1st'
@@ -116,12 +147,96 @@ def batch_data(request):
     ).order_by('late_order', 'employee__fullname')
 
     employees = []
+
     for assignment in assignments:
-        emp_data = model_to_dict(assignment.employee, fields=[
+        employee = assignment.employee
+
+        # Base salary
+        basic_salary = employee.salary
+        basic_salary_annual = basic_salary * 12
+        basic_salary_cutoff = basic_salary / 2
+
+        # Tax
+        if employee.tax_declaration.lower() == "yes":
+            tax_deduction = Decimal('0.00')
+        else:
+            tax_deduction = basic_salary_cutoff * Decimal('0.027') if basic_salary_annual >= 250000 else Decimal('0.00')
+
+        # Philhealth
+        if employee.has_philhealth.lower() == "yes":
+            philhealth = basic_salary_cutoff * Decimal('0.05') if basic_salary_cutoff > Decimal('9999') else Decimal('500')
+        else:
+            philhealth = Decimal('0.00')
+
+        # Late adjustments
+        late_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="Late",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        late_amt_total = late_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        late_min_total = late_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
+
+        # Absent adjustments
+        absent_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="Late",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+
+        absent_amt_total = absent_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        absent_min_total = absent_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
+
+        # Other deductions
+        other_deductions = Adjustment.objects.filter(
+            employee=employee,
+            type="Deduction",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        ).exclude(name__in=["Late", "Absent"])
+        total_other_deductions = other_deductions.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+        # Incomes
+        incomes = Adjustment.objects.filter(
+            employee=employee,
+            type="Income",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+        # Final calculation
+        total_deductions = tax_deduction + philhealth + late_amt_total + total_other_deductions
+        net_salary = basic_salary_cutoff - total_deductions + total_income
+
+        # Build data
+        emp_data = model_to_dict(employee, fields=[
             'id', 'employee_number', 'fullname', 'position', 'salary', 'tax_declaration'
         ])
         emp_data['late_assigned'] = assignment.late_assigned
         emp_data['has_adjustments'] = assignment.has_adjustments
+        emp_data['basic_salary_cutoff'] = f"{basic_salary_cutoff:.2f}"
+        emp_data['tax_deduction'] = f"{tax_deduction:.2f}"
+        emp_data['philhealth'] = f"{philhealth:.2f}"
+        emp_data['late_amount'] = f"{late_amt_total:.2f}"
+        emp_data['late_minutes'] = f"{late_min_total:.2f}"
+        emp_data['absent_amount'] = f"{absent_amt_total:.2f}"
+        emp_data['absent_minutes'] = f"{absent_min_total:.2f}"
+        emp_data['other_deductions'] = f"{total_other_deductions:.2f}"
+        emp_data['total_deductions'] = f"{total_deductions:.2f}"
+        emp_data['income'] = f"{total_income:.2f}"
+        emp_data['net_salary'] = f"{net_salary:.2f}"
+
         employees.append(emp_data)
 
     return JsonResponse({
@@ -131,7 +246,6 @@ def batch_data(request):
         'cutoff_year': cutoff_year,
         'batch_number': batch_number,
     })
-
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
@@ -449,7 +563,6 @@ def adjustment_show(request, emp_id):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def pending(request):
-
     return render(request, 'payroll/pending.html')
 
 @login_required

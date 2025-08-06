@@ -36,6 +36,7 @@ urlpatterns = [
     path('payroll/pending', views.payroll.pending, name='payroll_pending'),
     path('payroll/data', views.payroll.data, name='payroll_data'),
     path('payroll/show', views.payroll.show, name='payroll_show'),
+    path('payroll/approve', views.payroll.approve, name='payroll_approve'),
 
     # Payslip
     path('payslip/', views.payslip.index, name='payslip'),

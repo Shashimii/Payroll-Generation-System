@@ -6,67 +6,149 @@
         Back
     </button>
 
-    
+
+<h2>General Payroll DENR NCR</h2>
 <h4>{{ cutoff_month }} {{ cutoff }} Cutoff {{ cutoff_year }} — Batch {{ batch_number }}</h4>
 
-<table class="table table-bordered table-hover mt-3">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Full Name</th>
-      <th>Position</th>
-      <th>Salary</th>
-      <th>Tax</th>
-      <th>Philhealth</th>
-      <th>Late</th>
-      <th>Absent</th>
-      <th>Adjustment Income</th>
-      <th>Adjustment Deduction</th>
-      <th>Net Pay</th>
-    </tr>
-  </thead>
-  <tbody id="employeeTableBody">
-    <tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>
-  </tbody>
+<table class="table table-striped table-bordered mt-3 text-sm">
+    <thead class="table-dark text-center align-middle">
+        <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Position</th>
+            <th>Salary</th>
+            <th>Tax</th>
+            <th>Philhealth</th>
+            <th>Late</th>
+            <th>Absent</th>
+            <th class="text-success">Adjustment Income</th>
+            <th class="text-danger">Adjustment Deduction</th>
+            <th>Net Pay</th>
+        </tr>
+        </thead>
+        <tbody id="employeeTableBody">
+        <tr>
+            <td colspan="11" class="text-center text-muted">Loading...</td>
+        </tr>
+    </tbody>
 </table>
 
-<button class="btn btn-success btn-block">Approve Payroll</button>
+<input type="hidden" id="cutoff" name="cutoff">
+<input type="hidden" id="cutoff_month" name="cutoff_month">
+<input type="hidden" id="cutoff_year" name="cutoff_year">
+<input type="hidden" id="batch_number" name="batch_number">
+
+<button id="approvePayrollBtn" class="btn btn-success btn-block">Approve Payroll</button>
 <button class="btn btn-danger btn-block">Return Payroll with Remarks</button>
 
 <script>
-  $(document).ready(function () {
+$(document).ready(function () {
     $.ajax({
-      url: '{% url "payroll_batch_data" %}',
-      method: 'GET',
-      data: {
-        batch_number: '{{ batch_number }}',
-        cutoff: '{{ cutoff }}',
-        cutoff_month: '{{ cutoff_month }}',
-        cutoff_year: '{{ cutoff_year }}'
-      },
-      success: function (response) {
+            url: '{% url "payroll_batch_data" %}',
+            method: 'GET',
+            data: {
+            batch_number: '{{ batch_number }}',
+            cutoff: '{{ cutoff }}',
+            cutoff_month: '{{ cutoff_month }}',
+            cutoff_year: '{{ cutoff_year }}'
+        },
+        success: function (response) {
+        $('#cutoff').val(response.cutoff);
+        $('#cutoff_month').val(response.cutoff_month);
+        $('#cutoff_year').val(response.cutoff_year);
+        $('#batch_number').val(response.batch_number);
+
         const tbody = $('#employeeTableBody');
         tbody.empty();
-        if (response.employees.length > 0) {
-          response.employees.forEach((emp, i) => {
-            tbody.append(`
-              <tr>
-                <td>${i + 1}</td>
-                <td>${emp.fullname}</td>
-                <td>${emp.position}</td>
-                <td>${emp.salary}</td>
-              </tr>
-            `);
-          });
-        } else {
-          tbody.append('<tr><td colspan="5" class="text-center text-muted">No employees found.</td></tr>');
+            if (response.employees.length > 0) {
+                response.employees.forEach((emp, i) => {
+                tbody.append(`
+                    <tr>
+                    <td>${i + 1}</td>
+                    <td>${emp.fullname}</td>
+                    <td>${emp.position}</td>
+                    <td>₱ ${emp.salary}</td>
+                    <td>₱ ${emp.tax_deduction}</td>
+                    <td>₱ ${emp.philhealth}</td>
+                    <td>₱ ${emp.late_amount}</td>
+                    <td>₱ ${emp.absent_amount}</td>
+                    <td>₱ ${emp.income}</td>
+                    <td>₱ ${emp.other_deductions}</td>
+                    <td>₱ ${emp.net_salary}</td>
+                    </tr>
+                `);
+                });
+            } else {
+                tbody.append('<tr><td colspan="5" class="text-center text-muted">No employees found.</td></tr>');
+            }
+        },
+        error: function () {
+            $('#employeeTableBody').html('<tr><td colspan="5" class="text-danger text-center">Failed to load data.</td></tr>');
         }
-      },
-      error: function () {
-        $('#employeeTableBody').html('<tr><td colspan="5" class="text-danger text-center">Failed to load data.</td></tr>');
-      }
     });
-  });
+});
+
+$('#approvePayrollBtn').click(function () {
+    $.ajax({
+        url: '{% url "payroll_approve" %}',
+        method: 'POST',
+        data: {
+            cutoff: $('#cutoff').val(),
+            cutoff_month: $('#cutoff_month').val(),
+            cutoff_year: $('#cutoff_year').val(),
+            batch_number: $('#batch_number').val(),
+            csrfmiddlewaretoken: '{{ csrf_token }}'  // required for POST
+        },
+        success: function (res) {
+            if (res.status === 'OK') {
+                alert('Payroll approved successfully!');
+                location.reload();
+            } else {
+                alert('Failed to approve payroll.');
+            }
+        },
+        error: function () {
+            alert('Server error.');
+        }
+    });
+});
 </script>
 
+
+<style>
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+thead {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    font-weight:700;
+}
+
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+    .table td:nth-child(4),
+    .table td:nth-child(5),
+    .table td:nth-child(6),
+    .table td:nth-child(7),
+    .table td:nth-child(8),
+    .table td:nth-child(9),
+    .table td:nth-child(10),
+    .table td:nth-child(11) {
+    text-align: right;
+}
+
+</style>
 {% endblock %}
