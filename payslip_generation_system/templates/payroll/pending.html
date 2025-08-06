@@ -48,16 +48,16 @@ $(document).ready(function () {
     });
 });
 
-    $('#pendingBatchList').on('click', '.pending-batch-item', function () {
-        const cutoff = $(this).data('cutoff');
-        const month = $(this).data('month');
-        const year = $(this).data('year');
-        const batch = $(this).data('batch');
+$('#pendingBatchList').on('click', '.pending-batch-item', function () {
+    const cutoff = $(this).data('cutoff');
+    const month = $(this).data('month');
+    const year = $(this).data('year');
+    const batch = $(this).data('batch');
 
 
-        const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}`;
-        window.location.href = url;
-    });
+    const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}`;
+    window.location.href = url;
+});
 </script>
 
 <style>

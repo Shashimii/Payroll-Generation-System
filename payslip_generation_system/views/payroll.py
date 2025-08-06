@@ -5,12 +5,11 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
+from django.db.models import Q, Count, F, Sum, Case, When, Value, IntegerField, Exists, OuterRef
 from decimal import Decimal
 from datetime import datetime
 from payslip_generation_system.models import Employee, BatchAssignment, Adjustment
 from payslip_generation_system.decorators import restrict_roles
-from django.db.models import Case, When, Value, IntegerField, Exists, OuterRef
 from django.forms.models import model_to_dict
 
 from django.contrib.auth.decorators import login_required
@@ -456,22 +455,39 @@ def pending(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def data(request):
-    # Get employees who have pending adjustments
-    pending_employee_ids = Adjustment.objects.filter(
-        status="Pending"
-    ).values_list('employee_id', flat=True).distinct()
-
-    # Get all distinct batches (including cutoff data) for those employees
-    batches = BatchAssignment.objects.filter(
-        employee_id__in=pending_employee_ids
-    ).values(
+    # Get all batches
+    all_batches = BatchAssignment.objects.values(
         'batch_number',
         'cutoff',
         'cutoff_month',
         'cutoff_year'
     ).distinct()
 
-    return JsonResponse({'batches': list(batches)}, status=200)
+    valid_batches = []
+
+    for batch in all_batches:
+        # Get all employee IDs in this batch
+        employee_ids = BatchAssignment.objects.filter(
+            batch_number=batch['batch_number'],
+            cutoff=batch['cutoff'],
+            cutoff_month=batch['cutoff_month'],
+            cutoff_year=batch['cutoff_year']
+        ).values_list('employee_id', flat=True)
+
+        # Count how many of them have at least one Pending adjustment
+        pending_adjustments = Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=batch['cutoff'],
+            month=batch['cutoff_month'],
+            cutoff_year=batch['cutoff_year'],
+            status="Pending"
+        ).values('employee_id').distinct().count()
+
+        # Only include the batch if ALL employees have Pending adjustments
+        if pending_adjustments == len(employee_ids):
+            valid_batches.append(batch)
+
+    return JsonResponse({'batches': valid_batches}, status=200)
 
 def show(request):
     context = {

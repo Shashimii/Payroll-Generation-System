@@ -13,10 +13,16 @@
   <thead>
     <tr>
       <th>#</th>
-      <th>Employee No.</th>
       <th>Full Name</th>
       <th>Position</th>
-      <th>Division</th>
+      <th>Salary</th>
+      <th>Tax</th>
+      <th>Philhealth</th>
+      <th>Late</th>
+      <th>Absent</th>
+      <th>Adjustment Income</th>
+      <th>Adjustment Deduction</th>
+      <th>Net Pay</th>
     </tr>
   </thead>
   <tbody id="employeeTableBody">
@@ -27,7 +33,7 @@
 <script>
   $(document).ready(function () {
     $.ajax({
-      url: '{% url "payroll_batch_data" %}', // This should point to your batch data view
+      url: '{% url "payroll_batch_data" %}',
       method: 'GET',
       data: {
         batch_number: '{{ batch_number }}',
@@ -43,10 +49,9 @@
             tbody.append(`
               <tr>
                 <td>${i + 1}</td>
-                <td>${emp.employee_number}</td>
                 <td>${emp.fullname}</td>
                 <td>${emp.position}</td>
-                <td>${emp.division}</td>
+                <td>${emp.salary}</td>
               </tr>
             `);
           });
