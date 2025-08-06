@@ -1,0 +1,64 @@
+{% extends "includes/layout.html" %}
+{% block title %}Payroll{% endblock title %}
+{% block layout_content %}
+    <button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'payroll_pending' %}'">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back
+    </button>
+
+    
+<h4>{{ cutoff_month }} {{ cutoff }} Cutoff {{ cutoff_year }} — Batch {{ batch_number }}</h4>
+
+<table class="table table-bordered table-hover mt-3">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Employee No.</th>
+      <th>Full Name</th>
+      <th>Position</th>
+      <th>Division</th>
+    </tr>
+  </thead>
+  <tbody id="employeeTableBody">
+    <tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>
+  </tbody>
+</table>
+
+<script>
+  $(document).ready(function () {
+    $.ajax({
+      url: '{% url "payroll_batch_data" %}', // This should point to your batch data view
+      method: 'GET',
+      data: {
+        batch_number: '{{ batch_number }}',
+        cutoff: '{{ cutoff }}',
+        cutoff_month: '{{ cutoff_month }}',
+        cutoff_year: '{{ cutoff_year }}'
+      },
+      success: function (response) {
+        const tbody = $('#employeeTableBody');
+        tbody.empty();
+        if (response.employees.length > 0) {
+          response.employees.forEach((emp, i) => {
+            tbody.append(`
+              <tr>
+                <td>${i + 1}</td>
+                <td>${emp.employee_number}</td>
+                <td>${emp.fullname}</td>
+                <td>${emp.position}</td>
+                <td>${emp.division}</td>
+              </tr>
+            `);
+          });
+        } else {
+          tbody.append('<tr><td colspan="5" class="text-center text-muted">No employees found.</td></tr>');
+        }
+      },
+      error: function () {
+        $('#employeeTableBody').html('<tr><td colspan="5" class="text-danger text-center">Failed to load data.</td></tr>');
+      }
+    });
+  });
+</script>
+
+{% endblock %}

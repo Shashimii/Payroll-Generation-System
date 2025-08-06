@@ -102,10 +102,13 @@
     <table>
         <thead>
             <tr>
+                <th>Seq No.</th>
                 <th>Employee No.</th>
                 <th>Full Name</th>
                 <th>Position</th>
-                <th>Division</th>
+                <th>Salary</th>
+                <th>With Sworn Declaration ?</th>
+                <th>Adjusted Made ?</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -414,8 +417,7 @@ function loadBatchData () {
           tbody.empty();
 
           if (response.employees.length > 0) {
-              response.employees.forEach(emp => {
-                
+              response.employees.forEach((emp, index) => {
                   let rowClass = '';
                   let lateButton = '';
                   let unlateButton = '';
@@ -423,7 +425,7 @@ function loadBatchData () {
                   if (emp.late_assigned === 'YES') {
                     rowClass = 'table-danger';
                   } else if (emp.late_assigned === 'NO') {
-                    rowClass = 'table-success';
+                    rowClass = 'table-info';
                   }
 
                   if (emp.late_assigned === 'YES') {
@@ -452,10 +454,13 @@ function loadBatchData () {
 
                   tbody.append(`
                       <tr class="${rowClass}">
+                          <td>${index + 1}</td>
                           <td>${emp.employee_number}</td>
                           <td>${emp.fullname}</td>
                           <td>${emp.position}</td>
-                          <td>${emp.division}</td>
+                          <td>₱ ${emp.salary}</td>
+                          <td>${emp.tax_declaration === 'yes' ? 'YES' : 'NO'}</td>
+                          <td class="${emp.has_adjustments ? 'text-green' : 'text-red'}">${emp.has_adjustments ? 'YES' : 'NO'}</td>
                           <td>
                             <button class='btn btn-info btn-sm show_employee' 
                               data-id='${emp.id}'
@@ -562,8 +567,6 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
                             <th>Name</th>
                             <th>Type</th>
                             <th>Amount</th>
-                            <th>Details</th>
-                            <th>Status</th>
                           </tr>
                         </thead>
                         <tbody>`;
@@ -571,10 +574,12 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
           res.adjustments.forEach(adj => {
             html += `<tr>
                       <td>${adj.name}</td>
-                      <td>${adj.type}</td>
-                      <td>₱${parseFloat(adj.amount).toFixed(2)}</td>
-                      <td>${adj.details || ''}</td>
-                      <td>${adj.status}</td>
+                      <td class="${adj.type === 'Income' ? 'text-success' : adj.type === 'Deduction' ? 'text-danger' : ''}">
+                        ${adj.type}
+                      </td>
+                      <td class="${adj.type === 'Income' ? 'text-success' : adj.type === 'Deduction' ? 'text-danger' : ''}">
+                        ₱${parseFloat(adj.amount).toFixed(2)}
+                      </td>
                     </tr>`;
           });
 
@@ -729,14 +734,7 @@ function sessionStorageLoad() {
         border: 1px solid #ccc;
         padding: 8px;
         text-align: left;
-    }
-
-    tr:nth-child(even) {
-        background-color: #fafafa;
-    }
-
-    tr:hover {
-        background-color: #e6f7ff;
+        font-weight:700;
     }
 </style>
 {% endblock %}
