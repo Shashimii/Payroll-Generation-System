@@ -874,6 +874,9 @@ def approve_data(request):
 
     return JsonResponse({'batches': valid_batches}, status=200)
 
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def approve_show(request):
     context = {
         'cutoff': request.GET.get('cutoff'),
@@ -882,3 +885,46 @@ def approve_show(request):
         'batch_number': request.GET.get('batch_number'),
     }
     return render(request, 'payroll/releasing.html', context)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def removed_employee_data(request):
+    cutoff = request.GET.get('cutoff') or '1st'
+    cutoff_month = request.GET.get('cutoff_month') or 'January'
+    cutoff_year = int(request.GET.get('cutoff_year') or datetime.now().year)
+    batch_number = 0
+    removed= 'YES'
+
+    # Get employees assigned to this batch
+    assignments = BatchAssignment.objects.filter(
+        cutoff=cutoff,
+        cutoff_month=cutoff_month,
+        cutoff_year=cutoff_year,
+        batch_number=batch_number,
+        removed=removed
+    ).select_related('employee')
+
+    employees = []
+
+    for a in assignments:
+        emp = a.employee
+
+        employees.append({
+            'id': emp.id,
+            'employee_number': emp.employee_number,
+            'fullname': emp.fullname,
+            'position': emp.position,
+            'salary': float(emp.salary),
+            'tax_declaration': emp.tax_declaration,
+            'removed': a.removed
+        })
+
+    print(employees)
+
+    return JsonResponse({
+        'employees': employees,
+        'cutoff': cutoff,
+        'cutoff_month': cutoff_month,
+        'cutoff_year': cutoff_year,
+        'batch_number': batch_number,
+    })

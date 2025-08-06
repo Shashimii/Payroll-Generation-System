@@ -33,6 +33,7 @@ urlpatterns = [
     path('payroll/batch/unlate', views.payroll.batch_unlate, name='payroll_batch_unlate'),
     path('payroll/batch/remove', views.payroll.batch_remove, name='payroll_batch_remove'),
     path('payroll/batch/unremove', views.payroll.batch_unremove, name='payroll_batch_unremove'),
+    path('payroll/batch/removed_employee_data', views.payroll.removed_employee_data, name='payroll_removed_employee_data'),
     path('payroll/adjustment/create/<int:emp_id>/', views.payroll.adjustment_create, name='payroll_adjustment_create'),
     path('payroll/adjustment/show/<int:emp_id>/', views.payroll.adjustment_show, name='payroll_adjustment_show'),
     path('payroll/adjustments/update/', views.payroll.adjustment_update, name='adjustments_update'),
