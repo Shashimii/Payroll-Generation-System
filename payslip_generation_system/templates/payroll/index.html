@@ -150,11 +150,11 @@
                   <strong>Salary:</strong>
                   <span class="text-success font-weight-bold modalSalary">₱</span>
               </div>
-              <input type="hidden" class="modalCutoff">
-              <input type="hidden" class="modalCutoffMonth">
-              <input type="hidden" class="modalCutoffYear">
-              <input type="hidden" class="modalBatchNumber">
-              <input type="hidden" class="modalEmployeeId">
+              <input type="hidden" id="modalAdjustmentCutoff">
+              <input type="hidden" id="modalAdjustmentCutoffMonth">
+              <input type="hidden" id="modalAdjustmentCutoffYear">
+              <input type="hidden" id="modalAdjustmentBatchNumber">
+              <input type="hidden" id="modalAdjustmentEmployeeId">
           </div>
         </div>
         
@@ -261,11 +261,11 @@
                   <strong>Salary:</strong>
                   <span class="text-success font-weight-bold modalSalary">₱</span>
               </div>
-              <input type="hidden" class="modalCutoff">
-              <input type="hidden" class="modalCutoffMonth">
-              <input type="hidden" class="modalCutoffYear">
-              <input type="hidden" class="modalBatchNumber">
-              <input type="hidden" class="modalEmployeeId">
+              <input type="hidden" id="modalShowAdjustmentCutoff">
+              <input type="hidden" id="modalShowAdjustmentCutoffMonth">
+              <input type="hidden" id="modalShowAdjustmentCutoffYear">
+              <input type="hidden" id="modalShowAdjustmentBatchNumber">
+              <input type="hidden" id="modalShowAdjustmentEmployeeId">
           </div>
         </div>
         
@@ -497,11 +497,11 @@ function showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
     method: 'GET',
     success: function (response) {
       const emp = response.employee;
-      $('.modalCutoff').val(cutoff);
-      $('.modalCutoffMonth').val(cutoffMonth);
-      $('.modalCutoffYear').val(cutoffYear);
-      $('.modalBatchNumber').val(batchNumber);
-      $('.modalEmployeeId').val(employeeId);
+      $('#modalAdjustmentCutoff').val(cutoff);
+      $('#modalAdjustmentCutoffMonth').val(cutoffMonth);
+      $('#modalAdjustmentCutoffYear').val(cutoffYear);
+      $('#modalAdjustmentBatchNumber').val(batchNumber);
+      $('#modalAdjustmentEmployeeId').val(employeeId);
       $('.modalFullname').text(emp.fullname);
       $('.modalPosition').text(emp.position);
       $('.modalSalary').text(emp.salary);
@@ -526,11 +526,11 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
       const emp = response.employee;
 
       // Fill modal fields
-      $('.modalCutoff').val(cutoff);
-      $('.modalCutoffMonth').val(cutoffMonth);
-      $('.modalCutoffYear').val(cutoffYear);
-      $('.modalBatchNumber').val(batchNumber);
-      $('.modalEmployeeId').val(employeeId);
+      $('#modalShowAdjustmentCutoff').val(cutoff);
+      $('#modalShowAdjustmentCutoffMonth').val(cutoffMonth);
+      $('#modalShowAdjustmentCutoffYear').val(cutoffYear);
+      $('#modalShowAdjustmentBatchNumber').val(batchNumber);
+      $('#modalShowAdjustmentEmployeeId').val(employeeId);
       $('.modalFullname').text(emp.fullname);
       $('.modalPosition').text(emp.position);
       $('.modalSalary').text(emp.salary);
