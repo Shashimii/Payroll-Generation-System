@@ -433,6 +433,26 @@ $(document).on('click', '.unlate_employee', function () {
   unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
 });
 
+$(document).on('click', '.remove_employee', function () {
+  const employeeId = $(this).data('id');
+  const cutoff = $(this).data('cutoff');
+  const cutoffMonth = $(this).data('month');
+  const cutoffYear = $(this).data('year');
+  const batchNumber = $(this).data('batch');
+
+  removeEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
+});
+
+$(document).on('click', '.unremove_employee', function () {
+  const employeeId = $(this).data('id');
+  const cutoff = $(this).data('cutoff');
+  const cutoffMonth = $(this).data('month');
+  const cutoffYear = $(this).data('year');
+  const batchNumber = $(this).data('batch');
+
+  unremoveEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
+});
+
 // Functions
 function loadBatchData () {
   const batchNumber = $('#batch_number').val();
@@ -466,6 +486,8 @@ function loadBatchData () {
                   let rowClass = '';
                   let lateButton = '';
                   let unlateButton = '';
+                  let removeButton = '';
+                  let unremoveButton = '';
 
                   if (emp.late_assigned === 'YES') {
                     rowClass = 'table-danger';
@@ -494,6 +516,29 @@ function loadBatchData () {
                         data-batch='${response.batch_number}'
                       >
                       Mark as Late
+                    </button>`;
+                  }
+                  if (emp.removed === 'YES') {
+                    unremoveButton = `
+                      <button class='btn btn-danger btn-sm unremove_employee' 
+                        data-id='${emp.id}'
+                        data-cutoff='${response.cutoff}'
+                        data-month='${response.cutoff_month}'
+                        data-year='${response.cutoff_year}'
+                        data-batch='${response.batch_number}'
+                      >
+                        Unremove
+                      </button>`;
+                  } else if (emp.removed === 'NO') {
+                    removeButton = `
+                    <button class='btn btn-danger btn-sm remove_employee' 
+                      data-id='${emp.id}'
+                      data-cutoff='${response.cutoff}'
+                      data-month='${response.cutoff_month}'
+                      data-year='${response.cutoff_year}'
+                      data-batch='${response.batch_number}'
+                    >
+                      Remove
                     </button>`;
                   }
 
@@ -527,6 +572,8 @@ function loadBatchData () {
                             </button> 
                             ${lateButton}
                             ${unlateButton}
+                            ${removeButton}
+                            ${unremoveButton}
                           </td>
                       </tr>
                   `);
@@ -649,7 +696,6 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
   });
 }
 
-
 function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
   $.ajax({
     url: `/payroll/batch/late`, 
@@ -684,6 +730,48 @@ function unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
     },
     success: function (response) {
       alert('Employee Marked as Late moved on the last batch.');
+      loadBatchData();
+    },
+    error: function () {
+      alert('Failed to load employee data.');
+    }
+  });
+}
+
+function removeEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
+  $.ajax({
+    url: `/payroll/batch/remove`, 
+    method: 'POST',
+    data: {
+      employee_id: employeeId,
+      cutoff: cutoff,
+      cutoff_month: cutoffMonth,
+      cutoff_year: cutoffYear,
+      batch_number: batchNumber,
+    },
+    success: function (response) {
+      alert('Employee Removed.');
+      loadBatchData();
+    },
+    error: function () {
+      alert('Failed to load employee data.');
+    }
+  });
+}
+
+function unremoveEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
+  $.ajax({
+    url: `/payroll/batch/unremove`, 
+    method: 'POST',
+    data: {
+      employee_id: employeeId,
+      cutoff: cutoff,
+      cutoff_month: cutoffMonth,
+      cutoff_year: cutoffYear,
+      batch_number: batchNumber,
+    },
+    success: function (response) {
+      alert('Employee Restored.');
       loadBatchData();
     },
     error: function () {

@@ -176,7 +176,6 @@ def reject(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def release(request):
@@ -225,6 +224,12 @@ def batch_data(request):
         late_order=Case(
             When(late_assigned='NO', then=Value(0)),
             When(late_assigned='YES', then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField()
+        ),
+        removed_order=Case(
+            When(removed='NO', then=Value(0)),
+            When(removed='YES', then=Value(1)),
             default=Value(2),
             output_field=IntegerField()
         ),
@@ -317,6 +322,7 @@ def batch_data(request):
             'id', 'employee_number', 'fullname', 'position', 'salary', 'tax_declaration'
         ])
         emp_data['late_assigned'] = assignment.late_assigned
+        emp_data['removed'] = assignment.removed
         emp_data['has_adjustments'] = assignment.has_adjustments
         emp_data['basic_salary_cutoff'] = f"{basic_salary_cutoff:.2f}"
         emp_data['tax_deduction'] = f"{tax_deduction:.2f}"
@@ -509,6 +515,111 @@ def batch_unlate(request):
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
+def batch_remove(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_id')
+        employee = get_object_or_404(Employee, id=employee_id)
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+        ## Same logic on the late
+
+        # Get existing batch_number before changing
+        previous_batch = BatchAssignment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+        ).values_list('batch_number', flat=True).first()
+
+        # Set the batch number to 0
+        batch_number = 0
+
+        # Update or create the batch assignment of employee
+        BatchAssignment.objects.update_or_create(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            defaults={
+                'batch_number': batch_number,
+                'removed': 'YES',
+                'previous_batch': previous_batch,
+            }
+        )
+
+        # Check for adjustment if theres any
+        adjustments = Adjustment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        # Adjustment exists update the adjustment batch_number identifier
+        if adjustments.exists():
+            adjustments.update(batch_number=batch_number)
+
+        return JsonResponse({'status': 'OK'}, status=200)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def batch_unremove(request):
+    if request.method == 'POST':
+        employee_id = request.POST.get('employee_id')
+        employee = get_object_or_404(Employee, id=employee_id)
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+
+        ## Get the previous_batch
+        ## Revert the employee batch number for the cutoff, month, year selected
+        ## Use the previous_number to revert the batch_number
+        ## Revert the assigned_late to NO
+
+        # Get the previous_batch
+        previous_batch = BatchAssignment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+        ).values_list('previous_batch', flat=True).first()
+
+        # Update or create the batch assignment of employee
+        BatchAssignment.objects.update_or_create(
+            employee=employee,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            defaults={
+                'batch_number': previous_batch,
+                'removed': 'NO',
+                'previous_batch': None,
+            }
+        )
+
+        # Check for adjustment if theres any
+        adjustments = Adjustment.objects.filter(
+            employee=employee,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        )
+
+        # Adjustment exists update the adjustment batch_number identifier
+        if adjustments.exists():
+            adjustments.update(batch_number=previous_batch)
+
+        return JsonResponse({'status': 'OK'}, status=200)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def adjustment_create(request, emp_id):
     if request.method == 'POST':
         # Form
@@ -652,7 +763,6 @@ def adjustment_show(request, emp_id):
         }, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])

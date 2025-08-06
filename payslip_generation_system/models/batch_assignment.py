@@ -42,6 +42,7 @@ class BatchAssignment(models.Model):
     ]
 
     late_assigned = models.CharField(max_length=10, choices=BOOLEAN_CHOICES, null=True, blank=True, default='NO')
+    removed = models.CharField(max_length=10, choices=BOOLEAN_CHOICES, null=True, blank=True, default='NO')
     previous_batch = models.IntegerField(null=True, blank=True)
 
     class Meta:
