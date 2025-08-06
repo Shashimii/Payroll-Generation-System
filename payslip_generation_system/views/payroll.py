@@ -113,6 +113,35 @@ def approve(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def release(request):
+    if request.method == 'POST':
+        # Payroll information
+        cutoff = request.POST.get('cutoff')
+        cutoff_month = request.POST.get('cutoff_month')
+        cutoff_year = request.POST.get('cutoff_year')
+        batch_number = request.POST.get('batch_number')
+
+        # Employees on the current payroll
+        employee_ids = list(BatchAssignment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).values_list('employee_id', flat=True))
+
+        # Update their adjustment statuses
+        Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).update(status="Credited")
+
+        return JsonResponse({'status': 'OK'}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
@@ -610,3 +639,54 @@ def show(request):
         'batch_number': request.GET.get('batch_number'),
     }
     return render(request, 'payroll/view.html', context)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def approved_list(request):
+    return render(request, 'payroll/approve.html')
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def approve_data(request):
+    # Get all batches
+    all_batches = BatchAssignment.objects.values(
+        'batch_number',
+        'cutoff',
+        'cutoff_month',
+        'cutoff_year'
+    ).distinct()
+
+    valid_batches = []
+
+    for batch in all_batches:
+        # Get all employee IDs in this batch
+        employee_ids = BatchAssignment.objects.filter(
+            batch_number=batch['batch_number'],
+            cutoff=batch['cutoff'],
+            cutoff_month=batch['cutoff_month'],
+            cutoff_year=batch['cutoff_year']
+        ).values_list('employee_id', flat=True)
+
+        # Count how many of them have at least one Pending adjustment
+        pending_adjustments = Adjustment.objects.filter(
+            employee_id__in=employee_ids,
+            cutoff=batch['cutoff'],
+            month=batch['cutoff_month'],
+            cutoff_year=batch['cutoff_year'],
+            status="Approved"
+        ).values('employee_id').distinct().count()
+
+        # Only include the batch if ALL employees have Pending adjustments
+        if pending_adjustments == len(employee_ids):
+            valid_batches.append(batch)
+
+    return JsonResponse({'batches': valid_batches}, status=200)
+
+def approve_show(request):
+    context = {
+        'cutoff': request.GET.get('cutoff'),
+        'cutoff_month': request.GET.get('cutoff_month'),
+        'cutoff_year': request.GET.get('cutoff_year'),
+        'batch_number': request.GET.get('batch_number'),
+    }
+    return render(request, 'payroll/releasing.html', context)

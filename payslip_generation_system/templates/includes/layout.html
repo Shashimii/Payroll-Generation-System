@@ -79,8 +79,8 @@
                         {% endif %}
 
                         <!-- Payroll Menu -->
-                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' %}menu-open{% endif %}">
-                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' %}active{% endif %}">
+                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' %}menu-open{% endif %}">
+                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' %}active{% endif %}">
                                 <i class="nav-icon fa-solid fa-address-card"></i>
                                 <p>
                                     Payroll
@@ -103,6 +103,16 @@
                                     <a href="{% url 'payroll_pending' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll_pending' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Check Adjustments</p>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                            <ul class="nav nav-treeview">
+                                {% if request.session.role != 'employee' %}
+                                <li class="nav-item">
+                                    <a href="{% url 'payroll_approved_list' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll_approved_list' %}active{% endif %}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Release Payslips</p>
                                     </a>
                                 </li>
                                 {% endif %}

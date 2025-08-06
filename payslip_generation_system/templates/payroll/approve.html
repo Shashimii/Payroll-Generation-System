@@ -1,0 +1,84 @@
+{% extends "includes/layout.html" %}
+{% block title %}Payroll{% endblock title %}
+{% block layout_content %}
+
+<div class="row">
+    <div class="col-12">
+        <h3><i class="fas fa-exclamation-circle text-warning"></i> Approved Payrolls</h3>
+        <ul class="list-group mt-3" id="pendingBatchList">
+            <li class="list-group-item text-center text-muted">Loading...</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+$(document).ready(function () {
+    $.ajax({
+        url: '/payroll/approve_data',
+        method: 'GET',
+        success: function (response) {
+        const list = $('#pendingBatchList');
+        list.empty();
+
+        if (response.batches.length === 0) {
+            list.append('<li class="list-group-item text-center text-muted">No batches with pending adjustments.</li>');
+        } else {
+            response.batches.forEach(function (batch) {
+            list.append(`
+            <li 
+                class="list-group-item d-flex justify-content-between align-items-center pending-batch-item"
+                data-cutoff="${batch.cutoff}" 
+                data-month="${batch.cutoff_month}" 
+                data-year="${batch.cutoff_year}" 
+                data-batch="${batch.batch_number}"
+            >
+                <div class="batch-text">
+                <span>${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span><br>
+                <strong>Batch ${batch.batch_number}</strong>
+                </div>
+                <span class="badge bg-warning text-dark">Pending</span>
+            </li>
+            `);
+            });
+        }
+        },
+        error: function () {
+        $('#pendingBatchList').html('<li class="list-group-item text-center text-danger">Error loading data.</li>');
+        }
+    });
+});
+
+$('#pendingBatchList').on('click', '.pending-batch-item', function () {
+    const cutoff = $(this).data('cutoff');
+    const month = $(this).data('month');
+    const year = $(this).data('year');
+    const batch = $(this).data('batch');
+
+
+    const url = `/payroll/approve_show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}`;
+    window.location.href = url;
+});
+</script>
+
+<style>
+  .list-group-item {
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .pending-batch-item:hover {
+    background-color: #4caf50 !important;
+    color: white !important;
+  }
+
+  .pending-batch-item:hover .batch-text strong,
+  .pending-batch-item:hover .batch-text small {
+    color: white !important;
+  }
+
+  .list-group-item:last-child {
+    border-bottom: none;
+  }
+</style>
+
+{% endblock %}
