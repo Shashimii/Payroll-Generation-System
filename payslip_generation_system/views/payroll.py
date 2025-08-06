@@ -10,7 +10,7 @@ from decimal import Decimal
 from datetime import datetime
 from payslip_generation_system.models import Employee, BatchAssignment, Adjustment
 from payslip_generation_system.decorators import restrict_roles
-from django.contrib.auth.models import User
+from django.db.models import Case, When, Value, IntegerField
 from django.forms.models import model_to_dict
 
 from django.contrib.auth.decorators import login_required
@@ -81,12 +81,20 @@ def batch_data(request):
     cutoff_month = cutoff_month if cutoff_month else 'January'
     cutoff_year = int(cutoff_year) if cutoff_year else datetime.now().year
 
+
     assignments = BatchAssignment.objects.filter(
         batch_number=batch_number,
         cutoff=cutoff,
         cutoff_month=cutoff_month,
         cutoff_year=cutoff_year
-    ).select_related('employee').order_by('employee__fullname')
+    ).select_related('employee').annotate(
+        late_order=Case(
+            When(late_assigned='NO', then=Value(0)),
+            When(late_assigned='YES', then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField()
+        )
+    ).order_by('late_order', 'employee__fullname')
 
     employees = []
     for assignment in assignments:
