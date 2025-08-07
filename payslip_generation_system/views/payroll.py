@@ -4,6 +4,7 @@ from django.db import connection
 from django.db import transaction
 from django.http import JsonResponse
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, F, Sum, Case, When, Value, IntegerField, Exists, OuterRef
@@ -26,7 +27,8 @@ def index(request):
     years = list(range(2020, 2031))
 
     # Get only distinct batch numbers
-    batches = BatchAssignment.objects.values_list('batch_number', flat=True).distinct().order_by('batch_number')
+    batches = BatchAssignment.objects.exclude(batch_number=0)\
+        .values_list('batch_number', flat=True).distinct().order_by('batch_number')
 
     return render(request, 'payroll/index.html', {
         'months': months,
@@ -79,6 +81,14 @@ def submit(request):
             month=cutoff_month,
             cutoff_year=cutoff_year
         ).update(status="Pending")
+
+        # Remove the ReturnRemark if it exists
+        ReturnRemark.objects.filter(
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            batch_number=batch_number
+        ).delete()
 
         return JsonResponse({'status': 'OK'}, status=200)
 
@@ -244,6 +254,37 @@ def batch_data(request):
         )
     ).order_by('late_order', 'employee__fullname')
 
+    has_pending_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Pending"
+    ).exists()
+
+    has_approved_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Approved"
+    ).exists()
+
+    has_credited_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Credited"
+    ).exists()
+
+    remark = ReturnRemark.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        cutoff_month=cutoff_month,
+        cutoff_year=cutoff_year
+    ).values_list('remark', flat=True).first()
+
     employees = []
 
     for assignment in assignments:
@@ -344,27 +385,39 @@ def batch_data(request):
         'cutoff_month': cutoff_month,
         'cutoff_year': cutoff_year,
         'batch_number': batch_number,
+        'has_pending_adjustments': has_pending_adjustments,
+        'has_approved_adjustments': has_approved_adjustments,
+        'has_credited_adjustments': has_credited_adjustments,
+        'remark': remark or "", 
     })
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def batch_create(request, batch_size=15):
     employees = Employee.objects.order_by('fullname')
-    cutoff=request.POST.get('cutoff')
-    cutoff_month=request.POST.get('cutoff_month')
-    cutoff_year=request.POST.get('cutoff_year')
+    cutoff = request.POST.get('cutoff')
+    cutoff_month = request.POST.get('cutoff_month')
+    cutoff_year = request.POST.get('cutoff_year')
     batch_number = 1
 
     if not cutoff or not cutoff_month or not cutoff_year:
         return JsonResponse({'error': 'Missing cutoff, month, or year.'}, status=400)
 
+    # Check if batches already exist for the given period
     if BatchAssignment.objects.filter(
         cutoff=cutoff,
         cutoff_month=cutoff_month,
         cutoff_year=cutoff_year
     ).exists():
-        return JsonResponse({'error': f'Batches already exist for {cutoff_month} {cutoff} cutoff {cutoff_year}.'}, status=400)
+        return JsonResponse({
+            'error': f'Batches already exist for {cutoff_month} {cutoff}, {cutoff_year}.'
+        }, status=400)
 
+    # Check if there are employees to assign
+    if not employees.exists():
+        return JsonResponse({'error': 'No employees found to create batches.'}, status=400)
+
+    # Create batches
     for index, employee in enumerate(employees, start=1):
         BatchAssignment.objects.create(
             employee=employee,
@@ -377,7 +430,9 @@ def batch_create(request, batch_size=15):
         if index % batch_size == 0:
             batch_number += 1
 
-    return JsonResponse({'message': f'Batches successfully created for {cutoff} {cutoff_year} {cutoff_year}.'})
+    return JsonResponse({
+        'message': f'Batches successfully created for {cutoff_month} {cutoff}, {cutoff_year}.'
+    })
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
@@ -623,28 +678,93 @@ def batch_unremove(request):
 def adjustment_create(request, emp_id):
     if request.method == 'POST':
         # Form
-        id = emp_id
+        employee = get_object_or_404(Employee, id=emp_id)
+
         late = request.POST.get('late')
         absence = request.POST.get('absence')
         income_name = request.POST.get('income_name')
-        income_ammount = request.POST.get('income_ammount')
+        income_amount = request.POST.get('income_amount')
         deduction_name = request.POST.get('deduction_name')
-        deduction_ammount = request.POST.get('deduction_ammount')
+        deduction_amount = request.POST.get('deduction_amount')
+        late_id = request.POST.get('late_id')
+        absence_id = request.POST.get('absence_id')
+        income_id = request.POST.get('income_id')
+        deduction_id = request.POST.get('deduction_id')
+        deleted_ids = request.POST.getlist('deleted_ids[]')
 
-        # Static
-        employee = get_object_or_404(Employee, id=id)
         cutoff = request.POST.get('cutoff')
         cutoff_month = request.POST.get('cutoff_month')
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
+        remarks = request.POST.get('remarks', '')
 
-        ## Conditions here if there is this data
-        ## Make this adjustment and insert to database
-        ## if not
-        ## Skip it dont make that empty adjustment
-        ## Check the next one
-        ## then status of every adjustment is Pending
+        # ## Conditions here if there is this data
+        # ## Make this adjustment and insert to database
+        # ## if not
+        # ## Skip it dont make that empty adjustment
+        # ## Check the next one
+        # ## then status of every adjustment is Pending
 
+        def parse_decimal(val):
+            try:
+                return Decimal(val)
+            except:
+                return Decimal('0.00')
+
+        if deleted_ids:
+            try:
+                Adjustment.objects.filter(id__in=deleted_ids).delete()
+            except (ValueError, ValidationError):
+                pass 
+
+        def save_adjustment(adj_id, name, adj_type, amount, details=''):
+            if not name or amount in [None, '', 'null']:
+                return
+
+            amount = parse_decimal(amount)
+
+            if adj_id:
+                try:
+                    adjustment = Adjustment.objects.get(id=adj_id)
+                    adjustment.name = name
+                    adjustment.type = adj_type
+                    adjustment.amount = amount
+                    adjustment.details = details
+                    adjustment.status = 'Waiting'
+                    adjustment.remarks = remarks
+                    adjustment.save()
+                except Adjustment.DoesNotExist:
+                    # If ID is invalid (not found), fallback to create new
+                    Adjustment.objects.create(
+                        employee=employee,
+                        name=name,
+                        type=adj_type,
+                        amount=amount,
+                        details=details,
+                        status='Waiting',
+                        remarks=remarks,
+                        cutoff=cutoff,
+                        month=cutoff_month,
+                        cutoff_year=cutoff_year,
+                        batch_number=batch_number
+                    )
+            else:
+                # Create new if no ID provided
+                Adjustment.objects.create(
+                    employee=employee,
+                    name=name,
+                    type=adj_type,
+                    amount=amount,
+                    details=details,
+                    status='Waiting',
+                    remarks=remarks,
+                    cutoff=cutoff,
+                    month=cutoff_month,
+                    cutoff_year=cutoff_year,
+                    batch_number=batch_number
+                )
+
+        # Save Late
         if late:
             try:
                 minutes_late = float(late)
@@ -654,20 +774,9 @@ def adjustment_create(request, emp_id):
             except Exception:
                 late_amount = Decimal('0.00')
 
-            Adjustment.objects.create(
-                employee=employee,
-                name="Late",
-                type="Deduction",
-                amount=late_amount,
-                details=late,
-                month=cutoff_month,
-                cutoff=cutoff,
-                status="Waiting",
-                remarks=request.POST.get('remarks', ''),
-                cutoff_year=cutoff_year,
-                batch_number=batch_number,
-            )
+            save_adjustment(late_id, 'Late', 'Deduction', late_amount, details=late)
 
+        # Save Absent
         if absence:
             try:
                 minutes_absent = float(absence) * 480
@@ -677,50 +786,15 @@ def adjustment_create(request, emp_id):
             except Exception:
                 absent_amount = Decimal('0.00')
 
-            Adjustment.objects.create(
-                employee=employee,
-                name="Absent",
-                type="Deduction",
-                amount=absent_amount,
-                details=absence,
-                month=cutoff_month,
-                cutoff=cutoff,
-                status="Waiting",
-                remarks=request.POST.get('remarks', ''),
-                cutoff_year=cutoff_year,
-                batch_number=batch_number,
-            )
+            save_adjustment(absence_id, 'Absent', 'Deduction', absent_amount, details=absence)
 
-        if income_name and income_ammount:
-            Adjustment.objects.create(
-                employee=employee,
-                name=income_name,
-                type="Income",
-                amount=income_ammount,
-                details="",
-                month=cutoff_month,
-                cutoff=cutoff,
-                status="Waiting",
-                remarks=request.POST.get('remarks', ''),
-                cutoff_year=cutoff_year,
-                batch_number=batch_number,
-            )
+        # Save Income
+        if income_name and income_amount:
+            save_adjustment(income_id, income_name, 'Income', income_amount)
 
-        if deduction_name and deduction_ammount:
-            Adjustment.objects.create(
-                employee=employee,
-                name=deduction_name,
-                type="Deduction",
-                amount=deduction_ammount,
-                details="",
-                month=cutoff_month,
-                cutoff=cutoff,
-                status="Waiting",
-                remarks=request.POST.get('remarks', ''),
-                cutoff_year=cutoff_year,
-                batch_number=batch_number,
-            )
-
+        # Save Deduction
+        if deduction_name and deduction_amount:
+            save_adjustment(deduction_id, deduction_name, 'Deduction', deduction_amount)
 
         return JsonResponse({'status': 'OK'}, status=200)
 

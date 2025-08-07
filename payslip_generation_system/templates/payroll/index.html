@@ -99,6 +99,7 @@
   <div class="card-body">
     <h2>General Payroll DENR-NCR</h2>
     <h5 id="payrollCutoffInfo" class="text-muted"></h5>
+    <div id="payrollRemarkContainer" class="mb-3"></div>
       <table class="table table-striped table-bordered mt-3 text-sm">
           <thead class="table-dark text-center align-middle">
             <tr>
@@ -119,10 +120,8 @@
 
   </div>
 
-  <div class="card-footer text-right">
-    <button class="btn btn-success" id="submitAdjustment">
-      <i class="fas fa-plus-circle mr-1"></i> Submit Adjustments
-    </button>
+  <div class="card-footer text-right" id="payrollSubmitBtnContainer">
+
   </div>
 </div>
 
@@ -158,117 +157,6 @@
 
 
 <!-- Modal -->
-<div class="modal fade" id="showModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-xl" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Employee Payroll Adjustments</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-
-        <div class="card card-outline card-success">
-          <div class="card-header">
-            <h3 class="card-title mb-0">Make Adjustments | Employee information</h3>
-          </div>
-          <div class="card-body">
-              <div class="mb-3">
-                  <strong>Name:</strong> 
-                  <span class="modalFullname"></span>
-              </div>
-              <div class="mb-3">
-                  <strong>Position:</strong> 
-                  <span class="modalPosition"></span>
-              </div>
-              <div>
-                  <strong>Salary:</strong>
-                  <span class="text-success font-weight-bold modalSalary">₱</span>
-              </div>
-              <input type="hidden" id="modalAdjustmentCutoff">
-              <input type="hidden" id="modalAdjustmentCutoffMonth">
-              <input type="hidden" id="modalAdjustmentCutoffYear">
-              <input type="hidden" id="modalAdjustmentBatchNumber">
-              <input type="hidden" id="modalAdjustmentEmployeeId">
-          </div>
-        </div>
-        
-        <div class="card card-outline card-success">
-          <div class="card-header">
-            <h3 class="card-title mb-0">Make Adjustments | Absence/Late</h3>
-            <div class="card-tools">
-              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
-            </div>
-          </div>
-          <div class="card-body">
-            <form id="payrollAdjustmentAbsenceLate" class="row">
-              <div class="form-group col-md-6">
-                <label for="cutoff">Absence (No. of Days)</label>
-                <input type="number" class="form-control" id="absence" name="absence" placeholder="number of days absent">
-              </div>
-
-              <div class="form-group col-md-6">
-                <label for="cutoff">Late (No. of Minutes)</label>
-                <input type="number" class="form-control" id="late" name="late"  placeholder="number of minutes late">
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div class="card card-outline card-success">
-          <div class="card-header">
-            <h3 class="card-title mb-0">Make Adjustments | Income</h3>
-            <div class="card-tools">
-              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
-            </div>
-          </div>
-          <div class="card-body">
-            <form id="payrollAdjustmentIncome" class="row">
-              <div class="form-group col-md-6">
-                <label for="income_name">Income Name</label>
-                <input type="text" class="form-control" id="income_name" name="income_name" placeholder="income name">
-              </div>
-              <div class="form-group col-md-6">
-                <label for="income_ammount">Income Ammount</label>
-                <input type="text" class="form-control" id="income_ammount" name="income_ammount" placeholder="income ammount">
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div class="card card-outline card-success">
-          <div class="card-header">
-            <h3 class="card-title mb-0">Make Adjustments | Deduction</h3>
-            <div class="card-tools">
-              <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
-            </div>
-          </div>
-          <div class="card-body">
-            <form id="payrollAdjustmentDeduction" class="row">
-              <div class="form-group col-md-6">
-                <label for="deduction_name">Deduction Name</label>
-                <input type="text" class="form-control" id="deduction_name" name="deduction_name" placeholder="deduction name">
-              </div>
-
-              <div class="form-group col-md-6">
-                <label for="deduction_ammount">Deduction Ammount</label>
-                <input type="number" class="form-control" id="deduction_ammount" name="deduction_ammount"  placeholder="deduction ammount">
-              </div>
-            </form>
-          </div>
-          {% if request.session.role|lower != 'checker' and request.session.role|lower != 'employee' and request.session.role|lower != 'accounting' %}
-          <div class="card-footer text-right">
-            <button type="button" id="addAdjustment" class="btn btn-success mb-3">
-              <i class="fas fa-plus-circle"></i> Add Adjustment
-            </button>
-          </div>
-          {% endif %}
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal fade" id="showAdjustmentModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
@@ -314,6 +202,10 @@
             <!-- Adjustments for this employee Here -->
           </div>
           <div class="card-footer">
+            <button id="addAdjLateRowBtn" class="btn btn-info mt-2">Add Late</button>
+            <button id="addAdjAbsentRowBtn" class="btn btn-info mt-2">Add Absent</button>
+            <button id="addAdjDeductionRowBtn" class="btn btn-info mt-2">Add Deduction</button>
+            <button id="addAdjIncomeRowBtn" class="btn btn-info mt-2">Add Income</button>
             <button class="btn btn-primary mt-2" id="saveAdjustmentsBtn">Save Adjustments</button>
           </div>
         </div>
@@ -323,6 +215,13 @@
 </div>
 
 <script>
+// Varaibles
+let deletedAdjustmentIds = [];
+let late_edit_id = null;
+let absence_edit_id = null;
+let income_edit_id = null;
+let deduction_edit_id = null;
+
 // onLoad
 $(document).ready(function () {
   sessionStorageLoad();
@@ -333,42 +232,63 @@ $(document).ready(function () {
 
   // Unrefactored
   $(document).on('click', '#saveAdjustmentsBtn', function () {
-    const adjustments = [];
+    const employeeId = $('#modalShowAdjustmentEmployeeId').val();
 
-    $('#adjustmentTable tbody tr').each(function () {
-      const row = $(this);
-      const id = row.data('id');
+    const data = {
+      // Employee
+      id: $('#modalShowAdjustmentEmployeeId').val(),
+      // Absence/Late
+      absence: $('#absence').val(),
+      late: $('#late').val(),
 
-      const name = row.find('.adj-name').val();
-      const type = row.find('.adj-type').val();
-      const amount = row.find('.adj-amount').val();
+      // Income Adjustment
+      income_name: $('#income_name').val(),
+      income_amount: $('#income_amount').val(),
 
-      if (id) {  // Ensure id is not null
-        adjustments.push({ id, name, type, amount });
-      }
-    });
+      // Deduction Adjustment
+      deduction_name: $('#deduction_name').val(),
+      deduction_amount: $('#deduction_amount').val(),
 
-    if (adjustments.length === 0) {
-      alert("No adjustments to save.");
-      return;
-    }
+      // Cutoff info
+      cutoff: $('#modalShowAdjustmentCutoff').val(),
+      cutoff_month: $('#modalShowAdjustmentCutoffMonth').val(),
+      cutoff_year: $('#modalShowAdjustmentCutoffYear').val(),
+      batch_number: $('#modalShowAdjustmentBatchNumber').val(),
 
-    // Debug log
-    console.log("Sending adjustments:", adjustments);
+      // Deleted Adjustments id
+      deleted_ids: deletedAdjustmentIds,
+      // Edit Adjustments id
+      late_id: late_edit_id,
+      absence_id: absence_edit_id,
+      income_id: income_edit_id,
+      deduction_id: deduction_edit_id,
 
-    // Send to server
+      csrfmiddlewaretoken: '{{ csrf_token }}',
+    };
+
     $.ajax({
-      url: '/payroll/adjustments/update/',
-      method: 'POST',
-      data: {
-        adjustments: JSON.stringify(adjustments),
-        csrfmiddlewaretoken: '{{ csrf_token }}'
+      type: 'POST',
+      url: `/payroll/adjustment/create/${employeeId}/`,
+      data: data,
+      success: function (response) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Adjustment saved successfully.',
+        confirmButtonColor: '#28a745'
+      }).then(() => {
+        location.reload();
+      });
+        deletedAdjustmentIds = [];
       },
-      success: function (res) {
-        alert('Adjustments updated successfully!');
-      },
-      error: function () {
-        alert('Failed to update adjustments.');
+      error: function (xhr) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to submit adjustment.',
+          confirmButtonColor: '#dc3545'
+        });
+        console.log(xhr.responseText);
       }
     });
   });
@@ -389,23 +309,34 @@ $('#generateBatchForm').on('submit', function (e) {
         csrfmiddlewaretoken: '{{ csrf_token }}'
     };
 
-    $.ajax({
-        type: 'POST',
-        url: '{% url "payroll_batch_create" %}',
-        data: data,
-        success: function (response) {
-            $('#response').html('<p style="color: green;">' + response.message + '</p>');
-        },
-        error: function (xhr) {
-            $('#response').html('<p style="color: red;">' + xhr.responseJSON.error + '</p>');
-        }
-    });
+  $.ajax({
+      type: 'POST',
+      url: '{% url "payroll_batch_create" %}',
+      data: data,
+      success: function (response) {
+          Swal.fire({
+              icon: 'success',
+              title: 'Success!',
+              text: response.message,
+              confirmButtonColor: '#28a745'
+          });
+      },
+      error: function (xhr) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Error!',
+              text: xhr.responseJSON?.error || 'Something went wrong.',
+              confirmButtonColor: '#dc3545'
+          });
+      }
+  });
 });
 
 // onChange
 $('#batch_number, #cutoff_period, #cutoff_month, #cutoff_year').on('change', function () {
   sessionStorageSave();
   loadBatchData();
+  loadRemovedEmployeeData();
 });
 
 // onclick
@@ -428,10 +359,6 @@ $(document).on('click', '.show_adjustments', function () {
 
   showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
 });
-
-$(document).on('click', '#addAdjustment', function () {
-  createAdjustment();
-})
 
 $(document).on('click', '#submitAdjustment', function () {
   const cutoff = $(this).attr('data-cutoff');
@@ -485,6 +412,38 @@ $(document).on('click', '.unremove_employee', function () {
   const batchNumber = $(this).data('batch');
 
   unremoveEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
+});
+
+$('#addAdjLateRowBtn').on('click', () => {
+  appendAdjustmentRow('Late', 'Deduction', false, 'addAdjLateRowBtn');
+});
+
+$('#addAdjAbsentRowBtn').on('click', () => {
+  appendAdjustmentRow('Absent', 'Deduction', false, 'addAdjAbsentRowBtn');
+});
+
+$('#addAdjDeductionRowBtn').on('click', () => {
+  appendAdjustmentRow('Other Deduction', 'Deduction', true, 'addAdjDeductionRowBtn');
+});
+
+$('#addAdjIncomeRowBtn').on('click', () => {
+  appendAdjustmentRow('Other Income', 'Income', true, 'addAdjIncomeRowBtn');
+});
+
+$(document).on('click', '.removeRowBtn', function () {
+  const row = $(this).closest('tr');
+  const adjustmentId = row.data('id');
+
+  if (adjustmentId) {
+    deletedAdjustmentIds.push(adjustmentId);
+  }
+
+  const buttonId = row.data('source-btn');
+  if (buttonId) {
+    $(`#${buttonId}`).prop('disabled', false);
+  }
+
+  row.remove();
 });
 
 // Functions
@@ -563,7 +522,7 @@ function loadBatchData () {
                       >
                         Unremove
                       </button>`;
-                  } else if (emp.removed === 'NO') {
+                  } else if (emp.removed === 'NO' && emp.late_assigned === 'NO') {
                     removeButton = `
                     <button class='btn btn-danger btn-sm remove_employee' 
                       data-id='${emp.id}'
@@ -586,15 +545,6 @@ function loadBatchData () {
                           <td>${emp.tax_declaration === 'yes' ? 'YES' : 'NO'}</td>
                           <td class="${emp.has_adjustments ? 'text-green' : 'text-red'}">${emp.has_adjustments ? 'YES' : 'NO'}</td>
                           <td>
-                            <button class='btn btn-info btn-sm show_employee' 
-                              data-id='${emp.id}'
-                              data-cutoff='${response.cutoff}'
-                              data-month='${response.cutoff_month}'
-                              data-year='${response.cutoff_year}'
-                              data-batch='${response.batch_number}'
-                            >
-                              Make Adjustments
-                            </button> 
                             <button class='btn btn-secondary btn-sm show_adjustments' 
                               data-id='${emp.id}'
                               data-cutoff='${response.cutoff}'
@@ -602,7 +552,7 @@ function loadBatchData () {
                               data-year='${response.cutoff_year}'
                               data-batch='${response.batch_number}'
                             >
-                              Show Adjustments
+                              Adjustments
                             </button> 
                             ${lateButton}
                             ${unlateButton}
@@ -612,8 +562,32 @@ function loadBatchData () {
                       </tr>
                   `);
               });
+
+              let submitButtonHtml = `
+              <button class="btn btn-success" id="submitAdjustment"
+                data-cutoff="${response.cutoff}" 
+                data-month="${response.cutoff_month}" 
+                data-year="${response.cutoff_year}" 
+                data-batch="${response.batch_number}"
+                ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either pending, approved, or credited."' : ''}
+              >
+                <i class="fas fa-plus-circle mr-1"></i> Submit Adjustments
+              </button>
+            `;
+            $('#payrollSubmitBtnContainer').html(submitButtonHtml);
+
           } else {
-              tbody.append('<tr><td colspan="5" class="text-muted text-center">Select the Payroll Month, Year, Cutoff Period, Batch Number or Generate the template first.</td></tr>');
+              tbody.append('<tr><td colspan="8" class="text-muted text-center">Select the Payroll Month, Year, Cutoff Period, Batch Number or Generate the template first.</td></tr>');
+              $('#payrollSubmitBtnContainer').empty();
+          }
+          if (response.remark) {
+            $('#payrollRemarkContainer').html(`
+              <div class="alert alert-warning" role="alert">
+                <strong>Returned Remark:</strong> ${response.remark}
+              </div>
+            `);
+          } else {
+            $('#payrollRemarkContainer').empty();
           }
       },
       error: function () {
@@ -622,34 +596,15 @@ function loadBatchData () {
   })
 }
 
-function showEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
-  $.ajax({
-    url: `/employee/show/${employeeId}/`,
-    method: 'GET',
-    success: function (response) {
-      const emp = response.employee;
-      $('#modalAdjustmentCutoff').val(cutoff);
-      $('#modalAdjustmentCutoffMonth').val(cutoffMonth);
-      $('#modalAdjustmentCutoffYear').val(cutoffYear);
-      $('#modalAdjustmentBatchNumber').val(batchNumber);
-      $('#modalAdjustmentEmployeeId').val(employeeId);
-      $('.modalFullname').text(emp.fullname);
-      $('.modalPosition').text(emp.position);
-      $('.modalSalary').text(emp.salary);
-
-      // Add cutoff info
-      $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
-
-      $('#showModal').modal('show');
-    },
-    error: function () {
-      alert('Failed to load employee data.');
-    }
-  });
-}
-
 function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
-  // First: Get Employee Info
+  // Clear removed ids first
+  deletedAdjustmentIds = [];
+  late_edit_id = null;
+  absence_edit_id = null;
+  income_edit_id = null;
+  deduction_edit_id = null;
+
+  // Get Employee Info
   $.ajax({
     url: `/employee/show/${employeeId}/`,
     method: 'GET',
@@ -681,41 +636,117 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
           const container = $('#showAdjustmentModal .card-body').last();
           container.empty();
 
-          if (!res.adjustments || res.adjustments.length === 0) {
-            container.html('<p class="text-muted">No adjustments found.</p>');
-            return;
-          }
-
           let html = `<table id="adjustmentTable" class="table table-sm table-bordered">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>`;
-                
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Minutes/Days/Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+          if (!res.adjustments || res.adjustments.length === 0) {
+            // No adjustments: Enable all buttons
+            $('#addAdjLateRowBtn').prop('disabled', false);
+            $('#addAdjAbsentRowBtn').prop('disabled', false);
+            $('#addAdjDeductionRowBtn').prop('disabled', false);
+            $('#addAdjIncomeRowBtn').prop('disabled', false);
+          } else {
             res.adjustments.forEach(adj => {
+              const name = adj.name.toLowerCase();
+              const type = adj.type;
+              const isLate = name === 'late';
+              const isAbsent = name === 'absent';
+              const isFixedName = isLate || isAbsent;
+
+              const disableTypeSelect = true;
+              const disableNameField = isFixedName;
+
+              // Disable Button
+              if (isLate) $('#addAdjLateRowBtn').prop('disabled', true);
+              if (isAbsent) $('#addAdjAbsentRowBtn').prop('disabled', true);
+              if (type === 'Deduction') $('#addAdjDeductionRowBtn').prop('disabled', true);
+              if (type === 'Income') $('#addAdjIncomeRowBtn').prop('disabled', true);
+
+              if (isLate) {
+                late_edit_id = adj.id;
+              } else if (isAbsent) {
+                absence_edit_id = adj.id;
+              } else if (type === 'Income') {
+                income_edit_id = adj.id;
+              } else if (type === 'Deduction') {
+                deduction_edit_id = adj.id;
+              }
+
+              // input type for name
+              let inputId = '';
+              if (!isLate && !isAbsent) {
+                if (type === 'Deduction') {
+                  inputId = 'deduction_name';
+                } else if (type === 'Income') {
+                  inputId = 'income_name';
+                }
+              }
+
+              const inputFieldName = `
+                <input type="text"
+                      class="form-control form-control-sm adj-name"
+                      value="${adj.name}"
+                      ${disableNameField ? 'readonly' : ''}
+                      ${inputId ? `id="${inputId}"` : ''}>
+              `;
+
+              // input type for minutes/day/amount
+              let inputFieldMDA = '';
+              if (isLate) {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="late" value="${adj.details || ''}">`;
+              } else if (isAbsent) {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="absence" value="${adj.details || ''}">`;
+              } else if (type === 'Deduction') {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="deduction_amount" value="${parseFloat(adj.amount).toFixed(2)}">`;
+              } else if (type === 'Income') {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="income_amount" value="${parseFloat(adj.amount).toFixed(2)}">`;
+              }
+
+
               html += `
-                <tr data-id="${adj.id}">
-                  <td><input type="text" class="form-control form-control-sm adj-name" value="${adj.name}"></td>
+                <tr data-id="${adj.id}" data-source-btn="${
+                  isLate ? 'addAdjLateRowBtn' :
+                  isAbsent ? 'addAdjAbsentRowBtn' :
+                  type === 'Deduction' ? 'addAdjDeductionRowBtn' :
+                  type === 'Income' ? 'addAdjIncomeRowBtn' : ''
+                }"> 
                   <td>
-                    <select class="form-select form-select-sm adj-type">
-                      <option value="Income" ${adj.type === 'Income' ? 'selected' : ''}>Income</option>
-                      <option value="Deduction" ${adj.type === 'Deduction' ? 'selected' : ''}>Deduction</option>
-                    </select>
+                    ${inputFieldName}
                   </td>
                   <td>
-                    <input type="number" class="form-control form-control-sm adj-amount" value="${parseFloat(adj.amount).toFixed(2)}">
+                    ${
+                      disableTypeSelect
+                        ? `<input type="text" class="form-control form-control-sm" value="${type}" readonly>
+                          <input type="hidden" class="adj-type" value="${type}">`
+                        : `<select class="form-select form-select-sm adj-type">
+                            <option value="Income" ${type === 'Income' ? 'selected' : ''}>Income</option>
+                            <option value="Deduction" ${type === 'Deduction' ? 'selected' : ''}>Deduction</option>
+                          </select>`
+                    }
+                  </td>
+                  <td>
+                    ${inputFieldMDA}
+                  </td>
+                  <td>
+                    <button class="btn btn-danger btn-sm removeRowBtn" type="button">Remove</button>
                   </td>
                 </tr>
               `;
-          });
+            });
+          }
 
           html += `</tbody></table>`;
           container.html(html);
         },
+
         error: function () {
           alert('Failed to load adjustments.');
         }
@@ -742,7 +773,12 @@ function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
       batch_number: batchNumber,
     },
     success: function (response) {
-      alert('Employee Marked as Late moved on the last batch.');
+      Swal.fire({
+        icon: 'success',
+        title: 'Marked as late',
+        text: 'Employee Marked as Late moved on the last batch.',
+        confirmButtonColor: '#28a745'
+      });
       loadBatchData();
     },
     error: function () {
@@ -763,7 +799,12 @@ function unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
       batch_number: batchNumber,
     },
     success: function (response) {
-      alert('Employee Marked as Late moved on the last batch.');
+    Swal.fire({
+      icon: 'success',
+      title: 'Not Late',
+      text: 'Employee moved back to its previous batch',
+      confirmButtonColor: '#28a745'
+    });
       loadBatchData();
     },
     error: function () {
@@ -784,8 +825,14 @@ function removeEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
       batch_number: batchNumber,
     },
     success: function (response) {
-      alert('Employee Removed.');
+      Swal.fire({
+        icon: 'success',
+        title: 'Removed',
+        text: 'Employee removed successfully.',
+        confirmButtonColor: '#28a745'
+      });
       loadBatchData();
+      loadRemovedEmployeeData();
     },
     error: function () {
       alert('Failed to load employee data.');
@@ -805,8 +852,14 @@ function unremoveEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumb
       batch_number: batchNumber,
     },
     success: function (response) {
-      alert('Employee Restored.');
+    Swal.fire({
+      icon: 'success',
+      title: 'Restored',
+      text: 'Employee moved back to its previous batch',
+      confirmButtonColor: '#28a745'
+    });
       loadBatchData();
+      loadRemovedEmployeeData();
     },
     error: function () {
       alert('Failed to load employee data.');
@@ -871,7 +924,7 @@ function loadRemovedEmployeeData () {
                   `);
               });
           } else {
-              tbody.append('<tr><td colspan="5" class="text-muted text-center">Select the Payroll Month, Year, Cutoff Period, Batch Number or Generate the template first.</td></tr>');
+              tbody.append('<tr><td colspan="8" class="text-muted text-center">Removed Employee for the Current Payroll Period will be moved here.</td></tr>');
           }
       },
       error: function () {
@@ -880,50 +933,62 @@ function loadRemovedEmployeeData () {
   })
 }
 
-function createAdjustment() {
-  const employeeId = $('#modalAdjustmentEmployeeId').val();
+function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
+  const isLate = name.toLowerCase() === 'late';
+  const isAbsent = name.toLowerCase() === 'absent';
+  const isFixedName = isLate || isAbsent;
 
-  const data = {
-    // Employee
-    id: $('#modalAdjustmentEmployeeId').val(),
-    // Absence/Late
-    absence: $('#absence').val(),
-    late: $('#late').val(),
-
-    // Income Adjustment
-    income_name: $('#income_name').val(),
-    income_ammount: $('#income_ammount').val(),
-
-    // Deduction Adjustment
-    deduction_name: $('#deduction_name').val(),
-    deduction_ammount: $('#deduction_ammount').val(),
-
-    // Cutoff info
-    cutoff: $('#modalAdjustmentCutoff').val(),
-    cutoff_month: $('#modalAdjustmentCutoffMonth').val(),
-    cutoff_year: $('#modalAdjustmentCutoffYear').val(),
-    batch_number: $('#modalAdjustmentBatchNumber').val(),
-
-    csrfmiddlewaretoken: '{{ csrf_token }}',
-  };
-
-  $.ajax({
-    type: 'POST',
-    url: `/payroll/adjustment/create/${employeeId}/`,
-    data: data,
-    success: function (response) {
-      alert('Adjustment submitted successfully.');
-    },
-    error: function (xhr) {
-      alert('Failed to submit adjustment.');
-      console.log(xhr.responseText);
+  let inputId = '';
+  if (!isLate && !isAbsent) {
+    if (type === 'Deduction') {
+      inputId = 'deduction_name';
+    } else if (type === 'Income') {
+      inputId = 'income_name';
     }
-  });
+  }
+
+  const inputFieldName = `
+    <input type="text"
+           class="form-control form-control-sm adj-name"
+           value="${name}"
+           ${isNameEditable ? '' : 'readonly'}
+           ${inputId ? `id="${inputId}"` : ''}>
+  `;
+
+  let inputFieldMDA = '';
+  if (isLate) {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="late" value="0">`;
+  } else if (isAbsent) {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="absence" value="0">`;
+  } else if (type === 'Deduction') {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="deduction_amount" value="0">`;
+  } else if (type === 'Income') {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="income_amount" value="0">`;
+  }
+
+  const typeField = `
+    <input type="text" class="form-control form-control-sm" value="${type}" readonly>
+    <input type="hidden" class="adj-type" value="${type}">
+  `;
+
+  const row = $(`
+    <tr data-source-btn="${buttonId}">
+      <td>${inputFieldName}</td>
+      <td>${typeField}</td>
+      <td>${inputFieldMDA}</td>
+      <td>
+        <button class="btn btn-danger btn-sm removeRowBtn" type="button">Remove</button>
+      </td>
+    </tr>
+  `);
+
+  $('#adjustmentTable tbody').append(row);
+  $(`#${buttonId}`).prop('disabled', true);
 }
 
 function submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber) {
   $.ajax({
-    url: '{% url "payroll_submit" %}', 
+    url: '{% url "payroll_submit" %}',
     method: 'POST',
     data: {
       batch_number: batchNumber,
@@ -932,12 +997,35 @@ function submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber) {
       cutoff_year: cutoffYear,
     },
     success: function (response) {
-      alert('Payroll Submitted.');
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: response.message || "Payroll Submitted Successfully.",
+      }).then(function () {
+        location.reload();
+      });
     },
-    error: function () {
-      alert('Error Submitting Payroll.');
-    }
-  })
+    error: function (xhr) {
+      let response = xhr.responseJSON;
+
+      // If batch is incomplete
+      if (xhr.status === 400 && response?.status === "incomplete") {
+        let names = response.missing_employees.map(emp => `• ${emp.fullname}`).join('\n');
+        Swal.fire({
+          icon: "warning",
+          title: "Incomplete Adjustments",
+          html: `<p>${response.message}</p><pre style="text-align: left;">${names}</pre>`,
+        });
+      } else {
+        // Other errors
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: response?.message || "An unexpected error occurred.",
+        });
+      }
+    },
+  });
 }
 
 function sessionStorageSave() {

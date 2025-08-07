@@ -145,8 +145,14 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.status === "OK") {
                     $('#remarksModal').modal('hide'); // hide the modal
-                    alert('Payroll returned with remarks.');
-                    location.href = "{% url 'payroll_pending' %}";
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Returned',
+                        text: 'Payroll returned with remarks.',
+                        confirmButtonColor: '#ffc107'
+                    }).then(() => {
+                        location.href = "{% url 'payroll_pending' %}";
+                    });
                 }
             },
             error: function () {
@@ -165,14 +171,18 @@ $('#approvePayrollBtn').click(function () {
             cutoff_month: $('#cutoff_month').val(),
             cutoff_year: $('#cutoff_year').val(),
             batch_number: $('#batch_number').val(),
-            csrfmiddlewaretoken: '{{ csrf_token }}'  // required for POST
+            csrfmiddlewaretoken: '{{ csrf_token }}'
         },
         success: function (res) {
             if (res.status === 'OK') {
-                alert('Payroll approved successfully!');
-                location.reload();
-            } else {
-                alert('Failed to approve payroll.');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Approved!',
+                    text: 'Payroll approved successfully!',
+                    confirmButtonColor: '#28a745' 
+                }).then(() => {
+                    location.href = "{% url 'payroll_pending' %}";
+                });
             }
         },
         error: function () {
