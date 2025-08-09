@@ -158,6 +158,9 @@
           <div class="card-footer">
             <button id="addAdjLateRowBtn" class="btn btn-info mt-2">Add Late</button>
             <button id="addAdjAbsentRowBtn" class="btn btn-info mt-2">Add Absent</button>
+            <button id="addAdjPhilhealthRowBtn" class="btn btn-info mt-2">Add Philhealth</button>
+            <button id="addAdjSSSRowBtn" class="btn btn-info mt-2">Add SSS</button>
+            <button id="addAdjTAXRowBtn" class="btn btn-info mt-2">Add TAX</button>
             <button id="addAdjDeductionRowBtn" class="btn btn-info mt-2">Add Deduction</button>
             <button id="addAdjIncomeRowBtn" class="btn btn-info mt-2">Add Income</button>
             <button class="btn btn-primary mt-2" id="saveAdjustmentsBtn">Save Adjustments</button>
@@ -173,6 +176,9 @@
 let deletedAdjustmentIds = [];
 let late_edit_id = null;
 let absence_edit_id = null;
+let philhealth_edit_id = null;
+let sss_edit_id = null;
+let tax_edit_id = null;
 
 // onLoad
 $(document).ready(function () {
@@ -218,6 +224,10 @@ $(document).ready(function () {
       // Absence/Late
       absence: $('#absence').val(),
       late: $('#late').val(),
+      // Philhealth/SSS/TAX
+      philhealth: $('#philhealth').val(),
+      sss: $('#sss').val(),
+      tax: $('#tax').val(),
 
       // Multiple Income Adjustments
       incomes: JSON.stringify(incomes),
@@ -235,6 +245,9 @@ $(document).ready(function () {
       // Edit Adjustments id
       late_id: late_edit_id,
       absence_id: absence_edit_id,
+      philhealth_id: philhealth_edit_id,
+      sss_id: sss_edit_id,
+      tax_id: tax_edit_id,
 
       csrfmiddlewaretoken: '{{ csrf_token }}',
     };
@@ -395,6 +408,18 @@ $('#addAdjLateRowBtn').on('click', () => {
 
 $('#addAdjAbsentRowBtn').on('click', () => {
   appendAdjustmentRow('Absent', 'Deduction', false, 'addAdjAbsentRowBtn');
+});
+
+$('#addAdjPhilhealthRowBtn').on('click', () => {
+  appendAdjustmentRow('Philhealth', 'Deduction', false, 'addAdjPhilhealthRowBtn');
+});
+
+$('#addAdjSSSRowBtn').on('click', () => {
+  appendAdjustmentRow('SSS', 'Deduction', false, 'addAdjSSSRowBtn');
+});
+
+$('#addAdjTAXRowBtn').on('click', () => {
+  appendAdjustmentRow('TAX', 'Deduction', false, 'addAdjTAXRowBtn');
 });
 
 $('#addAdjDeductionRowBtn').on('click', () => {
@@ -715,6 +740,9 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
             // No adjustments: Enable all buttons
             $('#addAdjLateRowBtn').prop('disabled', false);
             $('#addAdjAbsentRowBtn').prop('disabled', false);
+            $('#addAdjPhilhealthRowBtn').prop('disabled', false);
+            $('#addAdjSSSRowBtn').prop('disabled', false);
+            $('#addAdjTAXRowBtn').prop('disabled', false);
             $('#addAdjDeductionRowBtn').prop('disabled', false);
             $('#addAdjIncomeRowBtn').prop('disabled', false);
           } else {
@@ -723,20 +751,32 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
               const type = adj.type;
               const isLate = name === 'late';
               const isAbsent = name === 'absent';
-              const isFixedName = isLate || isAbsent;
+              const isPhilhealth = name === 'philhealth';
+              const isSSS = name === 'sss';
+              const isTAX = name === 'tax';
+              const isFixedName = isLate || isAbsent || isPhilhealth || isSSS || isTAX;
 
               const disableTypeSelect = true;
               const disableNameField = isFixedName;
 
-              // Only disable buttons for Late and Absent (one each)
+              // Only disable buttons for Late, Absent, Philhealth, SSS, and TAX (one each)
               if (isLate) $('#addAdjLateRowBtn').prop('disabled', true);
               if (isAbsent) $('#addAdjAbsentRowBtn').prop('disabled', true);
+              if (isPhilhealth) $('#addAdjPhilhealthRowBtn').prop('disabled', true);
+              if (isSSS) $('#addAdjSSSRowBtn').prop('disabled', true);
+              if (isTAX) $('#addAdjTAXRowBtn').prop('disabled', true);
               // Don't disable income and deduction buttons - allow multiple
 
               if (isLate) {
                 late_edit_id = adj.id;
               } else if (isAbsent) {
                 absence_edit_id = adj.id;
+              } else if (isPhilhealth) {
+                philhealth_edit_id = adj.id;
+              } else if (isSSS) {
+                sss_edit_id = adj.id;
+              } else if (isTAX) {
+                tax_edit_id = adj.id;
               } else {
                 // For income and deduction adjustments, add them to deleted_ids
                 // so they get replaced when saving
@@ -750,7 +790,7 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
 
               // input type for name
               let inputId = '';
-              if (!isLate && !isAbsent) {
+              if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
                 if (type === 'Deduction') {
                   inputId = `deduction_name_${uniqueId}`;
                 } else if (type === 'Income') {
@@ -772,6 +812,12 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
                 inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="late" value="${adj.details || ''}">`;
               } else if (isAbsent) {
                 inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="absence" value="${adj.details || ''}">`;
+              } else if (isPhilhealth) {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="philhealth" value="${parseFloat(adj.amount).toFixed(2)}">`;
+              } else if (isSSS) {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="sss" value="${parseFloat(adj.amount).toFixed(2)}">`;
+              } else if (isTAX) {
+                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="tax" value="${parseFloat(adj.amount).toFixed(2)}">`;
               } else if (type === 'Deduction') {
                 inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="deduction_amount_${uniqueId}" value="${parseFloat(adj.amount).toFixed(2)}">`;
               } else if (type === 'Income') {
@@ -783,6 +829,9 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
                 <tr data-id="${adj.id}" data-source-btn="${
                   isLate ? 'addAdjLateRowBtn' :
                   isAbsent ? 'addAdjAbsentRowBtn' :
+                  isPhilhealth ? 'addAdjPhilhealthRowBtn' :
+                  isSSS ? 'addAdjSSSRowBtn' :
+                  isTAX ? 'addAdjTAXRowBtn' :
                   type === 'Deduction' ? 'addAdjDeductionRowBtn' :
                   type === 'Income' ? 'addAdjIncomeRowBtn' : ''
                 }" data-unique-id="${uniqueId}"> 
@@ -1004,7 +1053,10 @@ function loadRemovedEmployeeData () {
 function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   const isLate = name.toLowerCase() === 'late';
   const isAbsent = name.toLowerCase() === 'absent';
-  const isFixedName = isLate || isAbsent;
+  const isPhilhealth = name.toLowerCase() === 'philhealth';
+  const isSSS = name.toLowerCase() === 'sss';
+  const isTAX = name.toLowerCase() === 'tax';
+  const isFixedName = isLate || isAbsent || isPhilhealth || isSSS || isTAX;
 
   // Generate unique IDs for multiple rows
   const timestamp = Date.now();
@@ -1012,7 +1064,7 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   const uniqueId = `${timestamp}_${randomId}`;
 
   let inputId = '';
-  if (!isLate && !isAbsent) {
+  if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
     if (type === 'Deduction') {
       inputId = `deduction_name_${uniqueId}`;
     } else if (type === 'Income') {
@@ -1033,6 +1085,12 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
     inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="late" value="0">`;
   } else if (isAbsent) {
     inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="absence" value="0">`;
+  } else if (isPhilhealth) {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="philhealth" value="0">`;
+  } else if (isSSS) {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="sss" value="0">`;
+  } else if (isTAX) {
+    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="tax" value="0">`;
   } else if (type === 'Deduction') {
     inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="deduction_amount_${uniqueId}" value="0">`;
   } else if (type === 'Income') {
@@ -1057,8 +1115,8 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
 
   $('#adjustmentTable tbody').append(row);
   
-  // Only disable buttons for Late and Absent (one each)
-  if (isLate || isAbsent) {
+  // Only disable buttons for Late, Absent, Philhealth, SSS, and TAX (one each)
+  if (isLate || isAbsent || isPhilhealth || isSSS || isTAX) {
     $(`#${buttonId}`).prop('disabled', true);
   }
 }

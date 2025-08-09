@@ -722,8 +722,14 @@ def adjustment_create(request, emp_id):
 
         late = request.POST.get('late')
         absence = request.POST.get('absence')
+        philhealth = request.POST.get('philhealth')
+        sss = request.POST.get('sss')
+        tax = request.POST.get('tax')
         late_id = request.POST.get('late_id')
         absence_id = request.POST.get('absence_id')
+        philhealth_id = request.POST.get('philhealth_id')
+        sss_id = request.POST.get('sss_id')
+        tax_id = request.POST.get('tax_id')
         deleted_ids = request.POST.getlist('deleted_ids[]')
 
         # Get multiple income and deduction data
@@ -833,6 +839,18 @@ def adjustment_create(request, emp_id):
                 absent_amount = Decimal('0.00')
 
             save_adjustment(absence_id, 'Absent', 'Deduction', absent_amount, details=absence)
+
+        # Save Philhealth
+        if philhealth:
+            save_adjustment(philhealth_id, 'Philhealth', 'Deduction', philhealth)
+
+        # Save SSS
+        if sss:
+            save_adjustment(sss_id, 'SSS', 'Deduction', sss)
+
+        # Save TAX
+        if tax:
+            save_adjustment(tax_id, 'TAX', 'Deduction', tax)
 
         # Save multiple Income adjustments
         for income in incomes:
