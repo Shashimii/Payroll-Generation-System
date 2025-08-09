@@ -578,7 +578,6 @@ function loadBatchData () {
   })
 }
 
-
 function appendRemoveBatchButton(month, cutoff, year) {
     const removeBtnHTML = `
         <button 
@@ -626,6 +625,7 @@ function removeBatch(btn) {
                         confirmButtonColor: '#28a745'
                     }).then(() => {
                         location.reload();
+                        sessionStorageClear();
                     });
                 },
                 error: function (xhr) {
@@ -1085,6 +1085,10 @@ function sessionStorageLoad() {
   if (sessionStorage.getItem('cutoff')) $('#cutoff_period').val(sessionStorage.getItem('cutoff'));
   if (sessionStorage.getItem('cutoff_month')) $('#cutoff_month').val(sessionStorage.getItem('cutoff_month'));
   if (sessionStorage.getItem('cutoff_year')) $('#cutoff_year').val(sessionStorage.getItem('cutoff_year'));
+}
+
+function sessionStorageClear() {
+  sessionStorage.clear();
 }
 
 </script>
