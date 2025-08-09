@@ -152,18 +152,31 @@
               <p><strong>Adjustments For:</strong> <span class="modalCutoff"></span></p>
             </div>
           </div>
-          <div class="card-body" id="adjustmentsContainer">
+                  <div class="card-body">
+          <div id="adjustmentsContainer">
             <!-- Adjustments for this employee Here -->
           </div>
-          <div class="card-footer">
-            <button id="addAdjLateRowBtn" class="btn btn-info mt-2">Add Late</button>
-            <button id="addAdjAbsentRowBtn" class="btn btn-info mt-2">Add Absent</button>
-            <button id="addAdjPhilhealthRowBtn" class="btn btn-info mt-2">Add Philhealth</button>
-            <button id="addAdjSSSRowBtn" class="btn btn-info mt-2">Add SSS</button>
-            <button id="addAdjTAXRowBtn" class="btn btn-info mt-2">Add TAX</button>
-            <button id="addAdjDeductionRowBtn" class="btn btn-info mt-2">Add Deduction</button>
-            <button id="addAdjIncomeRowBtn" class="btn btn-info mt-2">Add Income</button>
-            <button class="btn btn-primary mt-2" id="saveAdjustmentsBtn">Save Adjustments</button>
+        </div>
+                       <div class="card-footer">
+               <div class="row">
+                 <div class="col-12">
+                   <div class="d-flex flex-wrap justify-content-between gap-2">
+                     <button id="addAdjLateRowBtn" class="btn btn-warning flex-fill">Add Late</button>
+                     <button id="addAdjAbsentRowBtn" class="btn btn-danger flex-fill">Add Absent</button>
+                     <button id="addAdjPhilhealthRowBtn" class="btn btn-primary flex-fill">Add Philhealth</button>
+                     <button id="addAdjSSSRowBtn" class="btn btn-info flex-fill">Add SSS</button>
+                     <button id="addAdjTAXRowBtn" class="btn btn-secondary flex-fill">Add TAX</button>
+                     <button id="addAdjDeductionRowBtn" class="btn btn-outline-danger flex-fill">Add Deduction</button>
+                     <button id="addAdjIncomeRowBtn" class="btn btn-success flex-fill">Add Income</button>
+                   </div>
+                 </div>
+               </div>
+            <div class="row mt-3">
+              <div class="col-12">
+                <button class="btn btn-primary w-100" id="saveAdjustmentsBtn">Save Adjustments</button>
+                <button class="btn btn-secondary w-100 mt-2" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -775,7 +788,7 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
           batch_number: batchNumber
         },
         success: function (res) {
-          const container = $('#showAdjustmentModal .card-body').last();
+          const container = $('#adjustmentsContainer');
           container.empty();
 
           let html = `<table id="adjustmentTable" class="table table-sm table-bordered">
@@ -783,7 +796,7 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
               <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th>Minutes/Days/Amount</th>
+                <th>Value</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -865,19 +878,40 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
               // input type for minutes/day/amount
               let inputFieldMDA = '';
               if (isLate) {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="late" value="${adj.details || ''}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <input type="number" class="form-control" id="late" value="${adj.details || ''}" placeholder="Enter minutes" title="Enter the number of minutes late">
+                  <span class="input-group-text">minutes</span>
+                </div>`;
               } else if (isAbsent) {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="absence" value="${adj.details || ''}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <input type="number" class="form-control" id="absence" value="${adj.details || ''}" placeholder="Enter days" title="Enter the number of days absent">
+                  <span class="input-group-text">days</span>
+                </div>`;
               } else if (isPhilhealth) {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="philhealth" value="${parseFloat(adj.amount).toFixed(2)}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" class="form-control" id="philhealth" value="${parseFloat(adj.amount).toFixed(2)}" placeholder="Enter amount" title="Enter the Philhealth amount in peso">
+                </div>`;
               } else if (isSSS) {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="sss" value="${parseFloat(adj.amount).toFixed(2)}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" class="form-control" id="sss" value="${parseFloat(adj.amount).toFixed(2)}" placeholder="Enter amount" title="Enter the SSS amount in peso">
+                </div>`;
               } else if (isTAX) {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="tax" value="${parseFloat(adj.amount).toFixed(2)}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <input type="number" class="form-control" id="tax" value="${parseFloat(adj.amount).toFixed(2)}" placeholder="Enter percentage" title="Enter the tax percentage (e.g., 15 for 15%)">
+                  <span class="input-group-text">%</span>
+                </div>`;
               } else if (type === 'Deduction') {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="deduction_amount_${uniqueId}" value="${parseFloat(adj.amount).toFixed(2)}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" class="form-control adj-amount" id="deduction_amount_${uniqueId}" value="${parseFloat(adj.amount).toFixed(2)}" placeholder="Enter amount" title="Enter the deduction amount in peso">
+                </div>`;
               } else if (type === 'Income') {
-                inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="income_amount_${uniqueId}" value="${parseFloat(adj.amount).toFixed(2)}">`;
+                inputFieldMDA = `<div class="input-group input-group-sm">
+                  <span class="input-group-text">₱</span>
+                  <input type="number" class="form-control adj-amount" id="income_amount_${uniqueId}" value="${parseFloat(adj.amount).toFixed(2)}" placeholder="Enter amount" title="Enter the income amount in peso">
+                </div>`;
               }
 
 
@@ -1141,19 +1175,40 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
 
   let inputFieldMDA = '';
   if (isLate) {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="late" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <input type="number" class="form-control" id="late" value="0" placeholder="Enter minutes" title="Enter the number of minutes late">
+      <span class="input-group-text">minutes</span>
+    </div>`;
   } else if (isAbsent) {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="absence" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <input type="number" class="form-control" id="absence" value="0" placeholder="Enter days" title="Enter the number of days absent">
+      <span class="input-group-text">days</span>
+    </div>`;
   } else if (isPhilhealth) {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="philhealth" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <span class="input-group-text">₱</span>
+      <input type="number" class="form-control" id="philhealth" value="0" placeholder="Enter amount" title="Enter the Philhealth amount in peso">
+    </div>`;
   } else if (isSSS) {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="sss" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <span class="input-group-text">₱</span>
+      <input type="number" class="form-control" id="sss" value="0" placeholder="Enter amount" title="Enter the SSS amount in peso">
+    </div>`;
   } else if (isTAX) {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm" id="tax" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <input type="number" class="form-control" id="tax" value="0" placeholder="Enter percentage" title="Enter the tax percentage (e.g., 15 for 15%)">
+      <span class="input-group-text">%</span>
+    </div>`;
   } else if (type === 'Deduction') {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="deduction_amount_${uniqueId}" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <span class="input-group-text">₱</span>
+      <input type="number" class="form-control adj-amount" id="deduction_amount_${uniqueId}" value="0" placeholder="Enter amount" title="Enter the deduction amount in peso">
+    </div>`;
   } else if (type === 'Income') {
-    inputFieldMDA = `<input type="number" class="form-control form-control-sm adj-amount" id="income_amount_${uniqueId}" value="0">`;
+    inputFieldMDA = `<div class="input-group input-group-sm">
+      <span class="input-group-text">₱</span>
+      <input type="number" class="form-control adj-amount" id="income_amount_${uniqueId}" value="0" placeholder="Enter amount" title="Enter the income amount in peso">
+    </div>`;
   }
 
   const typeField = `
@@ -1270,5 +1325,62 @@ function sessionStorageClear() {
         border-color: #dc3545 !important;
         box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
     }
-</style>
-{% endblock %}
+    
+    /* Enhanced tooltip styling */
+    input[title] {
+        position: relative;
+    }
+    
+    input[title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-bottom: 5px;
+    }
+    
+    /* Placeholder styling */
+    input::placeholder {
+        color: #6c757d;
+        font-style: italic;
+        font-size: 0.875em;
+    }
+    
+             /* Alert styling enhancement */
+         .alert-info {
+             border-left: 4px solid #17a2b8;
+         }
+         
+         .alert-info .alert-heading {
+             color: #0c5460;
+         }
+         
+         /* Input group styling for inline units */
+         .input-group-text {
+             background-color: #f8f9fa;
+             border-color: #ced4da;
+             color: #495057;
+             font-weight: 500;
+             font-size: 0.875rem;
+         }
+         
+         .input-group .form-control:focus + .input-group-text {
+             border-color: #80bdff;
+             box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+         }
+         
+         /* Button spacing */
+         .card-footer .btn {
+             margin-right: 0.5rem;
+             margin-bottom: 0.5rem;
+         }
+   </style>
+   {% endblock %}
