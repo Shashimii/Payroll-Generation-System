@@ -436,6 +436,46 @@ def batch_create(request, batch_size=15):
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
+def batch_delete(request):
+    cutoff_month = request.POST.get('cutoff_month')
+    cutoff = request.POST.get('cutoff')
+    cutoff_year = request.POST.get('cutoff_year')
+
+    if not (cutoff_month and cutoff and cutoff_year):
+        return JsonResponse({'error': 'Missing required data'}, status=400)
+    
+    try:
+        batch_deleted, _ = BatchAssignment.objects.filter(
+            cutoff_month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year
+        ).delete()
+
+        adj_deleted, _ = Adjustment.objects.filter(
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year
+        ).delete()
+
+        remark_deleted, _ = ReturnRemark.objects.filter(
+            cutoff_month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year
+        ).delete()
+
+        if batch_deleted == 0 and adj_deleted == 0 and remark_deleted == 0:
+            return JsonResponse({'error': 'No matching records found'}, status=404)
+
+        return JsonResponse({
+            'message': f'{batch_deleted} batch assignments, '
+                       f'{adj_deleted} adjustments, and '
+                       f'{remark_deleted} return remarks removed successfully.'
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
 def batch_late(request):
     if request.method == 'POST':
         employee_id = request.POST.get('employee_id')

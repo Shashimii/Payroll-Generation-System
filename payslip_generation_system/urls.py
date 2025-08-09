@@ -29,6 +29,7 @@ urlpatterns = [
     path('payroll/submit', views.payroll.submit, name='payroll_submit'),
     path('payroll/batch/data', views.payroll.batch_data, name='payroll_batch_data'),
     path('payroll/batch/create', views.payroll.batch_create, name='payroll_batch_create'),
+    path('payroll/batch/delete', views.payroll.batch_delete, name='payroll_batch_delete'),
     path('payroll/batch/late', views.payroll.batch_late, name='payroll_batch_late'),
     path('payroll/batch/unlate', views.payroll.batch_unlate, name='payroll_batch_unlate'),
     path('payroll/batch/remove', views.payroll.batch_remove, name='payroll_batch_remove'),
