@@ -803,7 +803,7 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
             <tbody>`;
 
           if (!res.adjustments || res.adjustments.length === 0) {
-            // No adjustments: Enable all buttons
+            // No adjustments: Enable all buttons and show message
             $('#addAdjLateRowBtn').prop('disabled', false);
             $('#addAdjAbsentRowBtn').prop('disabled', false);
             $('#addAdjPhilhealthRowBtn').prop('disabled', false);
@@ -811,6 +811,14 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
             $('#addAdjTAXRowBtn').prop('disabled', false);
             $('#addAdjDeductionRowBtn').prop('disabled', false);
             $('#addAdjIncomeRowBtn').prop('disabled', false);
+            
+            // Add message row for no adjustments
+            html += `<tr>
+              <td colspan="4" class="text-center text-muted py-3">
+                <i class="fas fa-info-circle me-2"></i>
+                This Employee has no current adjustment. Add a new one or leave nothing and save it.
+              </td>
+            </tr>`;
           } else {
             res.adjustments.forEach(adj => {
               const name = adj.name.toLowerCase();
@@ -1147,6 +1155,18 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   const isSSS = name.toLowerCase() === 'sss';
   const isTAX = name.toLowerCase() === 'tax';
   const isFixedName = isLate || isAbsent || isPhilhealth || isSSS || isTAX;
+
+  // Remove the "no current adjustment" message if it exists
+  $('#adjustmentTable tbody tr').each(function() {
+    const $row = $(this);
+    const $td = $row.find('td');
+    if ($td.length === 1 && $td.attr('colspan') === '4') {
+      const text = $td.text().trim();
+      if (text.includes('This Employee has no current adjustment')) {
+        $row.remove();
+      }
+    }
+  });
 
   // Generate unique IDs only for dynamic rows (not fixed-name rows)
   let uniqueId = null;
