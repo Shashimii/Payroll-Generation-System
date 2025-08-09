@@ -722,15 +722,21 @@ def adjustment_create(request, emp_id):
 
         late = request.POST.get('late')
         absence = request.POST.get('absence')
-        income_name = request.POST.get('income_name')
-        income_amount = request.POST.get('income_amount')
-        deduction_name = request.POST.get('deduction_name')
-        deduction_amount = request.POST.get('deduction_amount')
         late_id = request.POST.get('late_id')
         absence_id = request.POST.get('absence_id')
-        income_id = request.POST.get('income_id')
-        deduction_id = request.POST.get('deduction_id')
         deleted_ids = request.POST.getlist('deleted_ids[]')
+
+        # Get multiple income and deduction data
+        import json
+        incomes_data = request.POST.get('incomes', '[]')
+        deductions_data = request.POST.get('deductions', '[]')
+        
+        try:
+            incomes = json.loads(incomes_data) if incomes_data else []
+            deductions = json.loads(deductions_data) if deductions_data else []
+        except json.JSONDecodeError:
+            incomes = []
+            deductions = []
 
         cutoff = request.POST.get('cutoff')
         cutoff_month = request.POST.get('cutoff_month')
@@ -828,15 +834,20 @@ def adjustment_create(request, emp_id):
 
             save_adjustment(absence_id, 'Absent', 'Deduction', absent_amount, details=absence)
 
-        # Save Income
-        if income_name and income_amount:
-            save_adjustment(income_id, income_name, 'Income', income_amount)
+        # Save multiple Income adjustments
+        for income in incomes:
+            if income.get('name') and income.get('amount'):
+                save_adjustment(None, income['name'], 'Income', income['amount'])
 
-        # Save Deduction
-        if deduction_name and deduction_amount:
-            save_adjustment(deduction_id, deduction_name, 'Deduction', deduction_amount)
+        # Save multiple Deduction adjustments
+        for deduction in deductions:
+            if deduction.get('name') and deduction.get('amount'):
+                save_adjustment(None, deduction['name'], 'Deduction', deduction['amount'])
 
-        return JsonResponse({'status': 'OK'}, status=200)
+        return JsonResponse({
+            'status': 'OK',
+            'message': f'Processed {len(incomes)} income and {len(deductions)} deduction adjustments'
+        }, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
