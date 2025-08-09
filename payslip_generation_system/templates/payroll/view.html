@@ -1,7 +1,7 @@
 {% extends "includes/layout.html" %}
 {% block title %}Payroll{% endblock title %}
 {% block layout_content %}
-    <button class="btn btn-secondary mb-3" onclick="window.location.href='{% url 'payroll_pending' %}'">
+    <button class="btn btn-secondary mb-3" id="backBtn">
         <i class="fa-solid fa-arrow-left"></i>
         Back
     </button>
@@ -19,6 +19,7 @@
             <th>Salary</th>
             <th>Tax</th>
             <th>Philhealth</th>
+            <th>SSS</th>
             <th>Late</th>
             <th>Absent</th>
             <th class="text-success">Adjustment Income</th>
@@ -28,7 +29,7 @@
         </thead>
         <tbody id="employeeTableBody">
         <tr>
-            <td colspan="11" class="text-center text-muted">Loading...</td>
+            <td colspan="12" class="text-center text-muted">Loading...</td>
         </tr>
     </tbody>
 </table>
@@ -77,6 +78,10 @@
 
 <script>
 $(document).ready(function () {
+    $('#backBtn').click(function() {
+        window.location.href = "{% url 'payroll_pending' %}";
+    });
+    
     $.ajax({
             url: '{% url "payroll_batch_data" %}',
             method: 'GET',
@@ -109,6 +114,7 @@ $(document).ready(function () {
                     <td>₱ ${emp.salary}</td>
                     <td>₱ ${emp.tax_deduction}</td>
                     <td>₱ ${emp.philhealth}</td>
+                    <td>₱ ${emp.sss}</td>
                     <td>₱ ${emp.late_amount}</td>
                     <td>₱ ${emp.absent_amount}</td>
                     <td>₱ ${emp.income}</td>
@@ -118,11 +124,11 @@ $(document).ready(function () {
                 `);
                 });
             } else {
-                tbody.append('<tr><td colspan="5" class="text-center text-muted">No employees found.</td></tr>');
+                tbody.append('<tr><td colspan="12" class="text-center text-muted">No employees found.</td></tr>');
             }
         },
         error: function () {
-            $('#employeeTableBody').html('<tr><td colspan="5" class="text-danger text-center">Failed to load data.</td></tr>');
+            $('#employeeTableBody').html('<tr><td colspan="12" class="text-danger text-center">Failed to load data.</td></tr>');
         }
     });
 
@@ -224,7 +230,8 @@ th, td {
     .table td:nth-child(8),
     .table td:nth-child(9),
     .table td:nth-child(10),
-    .table td:nth-child(11) {
+    .table td:nth-child(11),
+    .table td:nth-child(12) {
     text-align: right;
 }
 

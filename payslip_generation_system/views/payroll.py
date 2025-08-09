@@ -295,17 +295,41 @@ def batch_data(request):
         basic_salary_annual = basic_salary * 12
         basic_salary_cutoff = basic_salary / 2
 
-        # Tax
-        if employee.tax_declaration.lower() == "yes":
-            tax_deduction = Decimal('0.00')
-        else:
-            tax_deduction = basic_salary_cutoff * Decimal('0.027') if basic_salary_annual >= 250000 else Decimal('0.00')
+        # Tax - use TAX adjustment as percentage for salary-based computation
+        tax_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="TAX",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        tax_percentage = tax_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        
+        # Apply tax calculation logic with custom percentage or default
+        tax_deduction = basic_salary_cutoff * (tax_percentage / 100)
 
-        # Philhealth
-        if employee.has_philhealth.lower() == "yes":
-            philhealth = basic_salary_cutoff * Decimal('0.05') if basic_salary_cutoff > Decimal('9999') else Decimal('500')
-        else:
-            philhealth = Decimal('0.00')
+        # Philhealth - fetch from Philhealth adjustments
+        philhealth_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="Philhealth",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        philhealth = philhealth_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+        # SSS - fetch from SSS adjustments
+        sss_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="SSS",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        sss = sss_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Late adjustments
         late_adjustments = Adjustment.objects.filter(
@@ -340,7 +364,7 @@ def batch_data(request):
             cutoff=cutoff,
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
-        ).exclude(name__in=["Late", "Absent"])
+        ).exclude(name__in=["Late", "Absent", "TAX", "Philhealth", "SSS"])
         total_other_deductions = other_deductions.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Incomes
@@ -355,7 +379,7 @@ def batch_data(request):
         total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Final calculation
-        total_deductions = tax_deduction + philhealth + late_amt_total + total_other_deductions
+        total_deductions = tax_deduction + philhealth + sss + late_amt_total + absent_amt_total + total_other_deductions
         net_salary = basic_salary_cutoff - total_deductions + total_income
 
         # Build data
@@ -368,6 +392,7 @@ def batch_data(request):
         emp_data['basic_salary_cutoff'] = f"{basic_salary_cutoff:.2f}"
         emp_data['tax_deduction'] = f"{tax_deduction:.2f}"
         emp_data['philhealth'] = f"{philhealth:.2f}"
+        emp_data['sss'] = f"{sss:.2f}"
         emp_data['late_amount'] = f"{late_amt_total:.2f}"
         emp_data['late_minutes'] = f"{late_min_total:.2f}"
         emp_data['absent_amount'] = f"{absent_amt_total:.2f}"
