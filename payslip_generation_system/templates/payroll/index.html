@@ -210,6 +210,7 @@ $(document).ready(function () {
       const uniqueId = row.data('unique-id');
       
       // Check if this is a dynamic row (has unique-id) with a reserved name
+      // Fixed-name rows don't have unique-id, so we only check dynamic rows
       if (uniqueId && name) {
         const nameLower = name.toLowerCase().trim();
         if (reservedNames.includes(nameLower)) {
@@ -476,15 +477,22 @@ $(document).on('click', '.removeRowBtn', function () {
 // Real-time validation for reserved names in dynamic rows
 $(document).on('input', '.adj-name', function() {
   const input = $(this);
-  const name = input.val().toLowerCase().trim();
-  const reservedNames = ['late', 'absent', 'philhealth', 'sss', 'tax'];
+  const row = input.closest('tr');
+  const uniqueId = row.data('unique-id');
   
-  if (reservedNames.includes(name)) {
-    input.addClass('is-invalid');
-    input.attr('title', `"${input.val()}" is a reserved name. Please use the dedicated button instead.`);
-  } else {
-    input.removeClass('is-invalid');
-    input.removeAttr('title');
+  // Only validate dynamic rows (those with unique-id)
+  // Fixed-name rows don't have unique-id, so they're allowed to use reserved names
+  if (uniqueId) {
+    const name = input.val().toLowerCase().trim();
+    const reservedNames = ['late', 'absent', 'philhealth', 'sss', 'tax'];
+    
+    if (reservedNames.includes(name)) {
+      input.addClass('is-invalid');
+      input.attr('title', `"${input.val()}" is a reserved name. Please use the dedicated button instead.`);
+    } else {
+      input.removeClass('is-invalid');
+      input.removeAttr('title');
+    }
   }
 });
 
@@ -828,20 +836,23 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
                 deletedAdjustmentIds.push(adj.id);
               }
 
-              // Generate unique ID for existing adjustments
-              const timestamp = Date.now();
-              const randomId = Math.random().toString(36).substr(2, 9);
-              const uniqueId = `${timestamp}_${randomId}`;
+                             // Generate unique ID only for dynamic adjustments (not fixed-name ones)
+               let uniqueId = null;
+               if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
+                 const timestamp = Date.now();
+                 const randomId = Math.random().toString(36).substr(2, 9);
+                 uniqueId = `${timestamp}_${randomId}`;
+               }
 
-              // input type for name
-              let inputId = '';
-              if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
-                if (type === 'Deduction') {
-                  inputId = `deduction_name_${uniqueId}`;
-                } else if (type === 'Income') {
-                  inputId = `income_name_${uniqueId}`;
-                }
-              }
+               // input type for name
+               let inputId = '';
+               if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
+                 if (type === 'Deduction') {
+                   inputId = `deduction_name_${uniqueId}`;
+                 } else if (type === 'Income') {
+                   inputId = `income_name_${uniqueId}`;
+                 }
+               }
 
               const inputFieldName = `
                 <input type="text"
@@ -870,16 +881,16 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
               }
 
 
-              html += `
-                <tr data-id="${adj.id}" data-source-btn="${
-                  isLate ? 'addAdjLateRowBtn' :
-                  isAbsent ? 'addAdjAbsentRowBtn' :
-                  isPhilhealth ? 'addAdjPhilhealthRowBtn' :
-                  isSSS ? 'addAdjSSSRowBtn' :
-                  isTAX ? 'addAdjTAXRowBtn' :
-                  type === 'Deduction' ? 'addAdjDeductionRowBtn' :
-                  type === 'Income' ? 'addAdjIncomeRowBtn' : ''
-                }" data-unique-id="${uniqueId}"> 
+                             html += `
+                 <tr data-id="${adj.id}" data-source-btn="${
+                   isLate ? 'addAdjLateRowBtn' :
+                   isAbsent ? 'addAdjAbsentRowBtn' :
+                   isPhilhealth ? 'addAdjPhilhealthRowBtn' :
+                   isSSS ? 'addAdjSSSRowBtn' :
+                   isTAX ? 'addAdjTAXRowBtn' :
+                   type === 'Deduction' ? 'addAdjDeductionRowBtn' :
+                   type === 'Income' ? 'addAdjIncomeRowBtn' : ''
+                 }"${uniqueId ? ` data-unique-id="${uniqueId}"` : ''}>  
                   <td>
                     ${inputFieldName}
                   </td>
@@ -1103,10 +1114,13 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   const isTAX = name.toLowerCase() === 'tax';
   const isFixedName = isLate || isAbsent || isPhilhealth || isSSS || isTAX;
 
-  // Generate unique IDs for multiple rows
-  const timestamp = Date.now();
-  const randomId = Math.random().toString(36).substr(2, 9);
-  const uniqueId = `${timestamp}_${randomId}`;
+  // Generate unique IDs only for dynamic rows (not fixed-name rows)
+  let uniqueId = null;
+  if (!isFixedName) {
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substr(2, 9);
+    uniqueId = `${timestamp}_${randomId}`;
+  }
 
   let inputId = '';
   if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
@@ -1148,7 +1162,7 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   `;
 
   const row = $(`
-    <tr data-source-btn="${buttonId}" data-unique-id="${uniqueId}">
+    <tr data-source-btn="${buttonId}"${uniqueId ? ` data-unique-id="${uniqueId}"` : ''}>
       <td>${inputFieldName}</td>
       <td>${typeField}</td>
       <td>${inputFieldMDA}</td>
