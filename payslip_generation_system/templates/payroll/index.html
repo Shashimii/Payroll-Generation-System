@@ -192,9 +192,15 @@ $(document).ready(function () {
   $(document).on('click', '#saveAdjustmentsBtn', function () {
     const employeeId = $('#modalShowAdjustmentEmployeeId').val();
 
+    // Reserved names that should only be used with dedicated buttons
+    const reservedNames = ['late', 'absent', 'philhealth', 'sss', 'tax'];
+    
     // Collect all income and deduction data from the table
     const incomes = [];
     const deductions = [];
+    
+    let hasReservedNameError = false;
+    let reservedNameError = '';
     
     $('#adjustmentTable tbody tr').each(function() {
       const row = $(this);
@@ -202,6 +208,16 @@ $(document).ready(function () {
       const name = row.find('.adj-name').val();
       const amount = row.find('.adj-amount').val();
       const uniqueId = row.data('unique-id');
+      
+      // Check if this is a dynamic row (has unique-id) with a reserved name
+      if (uniqueId && name) {
+        const nameLower = name.toLowerCase().trim();
+        if (reservedNames.includes(nameLower)) {
+          hasReservedNameError = true;
+          reservedNameError = `"${name}" is a reserved name. Please use the dedicated "${name.charAt(0).toUpperCase() + name.slice(1)}" button instead.`;
+          return false; // break the loop
+        }
+      }
       
       if (type === 'Income' && name && amount) {
         incomes.push({
@@ -217,6 +233,17 @@ $(document).ready(function () {
         });
       }
     });
+    
+    // Show error if reserved name was used in dynamic rows
+    if (hasReservedNameError) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Name',
+        text: reservedNameError,
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
 
     const data = {
       // Employee
@@ -444,6 +471,21 @@ $(document).on('click', '.removeRowBtn', function () {
   }
 
   row.remove();
+});
+
+// Real-time validation for reserved names in dynamic rows
+$(document).on('input', '.adj-name', function() {
+  const input = $(this);
+  const name = input.val().toLowerCase().trim();
+  const reservedNames = ['late', 'absent', 'philhealth', 'sss', 'tax'];
+  
+  if (reservedNames.includes(name)) {
+    input.addClass('is-invalid');
+    input.attr('title', `"${input.val()}" is a reserved name. Please use the dedicated button instead.`);
+  } else {
+    input.removeClass('is-invalid');
+    input.removeAttr('title');
+  }
 });
 
 // Functions
@@ -1203,6 +1245,16 @@ function sessionStorageClear() {
         padding: 8px;
         text-align: left;
         font-weight:700;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    
+    .is-invalid:focus {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
     }
 </style>
 {% endblock %}
