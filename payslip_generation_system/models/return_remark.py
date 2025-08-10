@@ -29,8 +29,9 @@ class ReturnRemark(models.Model):
 
     cutoff = models.CharField(max_length=10, choices=CUTOFF_PERIOD_CHOICES)
 
-    cutoff_year = models.CharField(max_length=50)  
+    cutoff_year = models.CharField(max_length=50)
 
+    assigned_office = models.CharField(max_length=100, blank=True, null=True)
     class Meta:
         unique_together = ['cutoff', 'cutoff_month', 'cutoff_year']
         ordering = ['remark', 'cutoff_year', 'cutoff_month', 'cutoff', 'batch_number',]
