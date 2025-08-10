@@ -150,7 +150,8 @@ $(document).ready(function () {
             batch_number: '{{ batch_number }}',
             cutoff: '{{ cutoff }}',
             cutoff_month: '{{ cutoff_month }}',
-            cutoff_year: '{{ cutoff_year }}'
+            cutoff_year: '{{ cutoff_year }}',
+            assigned_office: '{{ assigned_office }}'
         },
         success: function (response) {
         $('#cutoff').val(response.cutoff);

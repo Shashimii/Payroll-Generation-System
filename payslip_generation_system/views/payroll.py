@@ -267,6 +267,9 @@ def batch_data(request):
     cutoff_month = request.GET.get('cutoff_month') or 'January'
     cutoff_year = int(request.GET.get('cutoff_year') or datetime.now().year)
     batch_number = int(batch_number or 1)
+    
+    # Get assigned_office from URL if coming from pending page
+    url_assigned_office = request.GET.get('assigned_office')
 
     # Get user role and filter batches accordingly
     user_role = request.session.get('role', '')
@@ -274,15 +277,26 @@ def batch_data(request):
     # Get assigned office for the current user
     assigned_office = get_user_assigned_office(user_role)
     
-    # Filter assignments based on user role
-    if assigned_office and user_role != 'admin' and user_role != 'checker':
-        # For office-specific preparators, show only their office batches
+    # If we have url_assigned_office (coming from pending page), filter by employees with pending adjustments for that office
+    if url_assigned_office:
+        # Get employees with pending adjustments for the specific assigned_office
+        employees_with_pending = Adjustment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year,
+            status="Pending",
+            assigned_office=url_assigned_office
+        ).values_list('employee_id', flat=True).distinct()
+        
+        # Filter assignments to only include employees with pending adjustments for the specific office
         assignments = BatchAssignment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
-            assigned_office=assigned_office
+            employee_id__in=employees_with_pending,
+            assigned_office=url_assigned_office
         ).select_related('employee').annotate(
             late_order=Case(
                 When(late_assigned='NO', then=Value(0)),
@@ -302,45 +316,82 @@ def batch_data(request):
                     batch_number=batch_number,
                     cutoff=cutoff,
                     month=cutoff_month,
-                    cutoff_year=cutoff_year
+                    cutoff_year=cutoff_year,
+                    assigned_office=url_assigned_office
                 )
             )
         ).order_by('late_order', 'employee__fullname')
     else:
-        # For admin and checker, show all batches
-        assignments = BatchAssignment.objects.filter(
-            batch_number=batch_number,
-            cutoff=cutoff,
-            cutoff_month=cutoff_month,
-            cutoff_year=cutoff_year
-        ).select_related('employee').annotate(
-            late_order=Case(
-                When(late_assigned='NO', then=Value(0)),
-                When(late_assigned='YES', then=Value(1)),
-                default=Value(2),
-                output_field=IntegerField()
-            ),
-            removed_order=Case(
-                When(removed='NO', then=Value(0)),
-                When(removed='YES', then=Value(1)),
-                default=Value(2),
-                output_field=IntegerField()
-            ),
-            has_adjustments=Exists(
-                Adjustment.objects.filter(
-                    employee=OuterRef('employee'),
-                    batch_number=batch_number,
-                    cutoff=cutoff,
-                    month=cutoff_month,
-                    cutoff_year=cutoff_year
+        # Filter assignments based on user role
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            # For office-specific preparators, show only their office batches
+            assignments = BatchAssignment.objects.filter(
+                batch_number=batch_number,
+                cutoff=cutoff,
+                cutoff_month=cutoff_month,
+                cutoff_year=cutoff_year,
+                assigned_office=assigned_office
+            ).select_related('employee').annotate(
+                late_order=Case(
+                    When(late_assigned='NO', then=Value(0)),
+                    When(late_assigned='YES', then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField()
+                ),
+                removed_order=Case(
+                    When(removed='NO', then=Value(0)),
+                    When(removed='YES', then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField()
+                ),
+                has_adjustments=Exists(
+                    Adjustment.objects.filter(
+                        employee=OuterRef('employee'),
+                        batch_number=batch_number,
+                        cutoff=cutoff,
+                        month=cutoff_month,
+                        cutoff_year=cutoff_year
+                    )
                 )
-            )
-        ).order_by('late_order', 'employee__fullname')
+            ).order_by('late_order', 'employee__fullname')
+        else:
+            # For admin and checker, show all batches
+            assignments = BatchAssignment.objects.filter(
+                batch_number=batch_number,
+                cutoff=cutoff,
+                cutoff_month=cutoff_month,
+                cutoff_year=cutoff_year
+            ).select_related('employee').annotate(
+                late_order=Case(
+                    When(late_assigned='NO', then=Value(0)),
+                    When(late_assigned='YES', then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField()
+                ),
+                removed_order=Case(
+                    When(removed='NO', then=Value(0)),
+                    When(removed='YES', then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField()
+                ),
+                has_adjustments=Exists(
+                    Adjustment.objects.filter(
+                        employee=OuterRef('employee'),
+                        batch_number=batch_number,
+                        cutoff=cutoff,
+                        month=cutoff_month,
+                        cutoff_year=cutoff_year
+                    )
+                )
+            ).order_by('late_order', 'employee__fullname')
 
     # Get the assigned_office for this batch (all employees in a batch should have the same assigned_office)
     batch_assigned_office = None
     if assignments.exists():
         batch_assigned_office = assignments.first().assigned_office
+
+    # Use url_assigned_office if available, otherwise use batch_assigned_office
+    office_to_check = url_assigned_office if url_assigned_office else batch_assigned_office
 
     # Filter adjustment status checks by assigned_office
     has_pending_adjustments = Adjustment.objects.filter(
@@ -349,7 +400,7 @@ def batch_data(request):
         month=cutoff_month,
         cutoff_year=cutoff_year,
         status="Pending",
-        assigned_office=batch_assigned_office
+        assigned_office=office_to_check
     ).exists()
 
     has_approved_adjustments = Adjustment.objects.filter(
@@ -358,7 +409,7 @@ def batch_data(request):
         month=cutoff_month,
         cutoff_year=cutoff_year,
         status="Approved",
-        assigned_office=batch_assigned_office
+        assigned_office=office_to_check
     ).exists()
 
     has_credited_adjustments = Adjustment.objects.filter(
@@ -367,7 +418,7 @@ def batch_data(request):
         month=cutoff_month,
         cutoff_year=cutoff_year,
         status="Credited",
-        assigned_office=batch_assigned_office
+        assigned_office=office_to_check
     ).exists()
 
     remark = ReturnRemark.objects.filter(
@@ -396,6 +447,8 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
+        if url_assigned_office:
+            tax_adjustments = tax_adjustments.filter(assigned_office=url_assigned_office)
         tax_percentage = tax_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         
         # Apply tax calculation logic with custom percentage or default
@@ -410,6 +463,8 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
+        if url_assigned_office:
+            philhealth_adjustments = philhealth_adjustments.filter(assigned_office=url_assigned_office)
         philhealth = philhealth_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # SSS - fetch from SSS adjustments
@@ -421,6 +476,8 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
+        if url_assigned_office:
+            sss_adjustments = sss_adjustments.filter(assigned_office=url_assigned_office)
         sss = sss_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Late adjustments
@@ -432,18 +489,22 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
+        if url_assigned_office:
+            late_adjustments = late_adjustments.filter(assigned_office=url_assigned_office)
         late_amt_total = late_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         late_min_total = late_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
 
         # Absent adjustments
         absent_adjustments = Adjustment.objects.filter(
             employee=employee,
-            name="Late",
+            name="Absent",
             month=cutoff_month,
             cutoff=cutoff,
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
+        if url_assigned_office:
+            absent_adjustments = absent_adjustments.filter(assigned_office=url_assigned_office)
 
         absent_amt_total = absent_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         absent_min_total = absent_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
@@ -457,6 +518,8 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         ).exclude(name__in=["Late", "Absent", "TAX", "Philhealth", "SSS"])
+        if url_assigned_office:
+            other_deductions = other_deductions.filter(assigned_office=url_assigned_office)
         total_other_deductions = other_deductions.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Incomes
@@ -468,6 +531,8 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
+        if url_assigned_office:
+            incomes = incomes.filter(assigned_office=url_assigned_office)
         total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Get detailed incomes and deductions for breakdown
@@ -484,13 +549,16 @@ def batch_data(request):
         
         if previous_batch is not None:
             # Check if the previous batch has any adjustments with status Pending, Approved, or Credited
-            previous_batch_submitted = Adjustment.objects.filter(
+            previous_batch_query = Adjustment.objects.filter(
                 batch_number=previous_batch,
                 cutoff=cutoff,
                 month=cutoff_month,
                 cutoff_year=cutoff_year,
                 status__in=["Pending", "Approved", "Credited"]
-            ).exists()
+            )
+            if url_assigned_office:
+                previous_batch_query = previous_batch_query.filter(assigned_office=url_assigned_office)
+            previous_batch_submitted = previous_batch_query.exists()
 
         # Build data
         emp_data = model_to_dict(employee, fields=[
@@ -519,13 +587,15 @@ def batch_data(request):
         employees.append(emp_data)
 
     # Determine if current batch is the last batch for the office
-    if assigned_office and user_role != 'admin' and user_role != 'checker':
+    office_to_check = url_assigned_office if url_assigned_office else assigned_office
+    
+    if office_to_check and user_role != 'admin' and user_role != 'checker':
         # For office-specific preparators, check last batch for their office
         last_batch_for_office = BatchAssignment.objects.filter(
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
-            assigned_office=assigned_office
+            assigned_office=office_to_check
         ).order_by('-batch_number').first()
         
         is_last_batch = last_batch_for_office and last_batch_for_office.batch_number == batch_number
@@ -1089,13 +1159,15 @@ def adjustment_show(request, emp_id):
         cutoff = request.GET.get('cutoff')
         cutoff_month = request.GET.get('cutoff_month')
         cutoff_year = request.GET.get('cutoff_year')
+        assigned_office = request.GET.get('assigned_office')
 
         adjustments = Adjustment.objects.filter(
             employee_id=emp_id,
             batch_number=batch_number,
             cutoff=cutoff,
             month=cutoff_month,
-            cutoff_year=cutoff_year
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
         )
 
         if not adjustments.exists():
@@ -1105,6 +1177,7 @@ def adjustment_show(request, emp_id):
                 'cutoff_month': cutoff_month,
                 'cutoff_year': cutoff_year,
                 'batch_number': batch_number,
+                'assigned_office': assigned_office,
             }, status=200)
 
         data = list(adjustments.values())
@@ -1115,6 +1188,7 @@ def adjustment_show(request, emp_id):
             'cutoff_month': cutoff_month,
             'cutoff_year': cutoff_year,
             'batch_number': batch_number,
+            'assigned_office': assigned_office,
         }, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -1214,6 +1288,7 @@ def show(request):
         'cutoff_month': request.GET.get('cutoff_month'),
         'cutoff_year': request.GET.get('cutoff_year'),
         'batch_number': request.GET.get('batch_number'),
+        'assigned_office': request.GET.get('assigned_office'),
     }
     return render(request, 'payroll/view.html', context)
 

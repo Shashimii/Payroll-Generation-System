@@ -31,6 +31,7 @@ $(document).ready(function () {
                 data-month="${batch.cutoff_month}" 
                 data-year="${batch.cutoff_year}" 
                 data-batch="${batch.batch_number}"
+                data-assigned-office="${batch.assigned_office || ''}"
             >
                 <div class="batch-text">
                 <span>${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span><br>
@@ -54,9 +55,10 @@ $('#pendingBatchList').on('click', '.pending-batch-item', function () {
     const month = $(this).data('month');
     const year = $(this).data('year');
     const batch = $(this).data('batch');
+    const assignedOffice = $(this).data('assigned-office');
 
 
-    const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}`;
+    const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}&assigned_office=${assignedOffice}`;
     window.location.href = url;
 });
 </script>
