@@ -524,6 +524,14 @@ $(document).on('input', '.adj-name', function() {
   }
 });
 
+// Global variable to store current batch data
+let currentBatchData = null;
+
+// Function to get current batch data
+function getCurrentBatchData() {
+  return currentBatchData;
+}
+
 // Functions
 function loadBatchData () {
   const batchNumber = $('#batch_number').val();
@@ -541,6 +549,9 @@ function loadBatchData () {
           cutoff_year: cutoffYear,
       },
       success: function (response) {
+          // Store current batch data for use in late/unlate functions
+          currentBatchData = response;
+          
           $('#payrollCutoffInfo').text(`${response.cutoff_month} ${response.cutoff} Cutoff ${response.cutoff_year} Batch ${response.batch_number}`);
           
           $('#submitAdjustment')
@@ -1008,6 +1019,10 @@ function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
       batch_number: batchNumber,
     },
     success: function (response) {
+      // Check if this is the last batch to determine whether to reload or just refresh data
+      const currentBatchData = getCurrentBatchData();
+      const shouldReload = currentBatchData && currentBatchData.is_last_batch;
+      
       Swal.fire({
         icon: 'success',
         title: 'Marked as late',
@@ -1015,7 +1030,11 @@ function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
         confirmButtonColor: '#28a745'
       }).then((result) => {
         if (result.isConfirmed) {
-          location.reload();
+          if (shouldReload) {
+            location.reload();
+          } else {
+            loadBatchData();
+          }
         }
       });
     },
@@ -1037,6 +1056,10 @@ function unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
         batch_number: batchNumber,
       },
     success: function (response) {
+      // Check if this is the last batch to determine whether to reload or just refresh data
+      const currentBatchData = getCurrentBatchData();
+      const shouldReload = currentBatchData && currentBatchData.is_last_batch;
+      
     Swal.fire({
       icon: 'success',
       title: 'Not Late',
@@ -1044,7 +1067,11 @@ function unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
       confirmButtonColor: '#28a745'
     }).then((result) => {
       if (result.isConfirmed) {
-        location.reload();
+        if (shouldReload) {
+          location.reload();
+        } else {
+          loadBatchData();
+        }
       }
     });
     },

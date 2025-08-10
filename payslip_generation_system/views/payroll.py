@@ -492,6 +492,27 @@ def batch_data(request):
 
         employees.append(emp_data)
 
+    # Determine if current batch is the last batch for the office
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, check last batch for their office
+        last_batch_for_office = BatchAssignment.objects.filter(
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
+        ).order_by('-batch_number').first()
+        
+        is_last_batch = last_batch_for_office and last_batch_for_office.batch_number == batch_number
+    else:
+        # For admin and checker, check last batch across all offices
+        last_batch_overall = BatchAssignment.objects.filter(
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).order_by('-batch_number').first()
+        
+        is_last_batch = last_batch_overall and last_batch_overall.batch_number == batch_number
+
     return JsonResponse({
         'employees': employees,
         'cutoff': cutoff,
@@ -501,7 +522,8 @@ def batch_data(request):
         'has_pending_adjustments': has_pending_adjustments,
         'has_approved_adjustments': has_approved_adjustments,
         'has_credited_adjustments': has_credited_adjustments,
-        'remark': remark or "", 
+        'remark': remark or "",
+        'is_last_batch': is_last_batch,
     })
 
 @login_required
