@@ -36,8 +36,8 @@
 
 <input type="hidden" id="cutoff" name="cutoff">
 <input type="hidden" id="cutoff_month" name="cutoff_month">
-<input type="hidden" id="cutoff_year" name="cutoff_year">
 <input type="hidden" id="batch_number" name="batch_number">
+<input type="hidden" id="cutoff_year" name="cutoff_year">
 
 <input type="hidden" id="reject_cutoff" name="cutoff">
 <input type="hidden" id="reject_cutoff_month" name="cutoff_month">
@@ -48,6 +48,52 @@
 <button class="btn btn-danger btn-block" data-bs-toggle="modal" data-bs-target="#remarksModal">
     Return Payroll with Remarks
 </button>
+
+<!-- Employee Breakdown Modal -->
+<div class="modal fade" id="employeeBreakdownModal" tabindex="-1" aria-labelledby="employeeBreakdownModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="employeeBreakdownModalLabel">Employee Breakdown Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <h6 class="text-muted">Employee Information</h6>
+            <p><strong>Name:</strong> <span id="modalEmployeeName"></span></p>
+            <p><strong>Position:</strong> <span id="modalEmployeePosition"></span></p>
+            <p><strong>Base Salary:</strong> ₱<span id="modalEmployeeSalary"></span></p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted">Summary</h6>
+            <p><strong>Total Income:</strong> ₱<span id="modalTotalIncome"></span></p>
+            <p><strong>Total Deductions:</strong> ₱<span id="modalTotalDeductions"></span></p>
+            <p><strong>Net Pay:</strong> ₱<span id="modalNetPay"></span></p>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-success">Income Breakdown</h6>
+            <div id="modalIncomeBreakdown">
+              <!-- Income items will be populated here -->
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-danger">Deductions Breakdown</h6>
+            <div id="modalDeductionsBreakdown">
+              <!-- Deduction items will be populated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -106,8 +152,8 @@ $(document).ready(function () {
         tbody.empty();
             if (response.employees.length > 0) {
                 response.employees.forEach((emp, i) => {
-                tbody.append(`
-                    <tr>
+                const row = $(`
+                    <tr class="employee-row" style="cursor: pointer;" data-employee='${JSON.stringify(emp)}' title="Click to view detailed breakdown">
                     <td>${i + 1}</td>
                     <td>${emp.fullname}</td>
                     <td>${emp.position}</td>
@@ -122,6 +168,19 @@ $(document).ready(function () {
                     <td>₱ ${emp.net_salary}</td>
                     </tr>
                 `);
+                
+                // Add hover effect
+                row.hover(
+                    function() { $(this).addClass('table-hover'); },
+                    function() { $(this).removeClass('table-hover'); }
+                );
+                
+                // Add click event
+                row.click(function() {
+                    showEmployeeBreakdown(emp);
+                });
+                
+                tbody.append(row);
                 });
             } else {
                 tbody.append('<tr><td colspan="12" class="text-center text-muted">No employees found.</td></tr>');
@@ -167,6 +226,102 @@ $(document).ready(function () {
         });
     });
 });
+
+function showEmployeeBreakdown(employee) {
+    // Populate employee information
+    $('#modalEmployeeName').text(employee.fullname);
+    $('#modalEmployeePosition').text(employee.position);
+    $('#modalEmployeeSalary').text(employee.salary);
+    $('#modalTotalIncome').text(employee.income);
+    $('#modalTotalDeductions').text(employee.total_deductions);
+    $('#modalNetPay').text(employee.net_salary);
+    
+    // Populate income breakdown
+    const incomeBreakdown = $('#modalIncomeBreakdown');
+    incomeBreakdown.empty();
+    
+    if (employee.incomes && employee.incomes.length > 0) {
+        employee.incomes.forEach(income => {
+            const details = income.details ? ` (${income.details})` : '';
+            incomeBreakdown.append(`
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <span class="text-success">${income.name}${details}</span>
+                    <span class="text-success fw-bold">₱${parseFloat(income.amount).toFixed(2)}</span>
+                </div>
+            `);
+        });
+    } else {
+        incomeBreakdown.append('<p class="text-muted">No additional income</p>');
+    }
+    
+    // Populate deductions breakdown
+    const deductionsBreakdown = $('#modalDeductionsBreakdown');
+    deductionsBreakdown.empty();
+    
+    // Add fixed deductions
+    if (employee.tax_deduction && parseFloat(employee.tax_deduction) > 0) {
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">TAX</span>
+                <span class="text-danger fw-bold">₱${employee.tax_deduction}</span>
+            </div>
+        `);
+    }
+    
+    if (employee.philhealth && parseFloat(employee.philhealth) > 0) {
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Philhealth</span>
+                <span class="text-danger fw-bold">₱${employee.philhealth}</span>
+            </div>
+        `);
+    }
+    
+    if (employee.sss && parseFloat(employee.sss) > 0) {
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">SSS</span>
+                <span class="text-danger fw-bold">₱${employee.sss}</span>
+            </div>
+        `);
+    }
+    
+    if (employee.late_amount && parseFloat(employee.late_amount) > 0) {
+        const lateDetails = employee.late_minutes ? ` (${employee.late_minutes} minutes)` : '';
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Late${lateDetails}</span>
+                <span class="text-danger fw-bold">₱${employee.late_amount}</span>
+            </div>
+        `);
+    }
+    
+    if (employee.absent_amount && parseFloat(employee.absent_amount) > 0) {
+        const absentDetails = employee.absent_minutes ? ` (${employee.absent_minutes} days)` : '';
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Absent${absentDetails}</span>
+                <span class="text-danger fw-bold">₱${employee.absent_amount}</span>
+            </div>
+        `);
+    }
+    
+    // Add dynamic deductions
+    if (employee.deductions && employee.deductions.length > 0) {
+        employee.deductions.forEach(deduction => {
+            const details = deduction.details ? ` (${deduction.details})` : '';
+            deductionsBreakdown.append(`
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                    <span class="text-danger">${deduction.name}${details}</span>
+                    <span class="text-danger fw-bold">₱${parseFloat(deduction.amount).toFixed(2)}</span>
+                </div>
+            `);
+        });
+    }
+    
+    // Show the modal
+    $('#employeeBreakdownModal').modal('show');
+}
 
 $('#approvePayrollBtn').click(function () {
     $.ajax({
@@ -218,22 +373,86 @@ th, td {
     font-weight:700;
 }
 
-
 .table td, .table th {
     vertical-align: middle;
 }
 
-    .table td:nth-child(4),
-    .table td:nth-child(5),
-    .table td:nth-child(6),
-    .table td:nth-child(7),
-    .table td:nth-child(8),
-    .table td:nth-child(9),
-    .table td:nth-child(10),
-    .table td:nth-child(11),
-    .table td:nth-child(12) {
+.table td:nth-child(4),
+.table td:nth-child(5),
+.table td:nth-child(6),
+.table td:nth-child(7),
+.table td:nth-child(8),
+.table td:nth-child(9),
+.table td:nth-child(10),
+.table td:nth-child(11),
+.table td:nth-child(12) {
     text-align: right;
 }
 
+/* Hover effect for clickable rows */
+.employee-row:hover {
+    background-color: #f8f9fa !important;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+.employee-row {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.employee-row::after {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #6c757d;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.employee-row:hover::after {
+    opacity: 1;
+}
+
+/* Modal styling */
+.modal-lg {
+    max-width: 800px;
+}
+
+.border.rounded {
+    background-color: #f8f9fa;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Table row styling */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    .employee-row::after {
+        display: none;
+    }
+}
 </style>
 {% endblock %}

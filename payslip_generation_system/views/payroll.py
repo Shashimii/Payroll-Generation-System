@@ -378,6 +378,10 @@ def batch_data(request):
         )
         total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
+        # Get detailed incomes and deductions for breakdown
+        detailed_incomes = list(incomes.values('name', 'amount', 'details'))
+        detailed_deductions = list(other_deductions.values('name', 'amount', 'details'))
+
         # Final calculation
         total_deductions = tax_deduction + philhealth + sss + late_amt_total + absent_amt_total + total_other_deductions
         net_salary = basic_salary_cutoff - total_deductions + total_income
@@ -417,6 +421,8 @@ def batch_data(request):
         emp_data['total_deductions'] = f"{total_deductions:.2f}"
         emp_data['income'] = f"{total_income:.2f}"
         emp_data['net_salary'] = f"{net_salary:.2f}"
+        emp_data['incomes'] = detailed_incomes
+        emp_data['deductions'] = detailed_deductions
 
         employees.append(emp_data)
 
