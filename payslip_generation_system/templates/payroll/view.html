@@ -38,11 +38,13 @@
 <input type="hidden" id="cutoff_month" name="cutoff_month">
 <input type="hidden" id="batch_number" name="batch_number">
 <input type="hidden" id="cutoff_year" name="cutoff_year">
+<input type="hidden" id="assigned_office" name="assigned_office">
 
 <input type="hidden" id="reject_cutoff" name="cutoff">
 <input type="hidden" id="reject_cutoff_month" name="cutoff_month">
 <input type="hidden" id="reject_cutoff_year" name="cutoff_year">
 <input type="hidden" id="reject_batch_number" name="batch_number">
+<input type="hidden" id="reject_assigned_office" name="reject_assigned_office">
 
 <button id="approvePayrollBtn" class="btn btn-success btn-block">Approve Payroll</button>
 <button class="btn btn-danger btn-block" data-bs-toggle="modal" data-bs-target="#remarksModal">
@@ -158,11 +160,13 @@ $(document).ready(function () {
         $('#cutoff_month').val(response.cutoff_month);
         $('#cutoff_year').val(response.cutoff_year);
         $('#batch_number').val(response.batch_number);
+        $('#assigned_office').val(response.assigned_office);
 
         $('#reject_cutoff').val(response.cutoff);
         $('#reject_cutoff_month').val(response.cutoff_month);
         $('#reject_cutoff_year').val(response.cutoff_year);
         $('#reject_batch_number').val(response.batch_number);
+        $('#reject_assigned_office').val(response.assigned_office);
 
         const tbody = $('#employeeTableBody');
         tbody.empty();
@@ -340,16 +344,21 @@ function showEmployeeBreakdown(employee) {
 }
 
 $('#approvePayrollBtn').click(function () {
+    let data = {
+        cutoff: $('#cutoff').val(),
+        cutoff_month: $('#cutoff_month').val(),
+        cutoff_year: $('#cutoff_year').val(),
+        batch_number: $('#batch_number').val(),
+        assigned_office: $('#assigned_office').val(),
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    };
+
+    console.log("Payroll approval data:", data); // Debug 
+
     $.ajax({
         url: '{% url "payroll_approve" %}',
         method: 'POST',
-        data: {
-            cutoff: $('#cutoff').val(),
-            cutoff_month: $('#cutoff_month').val(),
-            cutoff_year: $('#cutoff_year').val(),
-            batch_number: $('#batch_number').val(),
-            csrfmiddlewaretoken: '{{ csrf_token }}'
-        },
+        data: data,
         success: function (res) {
             if (res.status === 'OK') {
                 Swal.fire({
@@ -366,7 +375,9 @@ $('#approvePayrollBtn').click(function () {
             alert('Server error.');
         }
     });
+    
 });
+
 </script>
 
 

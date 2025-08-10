@@ -146,13 +146,15 @@ def approve(request):
         cutoff_month = request.POST.get('cutoff_month')
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
+        assigned_office = request.POST.get('assigned_office')
 
         # Employees on the current payroll
         employee_ids = list(BatchAssignment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             cutoff_month=cutoff_month,
-            cutoff_year=cutoff_year
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
         ).values_list('employee_id', flat=True))
 
         # Update their adjustment statuses
@@ -160,7 +162,8 @@ def approve(request):
             employee_id__in=employee_ids,
             cutoff=cutoff,
             month=cutoff_month,
-            cutoff_year=cutoff_year
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
         ).update(status="Approved")
 
         return JsonResponse({'status': 'OK'}, status=200)
