@@ -714,6 +714,12 @@ function loadBatchData () {
                 <strong>Returned Remark:</strong> ${response.remark}
               </div>
             `);
+          } else if (response.approval_status) {
+            $('#payrollRemarkContainer').html(`
+              <div class="alert alert-success" role="alert">
+                <strong>Status:</strong> ${response.approval_status}
+              </div>
+            `);
           } else {
             $('#payrollRemarkContainer').empty();
           }

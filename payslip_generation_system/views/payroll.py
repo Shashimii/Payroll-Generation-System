@@ -659,6 +659,29 @@ def batch_data(request):
         
         is_last_batch = last_batch_overall and last_batch_overall.batch_number == batch_number
 
+    # Check if all adjustments in this batch are approved
+    total_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        assigned_office=office_to_check
+    ).count()
+    
+    approved_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Approved",
+        assigned_office=office_to_check
+    ).count()
+    
+    # Set approval status
+    approval_status = ""
+    if total_adjustments > 0 and approved_adjustments == total_adjustments:
+        approval_status = "Approved"
+
     return JsonResponse({
         'employees': employees,
         'cutoff': cutoff,
@@ -669,6 +692,7 @@ def batch_data(request):
         'has_approved_adjustments': has_approved_adjustments,
         'has_credited_adjustments': has_credited_adjustments,
         'remark': remark or "",
+        'approval_status': approval_status,
         'is_last_batch': is_last_batch,
         'assigned_office': batch_assigned_office,
         'formatted_office_name': get_formatted_office_name(batch_assigned_office),
@@ -1315,12 +1339,36 @@ def data(request):
             
             # Add each unique batch number for this office
             for batch_number in batch_numbers:
+                # Check if all adjustments in this batch are approved
+                total_adjustments = Adjustment.objects.filter(
+                    batch_number=batch_number,
+                    cutoff=pending_batch['cutoff'],
+                    month=pending_batch['month'],
+                    cutoff_year=pending_batch['cutoff_year'],
+                    assigned_office=office
+                ).count()
+                
+                approved_adjustments = Adjustment.objects.filter(
+                    batch_number=batch_number,
+                    cutoff=pending_batch['cutoff'],
+                    month=pending_batch['month'],
+                    cutoff_year=pending_batch['cutoff_year'],
+                    status="Approved",
+                    assigned_office=office
+                ).count()
+                
+                # Set approval status
+                approval_status = ""
+                if total_adjustments > 0 and approved_adjustments == total_adjustments:
+                    approval_status = "Approved"
+                
                 valid_batches.append({
                     'batch_number': batch_number,
                     'cutoff': pending_batch['cutoff'],
                     'cutoff_month': pending_batch['month'],
                     'cutoff_year': pending_batch['cutoff_year'],
-                    'assigned_office': office
+                    'assigned_office': office,
+                    'approval_status': approval_status
                 })
     
     # Remove duplicates based on batch_number, cutoff, cutoff_month, cutoff_year, and assigned_office
@@ -1418,6 +1466,8 @@ def approve_data(request):
             # Add formatted office name and payroll title
             batch['formatted_office_name'] = get_formatted_office_name(batch['assigned_office'])
             batch['payroll_title'] = get_payroll_title(batch['assigned_office'])
+            # Add approval status
+            batch['approval_status'] = "Approved"
             valid_batches.append(batch)
 
     return JsonResponse({'batches': valid_batches}, status=200)
@@ -1431,6 +1481,7 @@ def approve_show(request):
         'cutoff_month': request.GET.get('cutoff_month'),
         'cutoff_year': request.GET.get('cutoff_year'),
         'batch_number': request.GET.get('batch_number'),
+        'assigned_office': request.GET.get('assigned_office'),
     }
     return render(request, 'payroll/releasing.html', context)
 
@@ -1536,6 +1587,29 @@ def removed_employee_data(request):
 
     print(employees)
 
+    # Check if all adjustments in this batch are approved
+    total_adjustments = Adjustment.objects.filter(
+        employee_id__in=removed_employee_ids,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        assigned_office=batch_assigned_office
+    ).count()
+    
+    approved_adjustments = Adjustment.objects.filter(
+        employee_id__in=removed_employee_ids,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Approved",
+        assigned_office=batch_assigned_office
+    ).count()
+    
+    # Set approval status
+    approval_status = ""
+    if total_adjustments > 0 and approved_adjustments == total_adjustments:
+        approval_status = "Approved"
+
     return JsonResponse({
         'employees': employees,
         'cutoff': cutoff,
@@ -1545,6 +1619,7 @@ def removed_employee_data(request):
         'has_pending_adjustments': has_pending_adjustments,
         'has_approved_adjustments': has_approved_adjustments,
         'has_credited_adjustments': has_credited_adjustments,
+        'approval_status': approval_status,
         'assigned_office': batch_assigned_office,
         'formatted_office_name': get_formatted_office_name(batch_assigned_office),
         'payroll_title': get_payroll_title(batch_assigned_office),

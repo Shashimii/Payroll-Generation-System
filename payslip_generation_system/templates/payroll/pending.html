@@ -38,7 +38,12 @@ $(document).ready(function () {
                 <strong>Batch ${batch.batch_number}</strong><br>
                 <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
                 </div>
-                <span class="badge bg-warning text-dark">Pending</span>
+                <div class="batch-status">
+                  ${batch.approval_status ? 
+                    `<span class="badge bg-success">${batch.approval_status}</span>` : 
+                    `<span class="badge bg-warning text-dark">Pending</span>`
+                  }
+                </div>
             </li>
             `);
             });
