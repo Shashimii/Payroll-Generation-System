@@ -559,7 +559,7 @@ function loadBatchData () {
                         data-month='${response.cutoff_month}'
                         data-year='${response.cutoff_year}'
                         data-batch='${response.batch_number}'
-                        ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
+                        ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments || emp.previous_batch_submitted) ? 'disabled title="' + (emp.previous_batch_submitted ? 'Cannot unmark as late: Previous batch has been submitted.' : 'Adjustments are either being checked, approved, or credited.') + '"' : ''}
                       >
                         Not Late
                       </button>`;
