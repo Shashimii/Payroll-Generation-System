@@ -29,6 +29,35 @@ def get_user_assigned_office(user_role):
     }
     return role_to_office.get(user_role)
 
+def get_formatted_office_name(office_code):
+    """
+    Helper function to get formatted office name from office code
+    """
+    office_name_map = {
+        'denr_ncr_nec': 'DENR NCR NEC',
+        'meo_s': 'MEO South',
+        'meo_e': 'MEO East',
+        'meo_w': 'MEO West',
+        'meo_n': 'MEO North',
+    }
+    return office_name_map.get(office_code, office_code)
+
+def get_payroll_title(office_code):
+    """
+    Helper function to get the payroll title based on office
+    """
+    if not office_code:
+        return "General Payroll DENR NCR"
+    
+    office_name_map = {
+        'denr_ncr_nec': 'General Payroll DENR NCR NEC',
+        'meo_s': 'General Payroll DENR NCR MEO South',
+        'meo_e': 'General Payroll DENR NCR MEO East',
+        'meo_w': 'General Payroll DENR NCR MEO West',
+        'meo_n': 'General Payroll DENR NCR MEO North',
+    }
+    return office_name_map.get(office_code, "General Payroll DENR NCR")
+
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def index(request):
@@ -642,6 +671,8 @@ def batch_data(request):
         'remark': remark or "",
         'is_last_batch': is_last_batch,
         'assigned_office': batch_assigned_office,
+        'formatted_office_name': get_formatted_office_name(batch_assigned_office),
+        'payroll_title': get_payroll_title(batch_assigned_office),
     })
 
 @login_required
@@ -1299,6 +1330,9 @@ def data(request):
         key = (batch['batch_number'], batch['cutoff'], batch['cutoff_month'], batch['cutoff_year'], batch['assigned_office'])
         if key not in seen:
             seen.add(key)
+            # Add formatted office name and payroll title
+            batch['formatted_office_name'] = get_formatted_office_name(batch['assigned_office'])
+            batch['payroll_title'] = get_payroll_title(batch['assigned_office'])
             unique_batches.append(batch)
 
     return JsonResponse({'batches': unique_batches}, status=200)
@@ -1334,7 +1368,8 @@ def approve_data(request):
             'batch_number',
             'cutoff',
             'cutoff_month',
-            'cutoff_year'
+            'cutoff_year',
+            'assigned_office'
         ).distinct()
     else:
         # For admin and checker, show all batches
@@ -1342,7 +1377,8 @@ def approve_data(request):
             'batch_number',
             'cutoff',
             'cutoff_month',
-            'cutoff_year'
+            'cutoff_year',
+            'assigned_office'
         ).distinct()
 
     valid_batches = []
@@ -1379,6 +1415,9 @@ def approve_data(request):
 
         # Only include the batch if ALL employees have Approved adjustments
         if approved_adjustments == len(employee_ids):
+            # Add formatted office name and payroll title
+            batch['formatted_office_name'] = get_formatted_office_name(batch['assigned_office'])
+            batch['payroll_title'] = get_payroll_title(batch['assigned_office'])
             valid_batches.append(batch)
 
     return JsonResponse({'batches': valid_batches}, status=200)
@@ -1433,6 +1472,11 @@ def removed_employee_data(request):
 
     # Get the employee IDs for removed employees
     removed_employee_ids = [a.employee.id for a in assignments]
+
+    # Get the assigned_office for this batch (all employees in a batch should have the same assigned_office)
+    batch_assigned_office = None
+    if assignments.exists():
+        batch_assigned_office = assignments.first().assigned_office
 
     # Check for adjustment statuses for removed employees
     has_pending_adjustments = Adjustment.objects.filter(
@@ -1501,4 +1545,7 @@ def removed_employee_data(request):
         'has_pending_adjustments': has_pending_adjustments,
         'has_approved_adjustments': has_approved_adjustments,
         'has_credited_adjustments': has_credited_adjustments,
+        'assigned_office': batch_assigned_office,
+        'formatted_office_name': get_formatted_office_name(batch_assigned_office),
+        'payroll_title': get_payroll_title(batch_assigned_office),
     })

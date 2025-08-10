@@ -7,7 +7,7 @@
     </button>
 
 
-<h2>General Payroll DENR NCR</h2>
+<h2 id="payrollTitle">General Payroll DENR NCR</h2>
 <h4>{{ cutoff_month }} {{ cutoff }} Cutoff {{ cutoff_year }} — Batch {{ batch_number }}</h4>
 
 <table class="table table-striped table-bordered mt-3 text-sm">
@@ -56,6 +56,9 @@ $(document).ready(function () {
         $('#cutoff_month').val(response.cutoff_month);
         $('#cutoff_year').val(response.cutoff_year);
         $('#batch_number').val(response.batch_number);
+
+        // Update payroll title
+        $('#payrollTitle').text(response.payroll_title || 'General Payroll DENR NCR');
 
         const tbody = $('#employeeTableBody');
         tbody.empty();
