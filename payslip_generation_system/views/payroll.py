@@ -1126,49 +1126,63 @@ def data(request):
     # Get assigned office for the current user
     assigned_office = get_user_assigned_office(user_role)
     
-    # Filter batches based on user role
+    # Get all pending adjustments
+    pending_adjustments_query = Adjustment.objects.filter(status="Pending")
+    
+    # Apply assigned_office filter if user is office-specific preparator
     if assigned_office and user_role != 'admin' and user_role != 'checker':
-        # For office-specific preparators, show only their office batches
-        all_batches = BatchAssignment.objects.filter(assigned_office=assigned_office).values(
-            'batch_number',
-            'cutoff',
-            'cutoff_month',
-            'cutoff_year'
-        ).distinct()
-    else:
-        # For admin and checker, show all batches
-        all_batches = BatchAssignment.objects.values(
-            'batch_number',
-            'cutoff',
-            'cutoff_month',
-            'cutoff_year'
-        ).distinct()
-
+        pending_adjustments_query = pending_adjustments_query.filter(assigned_office=assigned_office)
+    
+    # Get unique batch identifiers from pending adjustments
+    pending_batches = pending_adjustments_query.values(
+        'cutoff',
+        'month',
+        'cutoff_year',
+        'assigned_office'
+    ).distinct()
+    
     valid_batches = []
+    
+    for pending_batch in pending_batches:
+        office = pending_batch['assigned_office']
+        if office:  # Skip if office is None
+            # Get employees with pending adjustments for this office and batch period
+            employees_with_pending = pending_adjustments_query.filter(
+                cutoff=pending_batch['cutoff'],
+                month=pending_batch['month'],
+                cutoff_year=pending_batch['cutoff_year'],
+                assigned_office=office
+            ).values_list('employee_id', flat=True).distinct()
+            
+            # Get unique batch numbers for these employees
+            batch_numbers = BatchAssignment.objects.filter(
+                employee_id__in=employees_with_pending,
+                cutoff=pending_batch['cutoff'],
+                cutoff_month=pending_batch['month'],
+                cutoff_year=pending_batch['cutoff_year'],
+                assigned_office=office
+            ).values_list('batch_number', flat=True).distinct()
+            
+            # Add each unique batch number for this office
+            for batch_number in batch_numbers:
+                valid_batches.append({
+                    'batch_number': batch_number,
+                    'cutoff': pending_batch['cutoff'],
+                    'cutoff_month': pending_batch['month'],
+                    'cutoff_year': pending_batch['cutoff_year'],
+                    'assigned_office': office
+                })
+    
+    # Remove duplicates based on batch_number, cutoff, cutoff_month, cutoff_year, and assigned_office
+    seen = set()
+    unique_batches = []
+    for batch in valid_batches:
+        key = (batch['batch_number'], batch['cutoff'], batch['cutoff_month'], batch['cutoff_year'], batch['assigned_office'])
+        if key not in seen:
+            seen.add(key)
+            unique_batches.append(batch)
 
-    for batch in all_batches:
-        # Get all employee IDs in this batch
-        employee_ids = BatchAssignment.objects.filter(
-            batch_number=batch['batch_number'],
-            cutoff=batch['cutoff'],
-            cutoff_month=batch['cutoff_month'],
-            cutoff_year=batch['cutoff_year']
-        ).values_list('employee_id', flat=True)
-
-        # Count how many of them have at least one Pending adjustment
-        pending_adjustments = Adjustment.objects.filter(
-            employee_id__in=employee_ids,
-            cutoff=batch['cutoff'],
-            month=batch['cutoff_month'],
-            cutoff_year=batch['cutoff_year'],
-            status="Pending"
-        ).values('employee_id').distinct().count()
-
-        # Only include the batch if ALL employees have Pending adjustments
-        if pending_adjustments == len(employee_ids):
-            valid_batches.append(batch)
-
-    return JsonResponse({'batches': valid_batches}, status=200)
+    return JsonResponse({'batches': unique_batches}, status=200)
 
 def show(request):
     context = {
@@ -1214,25 +1228,37 @@ def approve_data(request):
     valid_batches = []
 
     for batch in all_batches:
-        # Get all employee IDs in this batch
-        employee_ids = BatchAssignment.objects.filter(
+        # Get all employee IDs in this batch with assigned_office filtering
+        employee_ids_query = BatchAssignment.objects.filter(
             batch_number=batch['batch_number'],
             cutoff=batch['cutoff'],
             cutoff_month=batch['cutoff_month'],
             cutoff_year=batch['cutoff_year']
-        ).values_list('employee_id', flat=True)
+        )
+        
+        # Apply assigned_office filter if user is office-specific preparator
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            employee_ids_query = employee_ids_query.filter(assigned_office=assigned_office)
+        
+        employee_ids = employee_ids_query.values_list('employee_id', flat=True)
 
-        # Count how many of them have at least one Pending adjustment
-        pending_adjustments = Adjustment.objects.filter(
+        # Count how many of them have at least one Approved adjustment
+        approved_adjustments_query = Adjustment.objects.filter(
             employee_id__in=employee_ids,
             cutoff=batch['cutoff'],
             month=batch['cutoff_month'],
             cutoff_year=batch['cutoff_year'],
             status="Approved"
-        ).values('employee_id').distinct().count()
+        )
+        
+        # Apply assigned_office filter to adjustments if user is office-specific preparator
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            approved_adjustments_query = approved_adjustments_query.filter(assigned_office=assigned_office)
+        
+        approved_adjustments = approved_adjustments_query.values('employee_id').distinct().count()
 
-        # Only include the batch if ALL employees have Pending adjustments
-        if pending_adjustments == len(employee_ids):
+        # Only include the batch if ALL employees have Approved adjustments
+        if approved_adjustments == len(employee_ids):
             valid_batches.append(batch)
 
     return JsonResponse({'batches': valid_batches}, status=200)

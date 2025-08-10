@@ -34,7 +34,8 @@ $(document).ready(function () {
             >
                 <div class="batch-text">
                 <span>${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span><br>
-                <strong>Batch ${batch.batch_number}</strong>
+                <strong>Batch ${batch.batch_number}</strong><br>
+                <small class="text-muted">${batch.assigned_office || 'N/A'}</small>
                 </div>
                 <span class="badge bg-warning text-dark">Pending</span>
             </li>
