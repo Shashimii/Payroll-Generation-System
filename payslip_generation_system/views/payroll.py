@@ -1063,6 +1063,31 @@ def removed_employee_data(request):
     batch_number = 0
     removed= 'YES'
 
+    # Check for adjustment statuses (same logic as batch_data)
+    has_pending_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Pending"
+    ).exists()
+
+    has_approved_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Approved"
+    ).exists()
+
+    has_credited_adjustments = Adjustment.objects.filter(
+        batch_number=batch_number,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Credited"
+    ).exists()
+
     # Get employees assigned to this batch
     assignments = BatchAssignment.objects.filter(
         cutoff=cutoff,
@@ -1095,4 +1120,7 @@ def removed_employee_data(request):
         'cutoff_month': cutoff_month,
         'cutoff_year': cutoff_year,
         'batch_number': batch_number,
+        'has_pending_adjustments': has_pending_adjustments,
+        'has_approved_adjustments': has_approved_adjustments,
+        'has_credited_adjustments': has_credited_adjustments,
     })

@@ -51,9 +51,9 @@
       <div style="">
         <h2>General Payroll DENR-NCR</h2>
         <h5 style="text-align: right;" id="payrollCutoffInfo" class="text-muted"></h5>
-        <div id="payrollRemarkContainer" class="mb-3"></div>
       </div>
   </div>
+      <div id="payrollRemarkContainer" class="mb-3"></div>
       <table class="table table-striped table-bordered mt-3 text-sm">
           <thead class="table-dark text-center align-middle">
             <tr>
@@ -559,6 +559,7 @@ function loadBatchData () {
                         data-month='${response.cutoff_month}'
                         data-year='${response.cutoff_year}'
                         data-batch='${response.batch_number}'
+                        ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                       >
                         Not Late
                       </button>`;
@@ -570,6 +571,7 @@ function loadBatchData () {
                         data-month='${response.cutoff_month}'
                         data-year='${response.cutoff_year}'
                         data-batch='${response.batch_number}'
+                        ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                       >
                       Mark as Late
                     </button>`;
@@ -582,6 +584,7 @@ function loadBatchData () {
                         data-month='${response.cutoff_month}'
                         data-year='${response.cutoff_year}'
                         data-batch='${response.batch_number}'
+                        ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                       >
                         Unremove
                       </button>`;
@@ -593,6 +596,7 @@ function loadBatchData () {
                       data-month='${response.cutoff_month}'
                       data-year='${response.cutoff_year}'
                       data-batch='${response.batch_number}'
+                      ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                     >
                       Remove
                     </button>`;
@@ -614,6 +618,7 @@ function loadBatchData () {
                                 data-month='${response.cutoff_month}'
                                 data-year='${response.cutoff_year}'
                                 data-batch='${response.batch_number}'
+                                ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                               >
                                 Adjustments
                               </button> 
@@ -1131,6 +1136,7 @@ function loadRemovedEmployeeData () {
                               data-month='${response.cutoff_month}'
                               data-year='${response.cutoff_year}'
                               data-batch='${response.batch_number}'
+                              ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                             >
                               Unremove
                             </button>
