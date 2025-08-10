@@ -430,12 +430,24 @@ def batch_data(request):
         assigned_office=office_to_check
     ).exists()
 
-    remark = ReturnRemark.objects.filter(
+    # Filter remarks based on user role and assigned office
+    remark_query = ReturnRemark.objects.filter(
         batch_number=batch_number,
         cutoff=cutoff,
         cutoff_month=cutoff_month,
         cutoff_year=cutoff_year
-    ).values_list('remark', flat=True).first()
+    )
+    
+    # Apply assigned_office filter based on user role
+    if url_assigned_office:
+        # If coming from pending page, filter by the specific office
+        remark_query = remark_query.filter(assigned_office=url_assigned_office)
+    elif assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, only show remarks for their assigned office
+        remark_query = remark_query.filter(assigned_office=assigned_office)
+    # For admin and checker, show all remarks (no additional filter)
+    
+    remark = remark_query.values_list('remark', flat=True).first()
 
     employees = []
 

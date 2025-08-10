@@ -33,8 +33,8 @@ class ReturnRemark(models.Model):
 
     assigned_office = models.CharField(max_length=100, blank=True, null=True)
     class Meta:
-        unique_together = ['cutoff', 'cutoff_month', 'cutoff_year']
+        unique_together = ['cutoff', 'cutoff_month', 'cutoff_year', 'batch_number', 'assigned_office']
         ordering = ['remark', 'cutoff_year', 'cutoff_month', 'cutoff', 'batch_number',]
     
     def __str__(self):
-        return f"{self.employee.fullname} - Batch {self.batch_number} ({self.cutoff_month} {self.cutoff}, {self.cutoff_year})"
+        return f"Batch {self.batch_number} ({self.cutoff_month} {self.cutoff}, {self.cutoff_year}) - {self.assigned_office or 'All Offices'}"
