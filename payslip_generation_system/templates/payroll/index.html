@@ -185,6 +185,21 @@
 </div>
 
 <script>
+// Money formatting function
+function formatMoney(amount) {
+    if (amount === null || amount === undefined || amount === '') {
+        return '0.00';
+    }
+    const num = parseFloat(amount);
+    if (isNaN(num)) {
+        return '0.00';
+    }
+    return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
 // Varaibles
 let deletedAdjustmentIds = [];
 let late_edit_id = null;
@@ -606,10 +621,10 @@ function loadBatchData () {
                           <tr class="${rowClass}">
                             <td>${index + 1}</td>
                             <td>${emp.employee_number}</td>
-                            <td>${emp.fullname}</td>
-                            <td>${emp.position}</td>
-                            <td>₱ ${emp.salary}</td>
-                            <td>${emp.tax_declaration === 'yes' ? 'YES' : 'NO'}</td>
+                                                      <td>${emp.fullname}</td>
+                          <td>${emp.position}</td>
+                          <td>₱ ${formatMoney(emp.salary)}</td>
+                          <td>${emp.tax_declaration === 'yes' ? 'YES' : 'NO'}</td>
                             <td class="${emp.has_adjustments ? 'text-green' : 'text-red'}">${emp.has_adjustments ? 'YES' : 'NO'}</td>
                             <td>
                               <button class='btn btn-secondary btn-sm show_adjustments' 
@@ -1133,7 +1148,7 @@ function loadRemovedEmployeeData () {
                           <td>${emp.employee_number}</td>
                           <td>${emp.fullname}</td>
                           <td>${emp.position}</td>
-                          <td>₱ ${emp.salary}</td>
+                          <td>₱ ${formatMoney(emp.salary)}</td>
                           <td>${emp.tax_declaration === 'yes' ? 'YES' : 'NO'}</td>
                           <td>
                             <button class='btn btn-danger btn-sm unremove_employee' 
