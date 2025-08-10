@@ -409,13 +409,14 @@ $(document).on('click', '#submitAdjustment', function () {
   const cutoffMonth = $(this).attr('data-month');
   const cutoffYear = $(this).attr('data-year');
   const batchNumber = $(this).attr('data-batch');
+  const assignedOffice = $(this).attr('data-office');
 
   // submit the payroll information using ajax
   // make a url on the backend routes
   // handle the changing of the adjustment status
   // use the payroll information for selective changing
 
-  submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber);
+  submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice);
 })
 
 $(document).on('click', '.late_employee', function () {
@@ -663,6 +664,7 @@ function loadBatchData () {
                   data-month="${response.cutoff_month}" 
                   data-year="${response.cutoff_year}" 
                   data-batch="${response.batch_number}"
+                  data-office="${response.assigned_office || ''}"
                   ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                 >
                   <i class="fas fa-plus-circle mr-1"></i> Submit Adjustments
@@ -670,7 +672,7 @@ function loadBatchData () {
               `;
               $('#payrollSubmitBtnContainer').html(submitButtonHtml);
 
-              appendRemoveBatchButton(response.cutoff_month, response.cutoff, response.cutoff_year);
+              appendRemoveBatchButton(response.cutoff_month, response.cutoff, response.cutoff_year, response.assigned_office);
               if (response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) {
                   $('#removeBatchBtn button').prop('disabled', true);
               } else {
@@ -718,7 +720,7 @@ function loadBatchData () {
   })
 }
 
-function appendRemoveBatchButton(month, cutoff, year) {
+function appendRemoveBatchButton(month, cutoff, year, assignedOffice) {
     const removeBtnHTML = `
         <button 
             type="button" 
@@ -726,7 +728,8 @@ function appendRemoveBatchButton(month, cutoff, year) {
             onclick="removeBatch(this)"
             data-month="${month}" 
             data-cutoff="${cutoff}" 
-            data-year="${year}">
+            data-year="${year}"
+            data-office="${assignedOffice || ''}">
             <i class="fas fa-trash-alt mr-1"></i> Remove Batch
         </button>
     `;
@@ -737,10 +740,12 @@ function removeBatch(btn) {
     const month = $(btn).data('month');
     const cutoff = $(btn).data('cutoff');
     const year = $(btn).data('year');
+    const office = $(btn).data('office');
 
+    const officeText = office ? ` for ${office}` : '';
     Swal.fire({
         title: 'Are you sure?',
-        text: `Remove All Batches for ${month} ${cutoff}, ${year}?`,
+        text: `Remove All Batches for ${month} ${cutoff}, ${year}${officeText}?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
@@ -755,6 +760,7 @@ function removeBatch(btn) {
                     cutoff: cutoff,
                     cutoff_month: month,
                     cutoff_year: year,
+                    assigned_office: office,
                     csrfmiddlewaretoken: '{{ csrf_token }}'
                 },
                 success: function (response) {
@@ -1309,7 +1315,7 @@ function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   }
 }
 
-function submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber) {
+function submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice) {
   $.ajax({
     url: '{% url "payroll_submit" %}',
     method: 'POST',
@@ -1318,6 +1324,7 @@ function submitPayroll(cutoff, cutoffMonth, cutoffYear, batchNumber) {
       cutoff: cutoff,
       cutoff_month: cutoffMonth,
       cutoff_year: cutoffYear,
+      assigned_office: assignedOffice,
     },
     success: function (response) {
       Swal.fire({

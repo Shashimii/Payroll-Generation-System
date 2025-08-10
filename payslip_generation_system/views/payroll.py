@@ -93,13 +93,22 @@ def submit(request):
         # Employees on the current payroll
         employee_ids = list(batch_assignments.values_list('employee_id', flat=True))
 
-        # Employees who have submitted adjustments
-        adjusted_ids = list(Adjustment.objects.filter(
-            employee_id__in=employee_ids,
-            cutoff=cutoff,
-            month=cutoff_month,
-            cutoff_year=cutoff_year
-        ).values_list('employee_id', flat=True).distinct())
+        # Get the assigned_office for this batch
+        batch_assigned_office = None
+        if batch_assignments.exists():
+            batch_assigned_office = batch_assignments.first().assigned_office
+
+        # Employees who have submitted adjustments (filter by assigned_office)
+        adjustment_filter = {
+            'employee_id__in': employee_ids,
+            'cutoff': cutoff,
+            'month': cutoff_month,
+            'cutoff_year': cutoff_year
+        }
+        if batch_assigned_office:
+            adjustment_filter['assigned_office'] = batch_assigned_office
+
+        adjusted_ids = list(Adjustment.objects.filter(**adjustment_filter).values_list('employee_id', flat=True).distinct())
 
         # Find employees without adjustments
         missing_ids = list(set(employee_ids) - set(adjusted_ids))
@@ -113,13 +122,8 @@ def submit(request):
                 'missing_employees': list(missing_employees)
             }, status=400)
 
-        # Update their adjustment statuses
-        Adjustment.objects.filter(
-            employee_id__in=employee_ids,
-            cutoff=cutoff,
-            month=cutoff_month,
-            cutoff_year=cutoff_year
-        ).update(status="Pending")
+        # Update their adjustment statuses (filter by assigned_office)
+        Adjustment.objects.filter(**adjustment_filter).update(status="Pending")
 
         # Remove the ReturnRemark if it exists
         ReturnRemark.objects.filter(
@@ -333,12 +337,19 @@ def batch_data(request):
             )
         ).order_by('late_order', 'employee__fullname')
 
+    # Get the assigned_office for this batch (all employees in a batch should have the same assigned_office)
+    batch_assigned_office = None
+    if assignments.exists():
+        batch_assigned_office = assignments.first().assigned_office
+
+    # Filter adjustment status checks by assigned_office
     has_pending_adjustments = Adjustment.objects.filter(
         batch_number=batch_number,
         cutoff=cutoff,
         month=cutoff_month,
         cutoff_year=cutoff_year,
-        status="Pending"
+        status="Pending",
+        assigned_office=batch_assigned_office
     ).exists()
 
     has_approved_adjustments = Adjustment.objects.filter(
@@ -346,7 +357,8 @@ def batch_data(request):
         cutoff=cutoff,
         month=cutoff_month,
         cutoff_year=cutoff_year,
-        status="Approved"
+        status="Approved",
+        assigned_office=batch_assigned_office
     ).exists()
 
     has_credited_adjustments = Adjustment.objects.filter(
@@ -354,7 +366,8 @@ def batch_data(request):
         cutoff=cutoff,
         month=cutoff_month,
         cutoff_year=cutoff_year,
-        status="Credited"
+        status="Credited",
+        assigned_office=batch_assigned_office
     ).exists()
 
     remark = ReturnRemark.objects.filter(
@@ -537,6 +550,7 @@ def batch_data(request):
         'has_credited_adjustments': has_credited_adjustments,
         'remark': remark or "",
         'is_last_batch': is_last_batch,
+        'assigned_office': batch_assigned_office,
     })
 
 @login_required
@@ -608,22 +622,31 @@ def batch_delete(request):
     cutoff_month = request.POST.get('cutoff_month')
     cutoff = request.POST.get('cutoff')
     cutoff_year = request.POST.get('cutoff_year')
+    assigned_office = request.POST.get('assigned_office')
 
     if not (cutoff_month and cutoff and cutoff_year):
         return JsonResponse({'error': 'Missing required data'}, status=400)
     
     try:
-        batch_deleted, _ = BatchAssignment.objects.filter(
-            cutoff_month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year
-        ).delete()
+        # Filter by assigned_office if provided
+        batch_filter = {
+            'cutoff_month': cutoff_month,
+            'cutoff': cutoff,
+            'cutoff_year': cutoff_year
+        }
+        if assigned_office:
+            batch_filter['assigned_office'] = assigned_office
 
-        adj_deleted, _ = Adjustment.objects.filter(
-            month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year
-        ).delete()
+        adj_filter = {
+            'month': cutoff_month,
+            'cutoff': cutoff,
+            'cutoff_year': cutoff_year
+        }
+        if assigned_office:
+            adj_filter['assigned_office'] = assigned_office
+
+        batch_deleted, _ = BatchAssignment.objects.filter(**batch_filter).delete()
+        adj_deleted, _ = Adjustment.objects.filter(**adj_filter).delete()
 
         remark_deleted, _ = ReturnRemark.objects.filter(
             cutoff_month=cutoff_month,
@@ -634,10 +657,11 @@ def batch_delete(request):
         if batch_deleted == 0 and adj_deleted == 0 and remark_deleted == 0:
             return JsonResponse({'error': 'No matching records found'}, status=404)
 
+        office_text = f" for {assigned_office}" if assigned_office else ""
         return JsonResponse({
             'message': f'{batch_deleted} batch assignments, '
                        f'{adj_deleted} adjustments, and '
-                       f'{remark_deleted} return remarks removed successfully.'
+                       f'{remark_deleted} return remarks removed successfully{office_text}.'
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
