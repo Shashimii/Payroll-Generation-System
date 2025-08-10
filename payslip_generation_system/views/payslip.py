@@ -292,6 +292,7 @@ def adjustment_add(request, emp_id):
             status=request.POST.get('status', 'Pending'),
             remarks=request.POST.get('remarks', ''),
             cutoff_year=current_year,
+            assigned_office=employee.assigned_office,
         )
         messages.success(request, 'Adjustment successfully added.')
         return redirect('payslip_adjustment', emp_id=employee.id)

@@ -969,6 +969,7 @@ def adjustment_create(request, emp_id):
                     adjustment.details = details
                     adjustment.status = 'Waiting'
                     adjustment.remarks = remarks
+                    adjustment.assigned_office = employee.assigned_office
                     adjustment.save()
                 except Adjustment.DoesNotExist:
                     # If ID is invalid (not found), fallback to create new
@@ -983,7 +984,8 @@ def adjustment_create(request, emp_id):
                         cutoff=cutoff,
                         month=cutoff_month,
                         cutoff_year=cutoff_year,
-                        batch_number=batch_number
+                        batch_number=batch_number,
+                        assigned_office=employee.assigned_office
                     )
             else:
                 # Create new if no ID provided
@@ -998,7 +1000,8 @@ def adjustment_create(request, emp_id):
                     cutoff=cutoff,
                     month=cutoff_month,
                     cutoff_year=cutoff_year,
-                    batch_number=batch_number
+                    batch_number=batch_number,
+                    assigned_office=employee.assigned_office
                 )
 
         # Save Late
