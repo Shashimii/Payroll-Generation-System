@@ -58,6 +58,9 @@ class Adjustment(models.Model):
     
     # Batch Number
     batch_number = models.BigIntegerField(null=True, blank=True, default=None)
+    
+    # Assigned Office (for filtering purposes)
+    assigned_office = models.CharField(max_length=50, null=True, blank=True)
 
     # Timestamps to track when adjustments were created/updated
     created_at = models.DateTimeField(auto_now_add=True)
