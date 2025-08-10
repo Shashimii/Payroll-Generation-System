@@ -382,6 +382,20 @@ def batch_data(request):
         total_deductions = tax_deduction + philhealth + sss + late_amt_total + absent_amt_total + total_other_deductions
         net_salary = basic_salary_cutoff - total_deductions + total_income
 
+        # Check if the employee's previous batch has been submitted (for removed employees)
+        previous_batch = assignment.previous_batch
+        previous_batch_submitted = False
+        
+        if previous_batch is not None:
+            # Check if the previous batch has any adjustments with status Pending, Approved, or Credited
+            previous_batch_submitted = Adjustment.objects.filter(
+                batch_number=previous_batch,
+                cutoff=cutoff,
+                month=cutoff_month,
+                cutoff_year=cutoff_year,
+                status__in=["Pending", "Approved", "Credited"]
+            ).exists()
+
         # Build data
         emp_data = model_to_dict(employee, fields=[
             'id', 'employee_number', 'fullname', 'position', 'salary', 'tax_declaration'
@@ -389,6 +403,8 @@ def batch_data(request):
         emp_data['late_assigned'] = assignment.late_assigned
         emp_data['removed'] = assignment.removed
         emp_data['has_adjustments'] = assignment.has_adjustments
+        emp_data['previous_batch'] = previous_batch
+        emp_data['previous_batch_submitted'] = previous_batch_submitted
         emp_data['basic_salary_cutoff'] = f"{basic_salary_cutoff:.2f}"
         emp_data['tax_deduction'] = f"{tax_deduction:.2f}"
         emp_data['philhealth'] = f"{philhealth:.2f}"
@@ -1063,32 +1079,7 @@ def removed_employee_data(request):
     batch_number = 0
     removed= 'YES'
 
-    # Check for adjustment statuses (same logic as batch_data)
-    has_pending_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status="Pending"
-    ).exists()
-
-    has_approved_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status="Approved"
-    ).exists()
-
-    has_credited_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status="Credited"
-    ).exists()
-
-    # Get employees assigned to this batch
+    # Get employees assigned to this batch first
     assignments = BatchAssignment.objects.filter(
         cutoff=cutoff,
         cutoff_month=cutoff_month,
@@ -1097,10 +1088,52 @@ def removed_employee_data(request):
         removed=removed
     ).select_related('employee')
 
+    # Get the employee IDs for removed employees
+    removed_employee_ids = [a.employee.id for a in assignments]
+
+    # Check for adjustment statuses for removed employees
+    has_pending_adjustments = Adjustment.objects.filter(
+        employee_id__in=removed_employee_ids,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Pending"
+    ).exists()
+
+    has_approved_adjustments = Adjustment.objects.filter(
+        employee_id__in=removed_employee_ids,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Approved"
+    ).exists()
+
+    has_credited_adjustments = Adjustment.objects.filter(
+        employee_id__in=removed_employee_ids,
+        cutoff=cutoff,
+        month=cutoff_month,
+        cutoff_year=cutoff_year,
+        status="Credited"
+    ).exists()
+
     employees = []
 
     for a in assignments:
         emp = a.employee
+        
+        # Check if the employee's previous batch has been submitted
+        previous_batch = a.previous_batch
+        previous_batch_submitted = False
+        
+        if previous_batch is not None:
+            # Check if the previous batch has any adjustments with status Pending, Approved, or Credited
+            previous_batch_submitted = Adjustment.objects.filter(
+                batch_number=previous_batch,
+                cutoff=cutoff,
+                month=cutoff_month,
+                cutoff_year=cutoff_year,
+                status__in=["Pending", "Approved", "Credited"]
+            ).exists()
 
         employees.append({
             'id': emp.id,
@@ -1109,7 +1142,9 @@ def removed_employee_data(request):
             'position': emp.position,
             'salary': float(emp.salary),
             'tax_declaration': emp.tax_declaration,
-            'removed': a.removed
+            'removed': a.removed,
+            'previous_batch': previous_batch,
+            'previous_batch_submitted': previous_batch_submitted
         })
 
     print(employees)
