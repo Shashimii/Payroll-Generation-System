@@ -123,6 +123,21 @@
 </div>
 
 <script>
+// Money formatting function
+function formatMoney(amount) {
+    if (amount === null || amount === undefined || amount === '') {
+        return '0.00';
+    }
+    const num = parseFloat(amount);
+    if (isNaN(num)) {
+        return '0.00';
+    }
+    return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
 $(document).ready(function () {
     $('#backBtn').click(function() {
         window.location.href = "{% url 'payroll_pending' %}";
@@ -157,15 +172,15 @@ $(document).ready(function () {
                     <td>${i + 1}</td>
                     <td>${emp.fullname}</td>
                     <td>${emp.position}</td>
-                    <td>₱ ${emp.salary}</td>
-                    <td>₱ ${emp.tax_deduction}</td>
-                    <td>₱ ${emp.philhealth}</td>
-                    <td>₱ ${emp.sss}</td>
-                    <td>₱ ${emp.late_amount}</td>
-                    <td>₱ ${emp.absent_amount}</td>
-                    <td>₱ ${emp.income}</td>
-                    <td>₱ ${emp.other_deductions}</td>
-                    <td>₱ ${emp.net_salary}</td>
+                    <td>₱ ${formatMoney(emp.salary)}</td>
+                    <td>₱ ${formatMoney(emp.tax_deduction)}</td>
+                    <td>₱ ${formatMoney(emp.philhealth)}</td>
+                    <td>₱ ${formatMoney(emp.sss)}</td>
+                    <td>₱ ${formatMoney(emp.late_amount)}</td>
+                    <td>₱ ${formatMoney(emp.absent_amount)}</td>
+                    <td>₱ ${formatMoney(emp.income)}</td>
+                    <td>₱ ${formatMoney(emp.other_deductions)}</td>
+                    <td>₱ ${formatMoney(emp.net_salary)}</td>
                     </tr>
                 `);
                 
@@ -231,10 +246,10 @@ function showEmployeeBreakdown(employee) {
     // Populate employee information
     $('#modalEmployeeName').text(employee.fullname);
     $('#modalEmployeePosition').text(employee.position);
-    $('#modalEmployeeSalary').text(employee.salary);
-    $('#modalTotalIncome').text(employee.income);
-    $('#modalTotalDeductions').text(employee.total_deductions);
-    $('#modalNetPay').text(employee.net_salary);
+    $('#modalEmployeeSalary').text(formatMoney(employee.salary));
+    $('#modalTotalIncome').text(formatMoney(employee.income));
+    $('#modalTotalDeductions').text(formatMoney(employee.total_deductions));
+    $('#modalNetPay').text(formatMoney(employee.net_salary));
     
     // Populate income breakdown
     const incomeBreakdown = $('#modalIncomeBreakdown');
@@ -246,7 +261,7 @@ function showEmployeeBreakdown(employee) {
             incomeBreakdown.append(`
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                     <span class="text-success">${income.name}${details}</span>
-                    <span class="text-success fw-bold">₱${parseFloat(income.amount).toFixed(2)}</span>
+                    <span class="text-success fw-bold">₱${formatMoney(income.amount)}</span>
                 </div>
             `);
         });
@@ -263,7 +278,7 @@ function showEmployeeBreakdown(employee) {
         deductionsBreakdown.append(`
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <span class="text-danger">TAX</span>
-                <span class="text-danger fw-bold">₱${employee.tax_deduction}</span>
+                <span class="text-danger fw-bold">₱${formatMoney(employee.tax_deduction)}</span>
             </div>
         `);
     }
@@ -272,7 +287,7 @@ function showEmployeeBreakdown(employee) {
         deductionsBreakdown.append(`
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <span class="text-danger">Philhealth</span>
-                <span class="text-danger fw-bold">₱${employee.philhealth}</span>
+                <span class="text-danger fw-bold">₱${formatMoney(employee.philhealth)}</span>
             </div>
         `);
     }
@@ -281,7 +296,7 @@ function showEmployeeBreakdown(employee) {
         deductionsBreakdown.append(`
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <span class="text-danger">SSS</span>
-                <span class="text-danger fw-bold">₱${employee.sss}</span>
+                <span class="text-danger fw-bold">₱${formatMoney(employee.sss)}</span>
             </div>
         `);
     }
@@ -291,7 +306,7 @@ function showEmployeeBreakdown(employee) {
         deductionsBreakdown.append(`
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <span class="text-danger">Late${lateDetails}</span>
-                <span class="text-danger fw-bold">₱${employee.late_amount}</span>
+                <span class="text-danger fw-bold">₱${formatMoney(employee.late_amount)}</span>
             </div>
         `);
     }
@@ -301,7 +316,7 @@ function showEmployeeBreakdown(employee) {
         deductionsBreakdown.append(`
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <span class="text-danger">Absent${absentDetails}</span>
-                <span class="text-danger fw-bold">₱${employee.absent_amount}</span>
+                <span class="text-danger fw-bold">₱${formatMoney(employee.absent_amount)}</span>
             </div>
         `);
     }
@@ -313,7 +328,7 @@ function showEmployeeBreakdown(employee) {
             deductionsBreakdown.append(`
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                     <span class="text-danger">${deduction.name}${details}</span>
-                    <span class="text-danger fw-bold">₱${parseFloat(deduction.amount).toFixed(2)}</span>
+                    <span class="text-danger fw-bold">₱${formatMoney(deduction.amount)}</span>
                 </div>
             `);
         });
