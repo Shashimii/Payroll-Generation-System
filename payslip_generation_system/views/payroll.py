@@ -441,11 +441,9 @@ def batch_data(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def batch_create(request, batch_size=15):
-    employees = Employee.objects.order_by('fullname')
     cutoff = request.POST.get('cutoff')
     cutoff_month = request.POST.get('cutoff_month')
     cutoff_year = request.POST.get('cutoff_year')
-    batch_number = 1
 
     if not cutoff or not cutoff_month or not cutoff_year:
         return JsonResponse({'error': 'Missing cutoff, month, or year.'}, status=400)
@@ -460,25 +458,47 @@ def batch_create(request, batch_size=15):
             'error': f'Batches already exist for {cutoff_month} {cutoff}, {cutoff_year}.'
         }, status=400)
 
+    # Get all employees grouped by assigned office
+    employees_by_office = {}
+    all_employees = Employee.objects.order_by('fullname')
+    
+    for employee in all_employees:
+        office = employee.assigned_office or 'unassigned'
+        if office not in employees_by_office:
+            employees_by_office[office] = []
+        employees_by_office[office].append(employee)
+
     # Check if there are employees to assign
-    if not employees.exists():
+    if not all_employees.exists():
         return JsonResponse({'error': 'No employees found to create batches.'}, status=400)
 
-    # Create batches
-    for index, employee in enumerate(employees, start=1):
-        BatchAssignment.objects.create(
-            employee=employee,
-            batch_number=batch_number,
-            cutoff=cutoff,
-            cutoff_month=cutoff_month,
-            cutoff_year=cutoff_year
-        )
+    total_batches_created = 0
+    
+    # Create batches for each office separately
+    for office, employees in employees_by_office.items():
+        if not employees:  # Skip if no employees in this office
+            continue
+            
+        batch_number = 1
+        
+        for index, employee in enumerate(employees, start=1):
+            BatchAssignment.objects.create(
+                employee=employee,
+                batch_number=batch_number,
+                cutoff=cutoff,
+                cutoff_month=cutoff_month,
+                cutoff_year=cutoff_year,
+                assigned_office=employee.assigned_office
+            )
 
-        if index % batch_size == 0:
-            batch_number += 1
+            if index % batch_size == 0:
+                batch_number += 1
+        
+        total_batches_created += batch_number - 1 if batch_number > 1 else 1
 
     return JsonResponse({
-        'message': f'Batches successfully created for {cutoff_month} {cutoff}, {cutoff_year}.'
+        'message': f'Batches successfully created for {cutoff_month} {cutoff}, {cutoff_year}. '
+                   f'Total batches created: {total_batches_created} across all offices.'
     })
 
 @login_required
@@ -545,10 +565,15 @@ def batch_late(request):
             cutoff_year=cutoff_year,
         ).values_list('batch_number', flat=True).first()
 
-        # Get the last batch number for the selected payroll period
+        # Get the last batch number for the selected payroll period and office
         last_batch = (
             BatchAssignment.objects
-            .filter(cutoff=cutoff, cutoff_month=cutoff_month, cutoff_year=cutoff_year)
+            .filter(
+                cutoff=cutoff, 
+                cutoff_month=cutoff_month, 
+                cutoff_year=cutoff_year,
+                assigned_office=employee.assigned_office
+            )
             .order_by('-batch_number') # desc
             .first()
         )
@@ -562,12 +587,13 @@ def batch_late(request):
                 batch_number = last_batch_number + 1
             else:
                 # Employee is not in the last batch, so move them to the last batch
-                # Count the number of employees on the last batch
+                # Count the number of employees on the last batch for this office
                 count = BatchAssignment.objects.filter(
                     cutoff=cutoff,
                     cutoff_month=cutoff_month,
                     cutoff_year=cutoff_year,
-                    batch_number=last_batch_number
+                    batch_number=last_batch_number,
+                    assigned_office=employee.assigned_office
                 ).count()
 
                 if count < 15:
@@ -577,7 +603,7 @@ def batch_late(request):
                     # If last batch full, create new batch
                     batch_number = last_batch_number + 1
         else:
-            # No existing batches, create first batch
+            # No existing batches for this office, create first batch
             batch_number = 1
 
         # Update or create the batch assignment of employee
@@ -590,6 +616,7 @@ def batch_late(request):
                 'batch_number': batch_number,
                 'late_assigned': 'YES',
                 'previous_batch': previous_batch,
+                'assigned_office': employee.assigned_office,
             }
         )
 
@@ -643,6 +670,7 @@ def batch_unlate(request):
                 'batch_number': previous_batch,
                 'late_assigned': 'NO',
                 'previous_batch': None,
+                'assigned_office': employee.assigned_office,
             }
         )
 
@@ -696,6 +724,7 @@ def batch_remove(request):
                 'batch_number': batch_number,
                 'removed': 'YES',
                 'previous_batch': previous_batch,
+                'assigned_office': employee.assigned_office,
             }
         )
 
@@ -748,6 +777,7 @@ def batch_unremove(request):
                 'batch_number': previous_batch,
                 'removed': 'NO',
                 'previous_batch': None,
+                'assigned_office': employee.assigned_office,
             }
         )
 

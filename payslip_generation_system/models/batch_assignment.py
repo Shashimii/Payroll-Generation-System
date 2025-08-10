@@ -36,6 +36,16 @@ class BatchAssignment(models.Model):
 
     cutoff_year = models.CharField(max_length=50)  
 
+    ASSIGNED_OFFICE_CHOICES = [
+        ('denr_ncr_nec', 'DENR NCR NEC'),
+        ('meo_s', 'MEO SOUTH'),
+        ('meo_e', 'MEO EAST'),
+        ('meo_w', 'MEO WEST'),
+        ('meo_n', 'MEO NORTH')
+    ]
+
+    assigned_office = models.CharField(max_length=100, choices=ASSIGNED_OFFICE_CHOICES, blank=True, null=True)
+
     BOOLEAN_CHOICES = [
         ('YES', 'YES'), 
         ('NO', 'NO')
@@ -47,7 +57,7 @@ class BatchAssignment(models.Model):
 
     class Meta:
         unique_together = ['employee', 'cutoff', 'cutoff_month', 'cutoff_year']
-        ordering = ['cutoff_year', 'cutoff_month', 'cutoff', 'batch_number', 'late_assigned', 'previous_batch']
+        ordering = ['cutoff_year', 'cutoff_month', 'cutoff', 'assigned_office', 'batch_number', 'late_assigned', 'previous_batch']
     
     def __str__(self):
-        return f"{self.employee.fullname} - Batch {self.batch_number} ({self.cutoff_month} {self.cutoff}, {self.cutoff_year})"
+        return f"{self.employee.fullname} - Batch {self.batch_number} ({self.cutoff_month} {self.cutoff}, {self.cutoff_year}) - {self.assigned_office}"
