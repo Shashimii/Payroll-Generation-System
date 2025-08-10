@@ -528,8 +528,8 @@ def batch_late(request):
 
         ## Save the previous batch number update YES to assignment_late
         ## Change the employee batch number for the cutoff, month, year selected
-        ## move it to the last batch if the last batch is not yet 15 employees
-        ## if its already full create a new batch for it 
+        ## If employee is marked as late in the last existing batch, move them to a new batch
+        ## Otherwise, move them to the last batch if it's not full, or create a new batch if it is
 
         # Get existing batch_number before changing
         previous_batch = BatchAssignment.objects.filter(
@@ -539,7 +539,7 @@ def batch_late(request):
             cutoff_year=cutoff_year,
         ).values_list('batch_number', flat=True).first()
 
-        # last batch number for the selected payroll period
+        # Get the last batch number for the selected payroll period
         last_batch = (
             BatchAssignment.objects
             .filter(cutoff=cutoff, cutoff_month=cutoff_month, cutoff_year=cutoff_year)
@@ -547,24 +547,31 @@ def batch_late(request):
             .first()
         )
 
-        # Count the number of employees on the last batch
         if last_batch:
-            last_batch_number = last_batch.batch_number # batch_number
-            count = BatchAssignment.objects.filter(
-                cutoff=cutoff,
-                cutoff_month=cutoff_month,
-                cutoff_year=cutoff_year,
-                batch_number=last_batch_number
-            ).count()
-
-            if count <= 15:
-                # if last batch not full reassign to the last batch
-                batch_number = last_batch_number
-            else:
-                # if last batch full create new batch
+            last_batch_number = last_batch.batch_number
+            
+            # Check if the employee is currently in the last batch
+            if previous_batch == last_batch_number:
+                # Employee is in the last batch, so mark them as late in a NEW batch
                 batch_number = last_batch_number + 1
+            else:
+                # Employee is not in the last batch, so move them to the last batch
+                # Count the number of employees on the last batch
+                count = BatchAssignment.objects.filter(
+                    cutoff=cutoff,
+                    cutoff_month=cutoff_month,
+                    cutoff_year=cutoff_year,
+                    batch_number=last_batch_number
+                ).count()
+
+                if count < 15:
+                    # If last batch not full, move to the last batch
+                    batch_number = last_batch_number
+                else:
+                    # If last batch full, create new batch
+                    batch_number = last_batch_number + 1
         else:
-            # create a default to prevent error
+            # No existing batches, create first batch
             batch_number = 1
 
         # Update or create the batch assignment of employee
