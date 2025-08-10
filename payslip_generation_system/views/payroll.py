@@ -16,6 +16,19 @@ from django.forms.models import model_to_dict
 
 from django.contrib.auth.decorators import login_required
 
+def get_user_assigned_office(user_role):
+    """
+    Helper function to get the assigned office based on user role
+    """
+    role_to_office = {
+        'preparator_denr_nec': 'denr_ncr_nec',
+        'preparator_meo_s': 'meo_s',
+        'preparator_meo_e': 'meo_e',
+        'preparator_meo_w': 'meo_w',
+        'preparator_meo_n': 'meo_n',
+    }
+    return role_to_office.get(user_role)
+
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def index(request):
@@ -26,9 +39,22 @@ def index(request):
 
     years = list(range(2020, 2031))
 
-    # Get only distinct batch numbers
-    batches = BatchAssignment.objects.exclude(batch_number=0)\
-        .values_list('batch_number', flat=True).distinct().order_by('batch_number')
+    # Get user role and filter batches accordingly
+    user_role = request.session.get('role', '')
+    
+    # Get assigned office for the current user
+    assigned_office = get_user_assigned_office(user_role)
+    
+    # Filter batches based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, show only their office batches
+        batches = BatchAssignment.objects.exclude(batch_number=0)\
+            .filter(assigned_office=assigned_office)\
+            .values_list('batch_number', flat=True).distinct().order_by('batch_number')
+    else:
+        # For admin and checker, show all batches
+        batches = BatchAssignment.objects.exclude(batch_number=0)\
+            .values_list('batch_number', flat=True).distinct().order_by('batch_number')
 
     return render(request, 'payroll/index.html', {
         'months': months,
@@ -225,34 +251,74 @@ def batch_data(request):
     cutoff_year = int(request.GET.get('cutoff_year') or datetime.now().year)
     batch_number = int(batch_number or 1)
 
-    assignments = BatchAssignment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        cutoff_month=cutoff_month,
-        cutoff_year=cutoff_year
-    ).select_related('employee').annotate(
-        late_order=Case(
-            When(late_assigned='NO', then=Value(0)),
-            When(late_assigned='YES', then=Value(1)),
-            default=Value(2),
-            output_field=IntegerField()
-        ),
-        removed_order=Case(
-            When(removed='NO', then=Value(0)),
-            When(removed='YES', then=Value(1)),
-            default=Value(2),
-            output_field=IntegerField()
-        ),
-        has_adjustments=Exists(
-            Adjustment.objects.filter(
-                employee=OuterRef('employee'),
-                batch_number=batch_number,
-                cutoff=cutoff,
-                month=cutoff_month,
-                cutoff_year=cutoff_year
+    # Get user role and filter batches accordingly
+    user_role = request.session.get('role', '')
+    
+    # Get assigned office for the current user
+    assigned_office = get_user_assigned_office(user_role)
+    
+    # Filter assignments based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, show only their office batches
+        assignments = BatchAssignment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
+        ).select_related('employee').annotate(
+            late_order=Case(
+                When(late_assigned='NO', then=Value(0)),
+                When(late_assigned='YES', then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField()
+            ),
+            removed_order=Case(
+                When(removed='NO', then=Value(0)),
+                When(removed='YES', then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField()
+            ),
+            has_adjustments=Exists(
+                Adjustment.objects.filter(
+                    employee=OuterRef('employee'),
+                    batch_number=batch_number,
+                    cutoff=cutoff,
+                    month=cutoff_month,
+                    cutoff_year=cutoff_year
+                )
             )
-        )
-    ).order_by('late_order', 'employee__fullname')
+        ).order_by('late_order', 'employee__fullname')
+    else:
+        # For admin and checker, show all batches
+        assignments = BatchAssignment.objects.filter(
+            batch_number=batch_number,
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year
+        ).select_related('employee').annotate(
+            late_order=Case(
+                When(late_assigned='NO', then=Value(0)),
+                When(late_assigned='YES', then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField()
+            ),
+            removed_order=Case(
+                When(removed='NO', then=Value(0)),
+                When(removed='YES', then=Value(1)),
+                default=Value(2),
+                output_field=IntegerField()
+            ),
+            has_adjustments=Exists(
+                Adjustment.objects.filter(
+                    employee=OuterRef('employee'),
+                    batch_number=batch_number,
+                    cutoff=cutoff,
+                    month=cutoff_month,
+                    cutoff_year=cutoff_year
+                )
+            )
+        ).order_by('late_order', 'employee__fullname')
 
     has_pending_adjustments = Adjustment.objects.filter(
         batch_number=batch_number,
@@ -1016,13 +1082,29 @@ def pending(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def data(request):
-    # Get all batches
-    all_batches = BatchAssignment.objects.values(
-        'batch_number',
-        'cutoff',
-        'cutoff_month',
-        'cutoff_year'
-    ).distinct()
+    # Get user role and filter batches accordingly
+    user_role = request.session.get('role', '')
+    
+    # Get assigned office for the current user
+    assigned_office = get_user_assigned_office(user_role)
+    
+    # Filter batches based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, show only their office batches
+        all_batches = BatchAssignment.objects.filter(assigned_office=assigned_office).values(
+            'batch_number',
+            'cutoff',
+            'cutoff_month',
+            'cutoff_year'
+        ).distinct()
+    else:
+        # For admin and checker, show all batches
+        all_batches = BatchAssignment.objects.values(
+            'batch_number',
+            'cutoff',
+            'cutoff_month',
+            'cutoff_year'
+        ).distinct()
 
     valid_batches = []
 
@@ -1067,13 +1149,29 @@ def approved_list(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def approve_data(request):
-    # Get all batches
-    all_batches = BatchAssignment.objects.values(
-        'batch_number',
-        'cutoff',
-        'cutoff_month',
-        'cutoff_year'
-    ).distinct()
+    # Get user role and filter batches accordingly
+    user_role = request.session.get('role', '')
+    
+    # Get assigned office for the current user
+    assigned_office = get_user_assigned_office(user_role)
+    
+    # Filter batches based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, show only their office batches
+        all_batches = BatchAssignment.objects.filter(assigned_office=assigned_office).values(
+            'batch_number',
+            'cutoff',
+            'cutoff_month',
+            'cutoff_year'
+        ).distinct()
+    else:
+        # For admin and checker, show all batches
+        all_batches = BatchAssignment.objects.values(
+            'batch_number',
+            'cutoff',
+            'cutoff_month',
+            'cutoff_year'
+        ).distinct()
 
     valid_batches = []
 
@@ -1122,14 +1220,32 @@ def removed_employee_data(request):
     batch_number = 0
     removed= 'YES'
 
-    # Get employees assigned to this batch first
-    assignments = BatchAssignment.objects.filter(
-        cutoff=cutoff,
-        cutoff_month=cutoff_month,
-        cutoff_year=cutoff_year,
-        batch_number=batch_number,
-        removed=removed
-    ).select_related('employee')
+    # Get user role and filter batches accordingly
+    user_role = request.session.get('role', '')
+    
+    # Get assigned office for the current user
+    assigned_office = get_user_assigned_office(user_role)
+    
+    # Filter assignments based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, show only their office batches
+        assignments = BatchAssignment.objects.filter(
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            batch_number=batch_number,
+            removed=removed,
+            assigned_office=assigned_office
+        ).select_related('employee')
+    else:
+        # For admin and checker, show all batches
+        assignments = BatchAssignment.objects.filter(
+            cutoff=cutoff,
+            cutoff_month=cutoff_month,
+            cutoff_year=cutoff_year,
+            batch_number=batch_number,
+            removed=removed
+        ).select_related('employee')
 
     # Get the employee IDs for removed employees
     removed_employee_ids = [a.employee.id for a in assignments]
