@@ -72,13 +72,26 @@ def submit(request):
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
 
-        # Employees on the current payroll
-        employee_ids = list(BatchAssignment.objects.filter(
+        # Get user role and filter batches accordingly
+        user_role = request.session.get('role', '')
+        
+        # Get assigned office for the current user
+        assigned_office = get_user_assigned_office(user_role)
+        
+        # Filter batch assignments based on user role
+        batch_assignments = BatchAssignment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year
-        ).values_list('employee_id', flat=True))
+        )
+        
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            # For office-specific preparators, filter by their assigned office
+            batch_assignments = batch_assignments.filter(assigned_office=assigned_office)
+        
+        # Employees on the current payroll
+        employee_ids = list(batch_assignments.values_list('employee_id', flat=True))
 
         # Employees who have submitted adjustments
         adjusted_ids = list(Adjustment.objects.filter(
