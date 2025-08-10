@@ -658,7 +658,7 @@ function loadBatchData () {
                       <td colspan="8" class="text-center" style="background-color: #f8f9fa; padding: 20px;">
                           <div class="text-muted mb-3" style="font-size: 1rem; font-weight: 500;">
                               No batches found for <strong>${response.cutoff_month} ${response.cutoff} ${response.cutoff_year}</strong>.<br>
-                              Please generate one or choose a different option.
+                              Please generate one or choose a different option like a different batch number.
                           </div>
                           <button 
                               type="button" 
@@ -998,8 +998,11 @@ function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) 
         title: 'Marked as late',
         text: 'Employee Marked as Late moved on the last batch.',
         confirmButtonColor: '#28a745'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          location.reload();
+        }
       });
-      loadBatchData();
     },
     error: function () {
       alert('Failed to load employee data.');
@@ -1011,21 +1014,24 @@ function unlateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
   $.ajax({
     url: `/payroll/batch/unlate`, 
     method: 'POST',
-    data: {
-      employee_id: employeeId,
-      cutoff: cutoff,
-      cutoff_month: cutoffMonth,
-      cutoff_year: cutoffYear,
-      batch_number: batchNumber,
-    },
+          data: {
+        employee_id: employeeId,
+        cutoff: cutoff,
+        cutoff_month: cutoffMonth,
+        cutoff_year: cutoffYear,
+        batch_number: batchNumber,
+      },
     success: function (response) {
     Swal.fire({
       icon: 'success',
       title: 'Not Late',
       text: 'Employee moved back to its previous batch',
       confirmButtonColor: '#28a745'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        location.reload();
+      }
     });
-      loadBatchData();
     },
     error: function () {
       alert('Failed to load employee data.');
