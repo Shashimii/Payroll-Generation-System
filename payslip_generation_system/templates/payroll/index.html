@@ -400,8 +400,9 @@ $(document).on('click', '.show_adjustments', function () {
   const cutoffMonth = $(this).data('month');
   const cutoffYear = $(this).data('year');
   const batchNumber = $(this).data('batch');
+  const assignedOffice = $(this).data('office');
 
-  showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber);
+  showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice);
 });
 
 $(document).on('click', '#submitAdjustment', function () {
@@ -645,6 +646,7 @@ function loadBatchData () {
                                 data-month='${response.cutoff_month}'
                                 data-year='${response.cutoff_year}'
                                 data-batch='${response.batch_number}'
+                                data-office='${response.assigned_office || ''}'
                                 ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                               >
                                 Adjustments
@@ -787,7 +789,7 @@ function removeBatch(btn) {
     });
 };
 
-function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
+function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice) {
   // Clear removed ids first
   deletedAdjustmentIds = [];
   late_edit_id = null;
@@ -822,7 +824,8 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
           cutoff: cutoff,
           cutoff_month: cutoffMonth,
           cutoff_year: cutoffYear,
-          batch_number: batchNumber
+          batch_number: batchNumber,
+          assigned_office: assignedOffice
         },
         success: function (res) {
           const container = $('#adjustmentsContainer');
