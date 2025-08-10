@@ -179,12 +179,14 @@ def reject(request):
         cutoff_year = request.POST.get('cutoff_year')
         batch_number = request.POST.get('batch_number')
         remarks = request.POST.get('remarks')
+        assigned_office = request.POST.get('assigned_office')
 
         assignments = BatchAssignment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             cutoff_month=cutoff_month,
-            cutoff_year=cutoff_year
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
         )
 
         employee_ids = assignments.values_list('employee_id', flat=True)
@@ -193,7 +195,8 @@ def reject(request):
             employee_id__in=employee_ids,
             cutoff=cutoff,
             month=cutoff_month,
-            cutoff_year=cutoff_year
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
         )
 
         # Save to ReturnedAdjustments
@@ -207,6 +210,7 @@ def reject(request):
                 month=adj.month,
                 cutoff=adj.cutoff,
                 cutoff_year=adj.cutoff_year,
+                assigned_office=assigned_office,
                 status="Returned",
             )
         
@@ -216,6 +220,7 @@ def reject(request):
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
+            assigned_office=assigned_office,
             remark=remarks
         )
 
@@ -224,7 +229,8 @@ def reject(request):
             employee_id__in=employee_ids,
             cutoff=cutoff,
             month=cutoff_month,
-            cutoff_year=cutoff_year
+            cutoff_year=cutoff_year,
+            assigned_office=assigned_office
         ).update(status="Returned")
 
 

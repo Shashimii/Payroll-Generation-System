@@ -219,9 +219,12 @@ $(document).ready(function () {
             cutoff_month: $('#reject_cutoff_month').val(),
             cutoff_year: $('#reject_cutoff_year').val(),
             batch_number: $('#reject_batch_number').val(),
+            assigned_office: $('#reject_assigned_office').val(),
             remarks: $('#remarks').val(),
             csrfmiddlewaretoken: '{{ csrf_token }}',
         };
+
+        console.log(formData) // Debug
 
         $.ajax({
             url: "{% url 'payroll_reject' %}",
