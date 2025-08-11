@@ -21,7 +21,7 @@ $(document).ready(function () {
         list.empty();
 
         if (response.batches.length === 0) {
-            list.append('<li class="list-group-item text-center text-muted">No batches with pending adjustments.</li>');
+            list.append('<li class="list-group-item text-center text-muted">No Approved Payroll Batches.</li>');
         } else {
             response.batches.forEach(function (batch) {
             list.append(`
