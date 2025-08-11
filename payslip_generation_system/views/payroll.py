@@ -1475,68 +1475,140 @@ def approve_data(request):
     # Get assigned office for the current user
     assigned_office = get_user_assigned_office(user_role)
     
-    # Filter batches based on user role
-    if assigned_office and user_role != 'admin' and user_role != 'checker':
-        # For office-specific preparators, show only their office batches
-        all_batches = BatchAssignment.objects.filter(assigned_office=assigned_office).values(
-            'batch_number',
-            'cutoff',
-            'cutoff_month',
-            'cutoff_year',
-            'assigned_office'
-        ).distinct()
+    # For all roles, show office-level approval status (grouped by assigned_office)
+    # Get all unique assigned offices (excluding batch_number 0)
+    if assigned_office and user_role not in ['admin', 'checker', 'accounting']:
+        # For office-specific preparators, show only their office
+        all_offices = [assigned_office]
     else:
-        # For admin and checker, show all batches
-        all_batches = BatchAssignment.objects.values(
+        # For admin, checker, and accounting, show all offices
+        all_offices = BatchAssignment.objects.exclude(batch_number=0).values_list('assigned_office', flat=True).distinct()
+    
+    office_approval_status = []
+    
+    for office in all_offices:
+        # Get all batch numbers for this office (excluding batch_number 0)
+        office_batches = BatchAssignment.objects.filter(
+            assigned_office=office
+        ).exclude(batch_number=0).values(
             'batch_number',
             'cutoff',
             'cutoff_month',
-            'cutoff_year',
-            'assigned_office'
+            'cutoff_year'
         ).distinct()
-
-    valid_batches = []
-
-    for batch in all_batches:
-        # Get all employee IDs in this batch with assigned_office filtering
-        employee_ids_query = BatchAssignment.objects.filter(
-            batch_number=batch['batch_number'],
-            cutoff=batch['cutoff'],
-            cutoff_month=batch['cutoff_month'],
-            cutoff_year=batch['cutoff_year']
-        )
         
-        # Apply assigned_office filter if user is office-specific preparator
-        if assigned_office and user_role != 'admin' and user_role != 'checker':
-            employee_ids_query = employee_ids_query.filter(assigned_office=assigned_office)
+        all_batches_approved = True
         
-        employee_ids = employee_ids_query.values_list('employee_id', flat=True)
-
-        # Count how many of them have at least one Approved adjustment
-        approved_adjustments_query = Adjustment.objects.filter(
-            employee_id__in=employee_ids,
-            cutoff=batch['cutoff'],
-            month=batch['cutoff_month'],
-            cutoff_year=batch['cutoff_year'],
-            status="Approved"
-        )
+        for batch in office_batches:
+            # Get all employee IDs in this batch for this office
+            employee_ids = BatchAssignment.objects.filter(
+                batch_number=batch['batch_number'],
+                cutoff=batch['cutoff'],
+                cutoff_month=batch['cutoff_month'],
+                cutoff_year=batch['cutoff_year'],
+                assigned_office=office
+            ).values_list('employee_id', flat=True)
+            
+            if not employee_ids:
+                continue
+            
+            # Count how many employees have Approved adjustments
+            approved_adjustments = Adjustment.objects.filter(
+                employee_id__in=employee_ids,
+                cutoff=batch['cutoff'],
+                month=batch['cutoff_month'],
+                cutoff_year=batch['cutoff_year'],
+                status="Approved",
+                assigned_office=office
+            ).values('employee_id').distinct().count()
+            
+            # If not all employees have approved adjustments, mark this office as not fully approved
+            if approved_adjustments != len(employee_ids):
+                all_batches_approved = False
+                break
         
-        # Apply assigned_office filter to adjustments if user is office-specific preparator
-        if assigned_office and user_role != 'admin' and user_role != 'checker':
-            approved_adjustments_query = approved_adjustments_query.filter(assigned_office=assigned_office)
+        if all_batches_approved and office_batches.exists():
+            # All batches for this office are approved
+            office_approval_status.append({
+                'assigned_office': office,
+                'formatted_office_name': get_formatted_office_name(office),
+                'payroll_title': get_payroll_title(office),
+                'approval_status': "All Approved",
+                'message': f"All the payrolls on {get_formatted_office_name(office)} is Approved waiting for the Allowing the generation of payslips"
+            })
+    
+    return JsonResponse({'office_approval_status': office_approval_status}, status=200)
+
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def approve_office_to_credited(request):
+    """
+    Update all adjustments for a specific office from 'Approved' to 'Credited' status.
+    This function is called when the cashier confirms the SweetAlert2 dialog.
+    """
+    if request.method == 'POST':
+        assigned_office = request.POST.get('assigned_office')
         
-        approved_adjustments = approved_adjustments_query.values('employee_id').distinct().count()
-
-        # Only include the batch if ALL employees have Approved adjustments
-        if approved_adjustments == len(employee_ids):
-            # Add formatted office name and payroll title
-            batch['formatted_office_name'] = get_formatted_office_name(batch['assigned_office'])
-            batch['payroll_title'] = get_payroll_title(batch['assigned_office'])
-            # Add approval status
-            batch['approval_status'] = "Approved"
-            valid_batches.append(batch)
-
-    return JsonResponse({'batches': valid_batches}, status=200)
+        if not assigned_office:
+            return JsonResponse({'success': False, 'message': 'Assigned office is required'}, status=400)
+        
+        try:
+            # Get all batch numbers for this office (excluding batch_number 0)
+            office_batches = BatchAssignment.objects.filter(
+                assigned_office=assigned_office
+            ).exclude(batch_number=0).values(
+                'batch_number',
+                'cutoff',
+                'cutoff_month',
+                'cutoff_year'
+            ).distinct()
+            
+            updated_count = 0
+            
+            for batch in office_batches:
+                # Get all employee IDs in this batch for this office
+                employee_ids = BatchAssignment.objects.filter(
+                    batch_number=batch['batch_number'],
+                    cutoff=batch['cutoff'],
+                    cutoff_month=batch['cutoff_month'],
+                    cutoff_year=batch['cutoff_year'],
+                    assigned_office=assigned_office
+                ).values_list('employee_id', flat=True)
+                
+                if not employee_ids:
+                    continue
+                
+                # Update all adjustments for these employees from 'Approved' to 'Credited'
+                updated_adjustments = Adjustment.objects.filter(
+                    employee_id__in=employee_ids,
+                    cutoff=batch['cutoff'],
+                    month=batch['cutoff_month'],
+                    cutoff_year=batch['cutoff_year'],
+                    status="Approved",
+                    assigned_office=assigned_office
+                ).update(status="Credited")
+                
+                updated_count += updated_adjustments
+            
+            if updated_count > 0:
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Successfully updated {updated_count} adjustments to Credited status for {get_formatted_office_name(assigned_office)}'
+                }, status=200)
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'message': f'No adjustments found to update for {get_formatted_office_name(assigned_office)}'
+                }, status=404)
+                
+        except Exception as e:
+            return JsonResponse({
+                'success': False, 
+                'message': f'Error updating adjustments: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 
 @login_required
