@@ -63,6 +63,12 @@ class Employee(models.Model):
 
     has_philhealth = models.CharField(max_length=100, choices=BOOLEAN_CHOICES)
 
+    EMPLOYEE_TYPE = [
+        ('COS', 'COS'),
+        ('ER', 'ER'),
+    ]
+    employee_type = models.CharField(max_length=100, choices=EMPLOYEE_TYPE, blank=True, null=True)
+
     def __str__(self):
         return f"{self.employee_number} - {self.fullname} - {self.position}"
     

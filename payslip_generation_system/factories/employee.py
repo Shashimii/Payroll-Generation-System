@@ -25,4 +25,5 @@ class EmployeeFactory(factory.django.DjangoModelFactory):
     eligibility = factory.Iterator(['yes', 'no'])
     assigned_office = factory.Iterator(['denr_ncr_nec', 'meo_s', 'meo_e', 'meo_w', 'meo_n'])
     has_philhealth = factory.Iterator(['yes', 'no'])
+    employee_type = factory.Iterator(['COS', 'ER'])
     user = None
