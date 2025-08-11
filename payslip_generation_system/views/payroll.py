@@ -1547,7 +1547,7 @@ def removed_employee_data(request):
     cutoff = request.GET.get('cutoff') or '1st'
     cutoff_month = request.GET.get('cutoff_month') or 'January'
     cutoff_year = int(request.GET.get('cutoff_year') or datetime.now().year)
-    batch_number = 0
+    batch_number = int(request.GET.get('batch_number') or 0)
     removed= 'YES'
 
     # Get user role and filter batches accordingly
@@ -1563,7 +1563,7 @@ def removed_employee_data(request):
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
-            batch_number=batch_number,
+            previous_batch=batch_number,
             removed=removed,
             assigned_office=assigned_office
         ).select_related('employee')
@@ -1573,7 +1573,7 @@ def removed_employee_data(request):
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
-            batch_number=batch_number,
+            previous_batch=batch_number,
             removed=removed
         ).select_related('employee')
 
@@ -1655,7 +1655,7 @@ def removed_employee_data(request):
             'previous_batch_submitted': previous_batch_submitted
         })
 
-    print(employees)
+    print(employees) # Debug
 
     # Check if all adjustments in this batch are approved
     total_adjustments = Adjustment.objects.filter(
