@@ -68,7 +68,8 @@ class Employee(models.Model):
         ('ER', 'ER'),
     ]
     employee_type = models.CharField(max_length=100, choices=EMPLOYEE_TYPE, blank=True, null=True)
-
+    cluster_number = models.IntegerField(null=True, blank=True)
+    
     def __str__(self):
         return f"{self.employee_number} - {self.fullname} - {self.position}"
     
