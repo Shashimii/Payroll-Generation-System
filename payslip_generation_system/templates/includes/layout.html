@@ -88,7 +88,7 @@
                                 </p>
                             </a>
                             <ul class="nav nav-treeview">
-                                {% if request.session.role != 'employee' %}
+                                {% if user_role not in hide_make_adjustments %}
                                 <li class="nav-item">
                                     <a href="{% url 'payroll' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
@@ -98,7 +98,7 @@
                                 {% endif %}
                             </ul>
                             <ul class="nav nav-treeview">
-                                {% if request.session.role != 'employee' %}
+                                {% if user_role not in hide_check_adjustments %}
                                 <li class="nav-item">
                                     <a href="{% url 'payroll_pending' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll_pending' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
@@ -108,7 +108,7 @@
                                 {% endif %}
                             </ul>
                             <ul class="nav nav-treeview">
-                                {% if request.session.role != 'employee' %}
+                                {% if user_role not in hide_release_payslips %}
                                 <li class="nav-item">
                                     <a href="{% url 'payroll_approved_list' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll_approved_list' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>

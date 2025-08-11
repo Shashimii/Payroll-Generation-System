@@ -39,6 +39,32 @@ def global_user_context(request):
         'employee',
     ]
 
+    hide_make_adjustments = [
+        'checker',
+        'accounting',
+        'employee',
+    ]
+
+    hide_check_adjustments = [
+        'accounting',
+        'preparator_denr_nec',
+        'preparator_meo_s',
+        'preparator_meo_e',
+        'preparator_meo_w',
+        'preparator_meo_n',
+        'employee',
+    ]
+
+    hide_release_payslips = [
+        'checker',
+        'preparator_denr_nec',
+        'preparator_meo_s',
+        'preparator_meo_e',
+        'preparator_meo_w',
+        'preparator_meo_n',
+        'employee',
+    ]
+
     hide_generate_payslip = [
         'preparator_denr_nec',
         'preparator_meo_s',
@@ -77,6 +103,9 @@ def global_user_context(request):
         'hide_card_roles': hide_card_roles,
         'hide_admin_options': hide_admin_options,
         'hide_generate_payslip': hide_generate_payslip,
+        'hide_make_adjustments': hide_make_adjustments,
+        'hide_check_adjustments': hide_check_adjustments,
+        'hide_release_payslips': hide_release_payslips,
         'restricted_roles': restricted_roles,
     }
 
