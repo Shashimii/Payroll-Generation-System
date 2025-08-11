@@ -22,3 +22,9 @@
 - Metropolitan Enviromental Office East (MEO East)
 - Metropolitan Enviromental Office West (MEO West)
 - Metropolitan Enviromental Office North (MEO North)
+
+# assigned_office
+meo_s
+meo_e
+meo_w
+meo_n
