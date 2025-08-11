@@ -1585,28 +1585,33 @@ def removed_employee_data(request):
     if assignments.exists():
         batch_assigned_office = assignments.first().assigned_office
 
-    # Check for adjustment statuses for removed employees
+    # Check for adjustment statuses for removed employees (filter by assigned_office)
+    adjustment_filter = {
+        'employee_id__in': removed_employee_ids,
+        'cutoff': cutoff,
+        'month': cutoff_month,
+        'cutoff_year': cutoff_year,
+    }
+    
+    # For office-specific preparators, only check adjustments for their assigned office
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        adjustment_filter['assigned_office'] = assigned_office
+    elif batch_assigned_office:
+        # If we have a batch_assigned_office, use that for filtering
+        adjustment_filter['assigned_office'] = batch_assigned_office
+
     has_pending_adjustments = Adjustment.objects.filter(
-        employee_id__in=removed_employee_ids,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
+        **adjustment_filter,
         status="Pending"
     ).exists()
 
     has_approved_adjustments = Adjustment.objects.filter(
-        employee_id__in=removed_employee_ids,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
+        **adjustment_filter,
         status="Approved"
     ).exists()
 
     has_credited_adjustments = Adjustment.objects.filter(
-        employee_id__in=removed_employee_ids,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
+        **adjustment_filter,
         status="Credited"
     ).exists()
 
@@ -1620,14 +1625,23 @@ def removed_employee_data(request):
         previous_batch_submitted = False
         
         if previous_batch is not None:
-            # Check if the previous batch has any adjustments with status Pending, Approved, or Credited
-            previous_batch_submitted = Adjustment.objects.filter(
-                batch_number=previous_batch,
-                cutoff=cutoff,
-                month=cutoff_month,
-                cutoff_year=cutoff_year,
-                status__in=["Pending", "Approved", "Credited"]
-            ).exists()
+            # Check if the previous batch has any adjustments with status Pending, Approved, or Credited (filter by assigned_office)
+            previous_batch_filter = {
+                'batch_number': previous_batch,
+                'cutoff': cutoff,
+                'month': cutoff_month,
+                'cutoff_year': cutoff_year,
+                'status__in': ["Pending", "Approved", "Credited"]
+            }
+            
+            # For office-specific preparators, only check adjustments for their assigned office
+            if assigned_office and user_role != 'admin' and user_role != 'checker':
+                previous_batch_filter['assigned_office'] = assigned_office
+            elif batch_assigned_office:
+                # If we have a batch_assigned_office, use that for filtering
+                previous_batch_filter['assigned_office'] = batch_assigned_office
+            
+            previous_batch_submitted = Adjustment.objects.filter(**previous_batch_filter).exists()
 
         employees.append({
             'id': emp.id,
