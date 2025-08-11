@@ -1469,25 +1469,25 @@ def approved_list(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def approve_data(request):
-    # Get user role and filter batches accordingly
     user_role = request.session.get('role', '')
-    
-    # Get assigned office for the current user
     assigned_office = get_user_assigned_office(user_role)
-    
-    # For all roles, show office-level approval status (grouped by assigned_office)
-    # Get all unique assigned offices (excluding batch_number 0)
+
+    # For office-specific preparators, show only their office
     if assigned_office and user_role not in ['admin', 'checker', 'accounting']:
-        # For office-specific preparators, show only their office
         all_offices = [assigned_office]
     else:
-        # For admin, checker, and accounting, show all offices
-        all_offices = BatchAssignment.objects.exclude(batch_number=0).values_list('assigned_office', flat=True).distinct()
-    
+        all_offices = (
+            BatchAssignment.objects.exclude(batch_number=0)
+            .values_list('assigned_office', flat=True)
+            .distinct()
+        )
+
+    # Make sure offices are unique
+    all_offices = list(set(all_offices))
+
     office_approval_status = []
-    
+
     for office in all_offices:
-        # Get all batch numbers for this office (excluding batch_number 0)
         office_batches = BatchAssignment.objects.filter(
             assigned_office=office
         ).exclude(batch_number=0).values(
@@ -1496,11 +1496,10 @@ def approve_data(request):
             'cutoff_month',
             'cutoff_year'
         ).distinct()
-        
+
         all_batches_approved = True
-        
+
         for batch in office_batches:
-            # Get all employee IDs in this batch for this office
             employee_ids = BatchAssignment.objects.filter(
                 batch_number=batch['batch_number'],
                 cutoff=batch['cutoff'],
@@ -1508,11 +1507,10 @@ def approve_data(request):
                 cutoff_year=batch['cutoff_year'],
                 assigned_office=office
             ).values_list('employee_id', flat=True)
-            
+
             if not employee_ids:
                 continue
-            
-            # Count how many employees have Approved adjustments
+
             approved_adjustments = Adjustment.objects.filter(
                 employee_id__in=employee_ids,
                 cutoff=batch['cutoff'],
@@ -1521,23 +1519,24 @@ def approve_data(request):
                 status="Approved",
                 assigned_office=office
             ).values('employee_id').distinct().count()
-            
-            # If not all employees have approved adjustments, mark this office as not fully approved
+
             if approved_adjustments != len(employee_ids):
                 all_batches_approved = False
                 break
-        
+
         if all_batches_approved and office_batches.exists():
-            # All batches for this office are approved
-            office_approval_status.append({
-                'assigned_office': office,
-                'formatted_office_name': get_formatted_office_name(office),
-                'payroll_title': get_payroll_title(office),
-                'approval_status': "All Approved",
-                'message': f"All the payrolls on {get_formatted_office_name(office)} is Approved waiting for the Allowing the generation of payslips"
-            })
-    
+            # Only add if not already in the list
+            if not any(o['assigned_office'] == office for o in office_approval_status):
+                office_approval_status.append({
+                    'assigned_office': office,
+                    'formatted_office_name': get_formatted_office_name(office),
+                    'payroll_title': get_payroll_title(office),
+                    'approval_status': "All Approved",
+                    'message': f"All the payrolls on {get_formatted_office_name(office)} is Approved waiting for the Allowing the generation of payslips"
+                })
+
     return JsonResponse({'office_approval_status': office_approval_status}, status=200)
+
 
 
 @login_required
