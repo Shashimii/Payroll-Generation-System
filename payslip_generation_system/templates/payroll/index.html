@@ -752,49 +752,60 @@ function removeBatch(btn) {
     const year = $(btn).data('year');
     const office = $(btn).data('office');
 
-    const officeText = office ? ` for ${office}` : '';
-    Swal.fire({
-        title: 'Are you sure?',
-        text: `Remove All Batches for ${month} ${cutoff}, ${year}${officeText}?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Yes, remove all batches'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            $.ajax({
-                type: 'POST',
-                url: '{% url "payroll_batch_delete" %}',
-                data: {
-                    cutoff: cutoff,
-                    cutoff_month: month,
-                    cutoff_year: year,
-                    assigned_office: office,
-                    csrfmiddlewaretoken: '{{ csrf_token }}'
-                },
-                success: function (response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Removed!',
-                        text: response.message,
-                        confirmButtonColor: '#28a745'
-                    }).then(() => {
-                        location.reload();
-                        sessionStorageClear();
-                    });
-                },
-                error: function (xhr) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: xhr.responseJSON?.error || 'Something went wrong.',
-                        confirmButtonColor: '#dc3545'
-                    });
-                }
-            });
-        }
-    });
+// Map office codes to full names
+const officeNames = {
+    denr_ncr_nec: "DENR NCR National Ecology Center (NEC)",
+    meo_s: "Metropolitan Environmental Office South (MEO South)",
+    meo_e: "Metropolitan Environmental Office East (MEO East)",
+    meo_w: "Metropolitan Environmental Office West (MEO West)",
+    meo_n: "Metropolitan Environmental Office North (MEO North)"
+};
+
+  // Get the display name or use empty string
+  const officeDisplay = office && officeNames[office] ? ` for ${officeNames[office]}` : '';
+
+  Swal.fire({
+      title: 'Are you sure?',
+      text: `Remove All Batches for ${month} ${cutoff}, ${year}${officeDisplay}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, remove all batches'
+  }).then((result) => {
+      if (result.isConfirmed) {
+          $.ajax({
+              type: 'POST',
+              url: '{% url "payroll_batch_delete" %}',
+              data: {
+                  cutoff: cutoff,
+                  cutoff_month: month,
+                  cutoff_year: year,
+                  assigned_office: office,
+                  csrfmiddlewaretoken: '{{ csrf_token }}'
+              },
+              success: function (response) {
+                  Swal.fire({
+                      icon: 'success',
+                      title: 'Removed!',
+                      text: response.message,
+                      confirmButtonColor: '#28a745'
+                  }).then(() => {
+                      location.reload();
+                      sessionStorageClear();
+                  });
+              },
+              error: function (xhr) {
+                  Swal.fire({
+                      icon: 'error',
+                      title: 'Error!',
+                      text: xhr.responseJSON?.error || 'Something went wrong.',
+                      confirmButtonColor: '#dc3545'
+                  });
+              }
+          });
+      }
+  });
 };
 
 function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice) {
