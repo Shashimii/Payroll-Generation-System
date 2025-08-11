@@ -608,7 +608,7 @@ def batch_data(request):
         previous_batch_submitted = False
         
         if previous_batch is not None:
-            # Check if the previous batch has any adjustments with status Pending, Approved, or Credited
+            # Check if the previous batch has any adjustments with status Pending, Approved, or Credited (filter by assigned_office)
             previous_batch_query = Adjustment.objects.filter(
                 batch_number=previous_batch,
                 cutoff=cutoff,
@@ -616,8 +616,18 @@ def batch_data(request):
                 cutoff_year=cutoff_year,
                 status__in=["Pending", "Approved", "Credited"]
             )
+            
+            # Apply assigned_office filter based on user role and context
             if url_assigned_office:
+                # If coming from pending page, filter by the specific office
                 previous_batch_query = previous_batch_query.filter(assigned_office=url_assigned_office)
+            elif assigned_office and user_role != 'admin' and user_role != 'checker':
+                # For office-specific preparators, only check adjustments for their assigned office
+                previous_batch_query = previous_batch_query.filter(assigned_office=assigned_office)
+            elif batch_assigned_office:
+                # If we have a batch_assigned_office, use that for filtering
+                previous_batch_query = previous_batch_query.filter(assigned_office=batch_assigned_office)
+            
             previous_batch_submitted = previous_batch_query.exists()
 
         # Build data
