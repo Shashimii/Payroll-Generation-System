@@ -261,7 +261,7 @@ def data(request):
     denrncrnec = 'denr_ncr_nec'
     meos = 'meo_s'
     meoe = 'meo_e'
-    meow = 'moe_w'
+    meow = 'meo_w'
     meon = 'meo_n'
     
     # Data
