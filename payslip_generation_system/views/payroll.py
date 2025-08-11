@@ -154,13 +154,23 @@ def submit(request):
         # Update their adjustment statuses (filter by assigned_office)
         Adjustment.objects.filter(**adjustment_filter).update(status="Pending")
 
-        # Remove the ReturnRemark if it exists
-        ReturnRemark.objects.filter(
-            cutoff=cutoff,
-            cutoff_month=cutoff_month,
-            cutoff_year=cutoff_year,
-            batch_number=batch_number
-        ).delete()
+        # Get user role and assigned office for remark removal
+        user_role = request.session.get('role', '')
+        assigned_office = get_user_assigned_office(user_role)
+        
+        # Remove the ReturnRemark if it exists (filter by assigned_office for preparators)
+        remark_filter = {
+            'cutoff': cutoff,
+            'cutoff_month': cutoff_month,
+            'cutoff_year': cutoff_year,
+            'batch_number': batch_number
+        }
+        
+        # For office-specific preparators, only remove remarks for their assigned office
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            remark_filter['assigned_office'] = assigned_office
+        
+        ReturnRemark.objects.filter(**remark_filter).delete()
 
         return JsonResponse({'status': 'OK'}, status=200)
 
@@ -709,31 +719,56 @@ def batch_create(request, batch_size=15):
     if not cutoff or not cutoff_month or not cutoff_year:
         return JsonResponse({'error': 'Missing cutoff, month, or year.'}, status=400)
 
-    # Check if batches already exist for the given period
-    if BatchAssignment.objects.filter(
-        cutoff=cutoff,
-        cutoff_month=cutoff_month,
-        cutoff_year=cutoff_year
-    ).exists():
-        return JsonResponse({
-            'error': f'Batches already exist for {cutoff_month} {cutoff}, {cutoff_year}.'
-        }, status=400)
-
-    # Get all employees grouped by assigned office
-    employees_by_office = {}
-    all_employees = Employee.objects.order_by('fullname')
+    # Get user role and assigned office
+    user_role = request.session.get('role', '')
+    assigned_office = get_user_assigned_office(user_role)
     
-    for employee in all_employees:
-        office = employee.assigned_office or 'unassigned'
-        if office not in employees_by_office:
-            employees_by_office[office] = []
-        employees_by_office[office].append(employee)
+    # Check if batches already exist for the given period
+    batch_filter = {
+        'cutoff': cutoff,
+        'cutoff_month': cutoff_month,
+        'cutoff_year': cutoff_year
+    }
+    
+    # For office-specific preparators, check only their office
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        batch_filter['assigned_office'] = assigned_office
+    
+    if BatchAssignment.objects.filter(**batch_filter).exists():
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            return JsonResponse({
+                'error': f'Batches already exist for {cutoff_month} {cutoff}, {cutoff_year} in {get_formatted_office_name(assigned_office)}.'
+            }, status=400)
+        else:
+            return JsonResponse({
+                'error': f'Batches already exist for {cutoff_month} {cutoff}, {cutoff_year}.'
+            }, status=400)
+
+    # Get employees based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        # For office-specific preparators, only get employees from their assigned office
+        all_employees = Employee.objects.filter(assigned_office=assigned_office).order_by('fullname')
+        employees_by_office = {assigned_office: list(all_employees)}
+    else:
+        # For admin and checker, get all employees grouped by office
+        employees_by_office = {}
+        all_employees = Employee.objects.order_by('fullname')
+        
+        for employee in all_employees:
+            office = employee.assigned_office or 'unassigned'
+            if office not in employees_by_office:
+                employees_by_office[office] = []
+            employees_by_office[office].append(employee)
 
     # Check if there are employees to assign
     if not all_employees.exists():
-        return JsonResponse({'error': 'No employees found to create batches.'}, status=400)
+        if assigned_office and user_role != 'admin' and user_role != 'checker':
+            return JsonResponse({'error': f'No employees found in {get_formatted_office_name(assigned_office)} to create batches.'}, status=400)
+        else:
+            return JsonResponse({'error': 'No employees found to create batches.'}, status=400)
 
     total_batches_created = 0
+    offices_processed = []
     
     # Create batches for each office separately
     for office, employees in employees_by_office.items():
@@ -755,11 +790,18 @@ def batch_create(request, batch_size=15):
             if index % batch_size == 0:
                 batch_number += 1
         
-        total_batches_created += batch_number - 1 if batch_number > 1 else 1
+        batches_for_office = batch_number - 1 if batch_number > 1 else 1
+        total_batches_created += batches_for_office
+        offices_processed.append(f"{get_formatted_office_name(office)} ({batches_for_office} batches)")
+
+    # Create appropriate success message based on user role
+    if assigned_office and user_role != 'admin' and user_role != 'checker':
+        message = f'Batches successfully created for {cutoff_month} {cutoff}, {cutoff_year} in {get_formatted_office_name(assigned_office)}. Total batches created: {total_batches_created}.'
+    else:
+        message = f'Batches successfully created for {cutoff_month} {cutoff}, {cutoff_year}. Total batches created: {total_batches_created} across all offices.'
 
     return JsonResponse({
-        'message': f'Batches successfully created for {cutoff_month} {cutoff}, {cutoff_year}. '
-                   f'Total batches created: {total_batches_created} across all offices.'
+        'message': message
     })
 
 @login_required
@@ -794,11 +836,25 @@ def batch_delete(request):
         batch_deleted, _ = BatchAssignment.objects.filter(**batch_filter).delete()
         adj_deleted, _ = Adjustment.objects.filter(**adj_filter).delete()
 
-        remark_deleted, _ = ReturnRemark.objects.filter(
-            cutoff_month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year
-        ).delete()
+        # Get user role and assigned office for remark removal
+        user_role = request.session.get('role', '')
+        user_assigned_office = get_user_assigned_office(user_role)
+        
+        # Filter remarks by assigned_office for preparators
+        remark_filter = {
+            'cutoff_month': cutoff_month,
+            'cutoff': cutoff,
+            'cutoff_year': cutoff_year
+        }
+        
+        # For office-specific preparators, only remove remarks for their assigned office
+        if user_assigned_office and user_role != 'admin' and user_role != 'checker':
+            remark_filter['assigned_office'] = user_assigned_office
+        elif assigned_office:
+            # If assigned_office is provided in the request, use that
+            remark_filter['assigned_office'] = assigned_office
+        
+        remark_deleted, _ = ReturnRemark.objects.filter(**remark_filter).delete()
 
         if batch_deleted == 0 and adj_deleted == 0 and remark_deleted == 0:
             return JsonResponse({'error': 'No matching records found'}, status=404)
