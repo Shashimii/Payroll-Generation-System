@@ -499,33 +499,48 @@ def batch_data(request):
         basic_salary_cutoff = basic_salary / 2
 
         # Tax - use TAX adjustment as percentage for salary-based computation
-        tax_adjustments = Adjustment.objects.filter(
-            employee=employee,
-            name="TAX",
-            month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year,
-            status__in=["Pending", "Approved", "Credited"]
-        )
-        if url_assigned_office:
-            tax_adjustments = tax_adjustments.filter(assigned_office=url_assigned_office)
-        tax_percentage = tax_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        # tax_adjustments = Adjustment.objects.filter(
+        #     employee=employee,
+        #     name="TAX",
+        #     month=cutoff_month,
+        #     cutoff=cutoff,
+        #     cutoff_year=cutoff_year,
+        #     status__in=["Pending", "Approved", "Credited"]
+        # )
+        # if url_assigned_office:
+        #     tax_adjustments = tax_adjustments.filter(assigned_office=url_assigned_office)
+        # tax_percentage = tax_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         
-        # Apply tax calculation logic with custom percentage or default
-        tax_deduction = basic_salary_cutoff * (tax_percentage / 100)
+        # TAX DEDUCTION 
+        if (employee.tax_declaration == "yes"):
+                tax_deduction = Decimal('0.00')
+        else:
+            if (basic_salary_annual >= 250000):
+                tax_deduction = basic_salary_cutoff * Decimal('0.03') # TAX
+            else:
+                tax_deduction = basic_salary_cutoff * Decimal('0.00')
 
         # Philhealth - fetch from Philhealth adjustments
-        philhealth_adjustments = Adjustment.objects.filter(
-            employee=employee,
-            name="Philhealth",
-            month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year,
-            status__in=["Pending", "Approved", "Credited"]
-        )
-        if url_assigned_office:
-            philhealth_adjustments = philhealth_adjustments.filter(assigned_office=url_assigned_office)
-        philhealth = philhealth_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        # philhealth_adjustments = Adjustment.objects.filter(
+        #     employee=employee,
+        #     name="Philhealth",
+        #     month=cutoff_month,
+        #     cutoff=cutoff,
+        #     cutoff_year=cutoff_year,
+        #     status__in=["Pending", "Approved", "Credited"]
+        # )
+        # if url_assigned_office:
+        #     philhealth_adjustments = philhealth_adjustments.filter(assigned_office=url_assigned_office)
+        # philhealth = philhealth_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+        # PHILHEALTH DEDUCTION 
+        if employee.has_philhealth == "yes":
+            if basic_salary_cutoff > Decimal('9999'):
+                philhealth = basic_salary_cutoff * Decimal('0.05')
+            else:
+                philhealth = Decimal('500')
+        else:
+            philhealth = Decimal('0')
 
         # SSS - fetch from SSS adjustments
         sss_adjustments = Adjustment.objects.filter(
