@@ -1,6 +1,6 @@
 import factory
 from faker import Faker
-from payslip_generation_system.models import Employee
+from payslip_generation_system.models import Employee, Batch
 
 fake = Faker()
 
@@ -23,7 +23,19 @@ class EmployeeFactory(factory.django.DjangoModelFactory):
     salary = factory.LazyAttribute(lambda x: fake.pydecimal(left_digits=5, right_digits=2, positive=True))
     tax_declaration = factory.Iterator(['yes', 'no'])
     eligibility = factory.Iterator(['yes', 'no'])
-    assigned_office = factory.Iterator(['denr_ncr_nec', 'denr_ncr_prcmo', 'meo_s', 'meo_e', 'meo_w', 'meo_n'])
     has_philhealth = factory.Iterator(['yes', 'no'])
     employee_type = factory.Iterator(['COS', 'ER'])
+    
+    # These will be set when creating with a specific batch
+    assigned_office = None
+    batch_number = None
     user = None
+
+    @classmethod
+    def create_with_batch(cls, **kwargs):
+        """Create an employee with a specific batch, ensuring office alignment"""
+        batch = kwargs.pop('batch', None)
+        if batch:
+            kwargs['batch_number'] = batch.batch_number
+            kwargs['assigned_office'] = batch.batch_assigned_office
+        return cls.create(**kwargs)
