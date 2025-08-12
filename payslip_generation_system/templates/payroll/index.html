@@ -78,7 +78,7 @@
 
   </div>
 </div>
-
+{% comment %} 
 <div class="card card-outline card-success collapsed-card">
   <div class="card-header">
     <h3 class="card-title mb-0">Payroll | Removed Employees</h3>
@@ -107,7 +107,7 @@
       </tbody>
     </table>
   </div>
-</div>
+</div> {% endcomment %}
 
 
 <!-- Modal -->
@@ -652,11 +652,14 @@ function loadBatchData () {
                                 ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                               >
                                 Adjustments
-                              </button> 
+                              </button>
+                              <!---
                               ${lateButton}
                               ${unlateButton}
                               ${removeButton}
                               ${unremoveButton}
+                              --->
+
                             </td>
                           </tr>
                       `);
