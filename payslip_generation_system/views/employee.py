@@ -350,6 +350,17 @@ def data(request):
     data = []
     for emp in page:
         salary = f"₱{emp['salary']:,.2f}" if emp.get('salary') else ""
+        
+        # Get batch name if batch_number exists
+        batch_display = 'Not Assigned'
+        if emp.get('batch_number'):
+            try:
+                from payslip_generation_system.models.batch import Batch
+                batch = Batch.objects.filter(batch_number=emp['batch_number']).first()
+                if batch:
+                    batch_display = f"{batch.batch_name} (#{batch.batch_number})"
+            except:
+                batch_display = f"Batch #{emp['batch_number']}"
 
         data.append([
             emp.get('employee_number', ''),
@@ -361,7 +372,7 @@ def data(request):
             emp.get('tax_declaration', ''),
             emp.get('has_philhealth', ''),
             emp.get('eligibility', ''),
-            emp.get('batch_number', '') or 'Not Assigned',
+            batch_display,
             f"""
             <button class='btn btn-info btn-sm view-btn' data-id='{emp['id']}' title='Information' data-toggle='modal' data-target='#viewModal'>
                 <i class="fas fa-eye"></i>
@@ -415,7 +426,7 @@ def show(request, emp_id):
         'assigned_office': OFFICE_NAME_MAP.get(employee.assigned_office, employee.assigned_office),
         'has_philhealth': employee.has_philhealth,
         'eligibility': employee.eligibility,
-        'batch_number': employee.batch_number or 'Not Assigned',
+        'batch_number': 'Not Assigned',
         'attachments': [
             {
                 'file_url': attachment.file.url,
@@ -425,6 +436,16 @@ def show(request, emp_id):
             for attachment in attachments
         ]
     }
+    
+    # Get batch name if batch_number exists
+    if employee.batch_number:
+        try:
+            from payslip_generation_system.models.batch import Batch
+            batch = Batch.objects.filter(batch_number=employee.batch_number).first()
+            if batch:
+                employee_data['batch_number'] = f"{batch.batch_name} (#{batch.batch_number})"
+        except:
+            employee_data['batch_number'] = f"Batch #{employee.batch_number}"
 
     return JsonResponse({'employee': employee_data})
 
