@@ -28,3 +28,8 @@ meo_s
 meo_e
 meo_w
 meo_n
+
+preparator_meo_s
+preparator_meo_e 
+preparator_meo_w 
+preparator_meo_n 
