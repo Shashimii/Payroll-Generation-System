@@ -21,9 +21,7 @@ def get_user_assigned_office(user_role):
     return role_to_office.get(user_role)
 
 def get_formatted_office_name(office_code):
-    """
-    Helper function to get formatted office name from office code
-    """
+
     office_name_map = {
         'denr_ncr_nec': 'DENR NCR NEC',
         'denr_ncr_prcmo': 'DENR NCR PRCMO',
@@ -211,7 +209,7 @@ def update_batch(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'An error occurred: {str(e)}'
+                'error': f'An error occurred while updating the batch: {str(e)}'
             })
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
