@@ -35,9 +35,9 @@
 
           <div class="col-auto">
               <select id="batch_number" class="form-control" name="batch_number">
-                  <option selected disabled>Batch Number</option>
+                  <option selected disabled>Batch</option>
                   {% for b in batches %}
-                  <option value="{{ b }}">Batch {{ b }}</option>
+                  <option value="{{ b.batch_number }}">{{ b.batch_name }} (#{% if b.batch_number %}{{ b.batch_number }}{% endif %})</option>
                   {% endfor %}
               </select>
           </div>
@@ -556,7 +556,7 @@ function loadBatchData () {
           
           // Update payroll title and cutoff info
           $('#payrollTitle').text(response.payroll_title || 'General Payroll DENR-NCR');
-          $('#payrollCutoffInfo').text(`${response.cutoff_month} ${response.cutoff} Cutoff ${response.cutoff_year} Batch ${response.batch_number}`);
+          $('#payrollCutoffInfo').text(`${response.cutoff_month} ${response.cutoff} Cutoff ${response.cutoff_year} ${response.batch_name ? '— ' + response.batch_name : 'Batch ' + response.batch_number}`);
           
           $('#submitAdjustment')
           .attr('data-cutoff', response.cutoff)

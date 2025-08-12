@@ -76,17 +76,17 @@ def index(request):
     
     # Get assigned office for the current user
     assigned_office = get_user_assigned_office(user_role)
-    
-    # Filter batches based on user role
-    if assigned_office and user_role != 'admin' and user_role != 'checker':
-        # For office-specific preparators, show only their office batches
-        batches = BatchAssignment.objects.exclude(batch_number=0)\
-            .filter(assigned_office=assigned_office)\
-            .values_list('batch_number', flat=True).distinct().order_by('batch_number')
+
+    # Provide batches from Batch model, filtered by office when applicable
+    if assigned_office and user_role not in ['admin', 'checker']:
+        batch_rows = Batch.objects.filter(batch_assigned_office=assigned_office)
     else:
-        # For admin and checker, show all batches
-        batches = BatchAssignment.objects.exclude(batch_number=0)\
-            .values_list('batch_number', flat=True).distinct().order_by('batch_number')
+        batch_rows = Batch.objects.all()
+
+    # Order and map to minimal dicts
+    batches = list(
+        batch_rows.order_by('batch_number').values('batch_number', 'batch_name')
+    )
 
     return render(request, 'payroll/index.html', {
         'months': months,
@@ -372,6 +372,7 @@ def batch_data(request):
                 )
             )
         ).order_by('late_order', 'employee__fullname')
+        batch_assigned_office = url_assigned_office
     else:
         # Filter assignments based on user role
         if assigned_office and user_role != 'admin' and user_role != 'checker':
@@ -405,6 +406,7 @@ def batch_data(request):
                     )
                 )
             ).order_by('late_order', 'employee__fullname')
+            batch_assigned_office = assigned_office
         else:
             # For admin and checker, show all batches
             assignments = BatchAssignment.objects.filter(
@@ -435,14 +437,15 @@ def batch_data(request):
                     )
                 )
             ).order_by('late_order', 'employee__fullname')
+            batch_assigned_office = None
 
     # Get the assigned_office for this batch (all employees in a batch should have the same assigned_office)
-    batch_assigned_office = None
-    if assignments.exists():
-        batch_assigned_office = assignments.first().assigned_office
+    # batch_assigned_office = None
+    # if assignments.exists():
+    #     batch_assigned_office = assignments.first().assigned_office
 
     # Use url_assigned_office if available, otherwise use batch_assigned_office
-    office_to_check = url_assigned_office if url_assigned_office else batch_assigned_office
+    office_to_check = url_assigned_office if url_assigned_office else assigned_office
 
     # Filter adjustment status checks by assigned_office
     has_pending_adjustments = Adjustment.objects.filter(
@@ -720,12 +723,28 @@ def batch_data(request):
     if total_adjustments > 0 and approved_adjustments == total_adjustments:
         approval_status = "Approved"
 
+    # Determine batch_name from Batch model
+    batch_name = None
+    try:
+        batch_qs = Batch.objects.filter(batch_number=batch_number)
+        if batch_assigned_office:
+            batch_qs = batch_qs.filter(batch_assigned_office=batch_assigned_office)
+        batch_obj = batch_qs.first()
+        if not batch_obj and batch_assigned_office:
+            # Fallback: if not found with office, try without office filter
+            batch_obj = Batch.objects.filter(batch_number=batch_number).first()
+        if batch_obj:
+            batch_name = batch_obj.batch_name
+    except Exception:
+        batch_name = None
+
     return JsonResponse({
         'employees': employees,
         'cutoff': cutoff,
         'cutoff_month': cutoff_month,
         'cutoff_year': cutoff_year,
         'batch_number': batch_number,
+        'batch_name': batch_name,
         'has_pending_adjustments': has_pending_adjustments,
         'has_approved_adjustments': has_approved_adjustments,
         'has_credited_adjustments': has_credited_adjustments,
