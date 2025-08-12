@@ -79,8 +79,8 @@
                         {% endif %}
 
                         <!-- Payroll Menu -->
-                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' %}menu-open{% endif %}">
-                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' %}active{% endif %}">
+                        <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' or request.resolver_match.url_name == 'batch_index' %}menu-open{% endif %}">
+                            <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' or request.resolver_match.url_name == 'batch_index' %}active{% endif %}">
                                 <i class="nav-icon fa-solid fa-address-card"></i>
                                 <p>
                                     Payroll
@@ -113,6 +113,14 @@
                                     <a href="{% url 'payroll_approved_list' %}" class="nav-link {% if request.resolver_match.url_name == 'payroll_approved_list' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Release Payslips</p>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                {% if user_role not in hide_make_adjustments %}
+                                <li class="nav-item">
+                                    <a href="{% url 'batch_index' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_index' %}active{% endif %}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Create Batches</p>
                                     </a>
                                 </li>
                                 {% endif %}
