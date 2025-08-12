@@ -253,7 +253,7 @@ def data(request):
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
     # Fields to retrieve
-    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'has_philhealth', 'eligibility', 'section', 'division', 'assigned_office']
+    fields = ['id', 'employee_number', 'fullname', 'position', 'fund_source', 'salary', 'tax_declaration', 'has_philhealth', 'eligibility', 'section', 'division', 'assigned_office', 'batch_number']
 
     # Roles
     role = request.session.get('role')
@@ -361,6 +361,7 @@ def data(request):
             emp.get('tax_declaration', ''),
             emp.get('has_philhealth', ''),
             emp.get('eligibility', ''),
+            emp.get('batch_number', '') or 'Not Assigned',
             f"""
             <button class='btn btn-info btn-sm view-btn' data-id='{emp['id']}' title='Information' data-toggle='modal' data-target='#viewModal'>
                 <i class="fas fa-eye"></i>
@@ -368,6 +369,9 @@ def data(request):
             <button class='edit-btn btn btn-primary btn-sm view-btn' title='Edit' data-id='{emp['id']}'>
                 <i class="fas fa-pen"></i>
             </button> 
+            <button class='set-batch-btn btn btn-warning btn-sm' title='Set Batch' data-id='{emp['id']}' data-name='{emp.get('fullname', '')}'>
+                <i class="fas fa-layer-group"></i>
+            </button>
             <button class='delete-btn btn btn-danger btn-sm view-btn' title='Delete' data-id='{emp['id']}'>
                 <i class="fas fa-trash"></i>
             </button>
@@ -411,6 +415,7 @@ def show(request, emp_id):
         'assigned_office': OFFICE_NAME_MAP.get(employee.assigned_office, employee.assigned_office),
         'has_philhealth': employee.has_philhealth,
         'eligibility': employee.eligibility,
+        'batch_number': employee.batch_number or 'Not Assigned',
         'attachments': [
             {
                 'file_url': attachment.file.url,
@@ -422,3 +427,80 @@ def show(request, emp_id):
     }
 
     return JsonResponse({'employee': employee_data})
+
+@login_required
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
+def assign_batch(request, emp_id):
+    if request.method == 'POST':
+        try:
+            employee = get_object_or_404(Employee, id=emp_id)
+            batch_id = request.POST.get('batch_id')
+            
+            if not batch_id:
+                return JsonResponse({'success': False, 'error': 'Batch ID is required.'})
+            
+            # Get the batch
+            from payslip_generation_system.models.batch import Batch
+            batch = get_object_or_404(Batch, id=batch_id)
+            
+            # Check if the batch belongs to the user's office
+            user_role = request.session.get('role', '')
+            user_office = get_user_assigned_office(user_role)
+            
+            if not user_office or batch.batch_assigned_office != user_office:
+                return JsonResponse({'success': False, 'error': 'You can only assign employees to batches in your office.'})
+            
+            # Update employee's batch number
+            employee.batch_number = batch.batch_number
+            employee.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Employee {employee.fullname} has been assigned to batch {batch.batch_name} (#{batch.batch_number})'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'})
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee', 'accounting'])
+def get_available_batches(request):
+    try:
+        user_role = request.session.get('role', '')
+        user_office = get_user_assigned_office(user_role)
+        
+        if not user_office:
+            return JsonResponse({'success': False, 'error': 'Unable to determine your office.'})
+        
+        # Get batches for the user's office
+        from payslip_generation_system.models.batch import Batch
+        batches = Batch.objects.filter(batch_assigned_office=user_office).order_by('batch_number')
+        
+        batch_data = []
+        for batch in batches:
+            batch_data.append({
+                'id': batch.id,
+                'batch_number': batch.batch_number,
+                'batch_name': batch.batch_name
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'batches': batch_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'})
+
+def get_user_assigned_office(user_role):
+    role_to_office = {
+        'preparator_denr_nec': 'denr_ncr_nec',
+        'preparator_denr_prcmo': 'denr_ncr_prcmo',
+        'preparator_meo_s': 'meo_s',
+        'preparator_meo_e': 'meo_e',
+        'preparator_meo_w': 'meo_w',
+        'preparator_meo_n': 'meo_n',
+    }
+    return role_to_office.get(user_role)

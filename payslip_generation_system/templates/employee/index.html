@@ -19,6 +19,7 @@
                 <th>Tax Declaration</th>
                 <th>Has Philhealth</th>
                 <th>CSC Eligibility</th>
+                <th>Batch Number</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -37,6 +38,36 @@
         <div class="modal-body" id="employeeDetailsBody">
             <!-- Employee Details -->
         </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="setBatchModal" tabindex="-1" role="dialog" aria-labelledby="setBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="setBatchModalLabel">Set Employee Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="setBatchForm">
+                    <div class="form-group">
+                        <label for="employeeName">Employee Name:</label>
+                        <input type="text" class="form-control" id="employeeName" readonly>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="batchSelect">Select Batch:</label>
+                        <select class="form-control" id="batchSelect" required>
+                            <option value="">Choose a batch...</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="employeeId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBatchBtn">Save Batch</button>
+            </div>
         </div>
     </div>
 </div>
@@ -131,6 +162,7 @@ $(document).ready(function() {
                         <tr><th>Salary</th><td>${employee.salary}</td></tr>
                         <tr><th>Has Philhealth</th><td>${employee.has_philhealth}</td></tr>
                         <tr><th>Eligibility</th><td>${employee.eligibility}</td></tr>
+                        <tr><th>Batch Number</th><td>${employee.batch_number}</td></tr>
                         <tr>
                             <th>Attachments</th>
                             <td>
@@ -151,6 +183,92 @@ $(document).ready(function() {
             },
             error: function () {
                 $('#employeeDetailsBody').html('<div class="text-danger text-center">Failed to load employee data.</div>');
+            }
+        });
+    });
+
+    // Set Batch button click
+    $(document).on('click', '.set-batch-btn', function() {
+        const employeeId = $(this).data('id');
+        const employeeName = $(this).data('name');
+        
+        // Set employee info in modal
+        $('#employeeId').val(employeeId);
+        $('#employeeName').val(employeeName);
+        
+        // Load available batches
+        loadAvailableBatches();
+        
+        // Show the modal
+        $('#setBatchModal').modal('show');
+    });
+
+    // Load available batches for the current user's office
+    function loadAvailableBatches() {
+        $.ajax({
+            url: '{% url "employee_get_available_batches" %}',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const batchSelect = $('#batchSelect');
+                    batchSelect.empty();
+                    batchSelect.append('<option value="">Choose a batch...</option>');
+                    
+                    response.batches.forEach(function(batch) {
+                        batchSelect.append(`<option value="${batch.id}">${batch.batch_name} (#${batch.batch_number})</option>`);
+                    });
+                } else {
+                    Swal.fire('Error', response.error || 'Failed to load batches', 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('Error', 'Failed to load batches. Please try again.', 'error');
+            }
+        });
+    }
+
+    // Save batch assignment
+    $('#saveBatchBtn').on('click', function() {
+        const employeeId = $('#employeeId').val();
+        const batchId = $('#batchSelect').val();
+        
+        if (!batchId) {
+            Swal.fire('Warning', 'Please select a batch.', 'warning');
+            return;
+        }
+        
+        // Disable button to prevent double submission
+        $('#saveBatchBtn').prop('disabled', true).text('Saving...');
+        
+        $.ajax({
+            url: `/employee/assign-batch/${employeeId}/`,
+            method: 'POST',
+            data: {
+                batch_id: batchId,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: response.message,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        // Close modal and refresh table
+                        $('#setBatchModal').modal('hide');
+                        $('#listTable').DataTable().ajax.reload();
+                    });
+                } else {
+                    Swal.fire('Error', response.error || 'Failed to assign batch', 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('Error', 'Failed to assign batch. Please try again.', 'error');
+            },
+            complete: function() {
+                // Re-enable button
+                $('#saveBatchBtn').prop('disabled', false).text('Save Batch');
             }
         });
     });

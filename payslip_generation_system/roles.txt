@@ -30,8 +30,8 @@ meo_e
 meo_w
 meo_n
 
-preparator_denr_nec -> denr_nec
-preparator_denr_prcmo -> denr_prcmo
+preparator_denr_nec -> denr_ncr_nec
+preparator_denr_prcmo -> denr_ncr_prcmo
 preparator_meo_s -> meo_s
 preparator_meo_e -> meo_e
 preparator_meo_w -> meo_w
