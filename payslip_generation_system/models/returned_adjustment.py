@@ -45,11 +45,12 @@ class ReturnedAdjustment(models.Model):
     # Store Year
     cutoff_year = models.CharField(max_length=50)
 
-    # Status Pending / Approved / Returned
+    # Status Pending / Approved / Returned / Credited
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
         ('Returned', 'Returned'),
+        ('Credited', 'Credited'),
     ]
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     

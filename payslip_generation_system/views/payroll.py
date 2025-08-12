@@ -711,7 +711,7 @@ def batch_data(request):
         cutoff=cutoff,
         month=cutoff_month,
         cutoff_year=cutoff_year,
-        status="Approved",
+        status__in=["Approved", "Credited"],
         assigned_office=office_to_check
     ).count()
     
@@ -1706,7 +1706,7 @@ def removed_employee_data(request):
 
     has_approved_adjustments = Adjustment.objects.filter(
         **adjustment_filter,
-        status="Approved"
+        status__in=["Approved", "Credited"]
     ).exists()
 
     has_credited_adjustments = Adjustment.objects.filter(
@@ -1770,7 +1770,7 @@ def removed_employee_data(request):
         cutoff=cutoff,
         month=cutoff_month,
         cutoff_year=cutoff_year,
-        status="Approved",
+        status__in=["Approved", "Credited"],
         assigned_office=batch_assigned_office
     ).count()
     
