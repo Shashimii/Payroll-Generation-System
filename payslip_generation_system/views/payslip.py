@@ -187,10 +187,23 @@ def generate(request):
             status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         )
+
+        #Absent
+        absent_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="Absent",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            status__in=["Pending", "Approved", "Credited"]
+            # Adjusted condition to match selected month
+        )
         
+        # Fomat the Late and Absent amount and minutes/days
         late_amt_total = late_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-        late_min_total = late_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00') 
-        
+        late_min_total = late_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
+        absent_amt_total = absent_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        absent_day_total = absent_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
+
         # Format the salary period
         salary_period = f"{selected_month} {current_year} - {selected_cutoff} Cutoff"
         
@@ -202,11 +215,11 @@ def generate(request):
             cutoff=selected_cutoff,
             status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
-        ).exclude(name="Late")
+        ).exclude(name__in=["Late", "Absent"])
         
         # Sum the amount for all adjustments
         total_adjustment_amount_minus = all_adjustment_minus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-        total_deductions = tax_deduction + philhealth + late_amt_total + total_adjustment_amount_minus
+        total_deductions = tax_deduction + philhealth + late_amt_total + absent_amt_total + total_adjustment_amount_minus
 
         #adjustment_plus
         all_adjustment_plus = Adjustment.objects.filter(
@@ -234,6 +247,8 @@ def generate(request):
             'philhealth': philhealth,
             'late_amt_total': late_amt_total,
             'late_min_total': late_min_total,
+            'absent_amt_total': absent_amt_total,
+            'absent_day_total': absent_day_total,
             'total_adjustment_amount_minus': total_adjustment_amount_minus,
             'all_adjustment_minus': all_adjustment_minus,
             'total_adjustment_amount_plus': total_adjustment_amount_plus,

@@ -98,7 +98,8 @@
                         <tbody>
                             <tr><td>TAX</td><td>₱{{ tax_deduction|floatformat:2|intcomma }}</td></tr>
                             <tr><td>Philhealth</td><td>₱{{ philhealth|floatformat:2|intcomma }}</td></tr>
-                            <tr><td>Late / Absences ({{ late_min_total }} minutes)</td><td>₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>Late ({{ late_min_total }} minutes)</td><td>₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>Absences ({{ absent_day_total }} days)</td><td>₱{{ absent_amt_total|floatformat:2|intcomma }}</td></tr>
                             <tr><td>Adjustments 
                                 <ul>
                                     {% for adjustment in all_adjustment_minus %}
