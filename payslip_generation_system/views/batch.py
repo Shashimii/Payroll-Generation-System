@@ -6,6 +6,20 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from ..models.batch import Batch
 
+def get_user_assigned_office(user_role):
+    """
+    Helper function to get the assigned office based on user role
+    """
+    role_to_office = {
+        'preparator_denr_nec': 'denr_ncr_nec',
+        'preparator_denr_prcmo': 'denr_ncr_prcmo',
+        'preparator_meo_s': 'meo_s',
+        'preparator_meo_e': 'meo_e',
+        'preparator_meo_w': 'meo_w',
+        'preparator_meo_n': 'meo_n',
+    }
+    return role_to_office.get(user_role)
+
 @login_required
 def index(request):
         return render(request, 'batch/create.html', {
@@ -31,6 +45,14 @@ def create(request):
             })
         
         try:
+            # Get the current user's role and assigned office
+            user_role = request.session.get('role', '')
+            assigned_office = get_user_assigned_office(user_role)
+            
+            # If no assigned office found, use a default
+            if not assigned_office:
+                assigned_office = 'general'
+            
             # Get the next available batch number
             last_batch = Batch.objects.order_by('-batch_number').first()
             next_batch_number = 1 if not last_batch else last_batch.batch_number + 1
@@ -39,13 +61,14 @@ def create(request):
             new_batch = Batch.objects.create(
                 batch_number=next_batch_number,
                 batch_name=batch_name,
-                batch_assigned_office='Default Office'  # You can add this field to your form if needed
+                batch_assigned_office=assigned_office
             )
             
             return JsonResponse({
                 'success': True,
                 'batch_name': new_batch.batch_name,
                 'batch_number': new_batch.batch_number,
+                'assigned_office': new_batch.batch_assigned_office,
                 'message': 'Batch created successfully!'
             })
             
