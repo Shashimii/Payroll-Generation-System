@@ -139,6 +139,31 @@ let currentUserOffice = '';
 let batchesData = [];
 let batchToDelete = null;
 
+// Office code to display name mapping (global)
+const OFFICE_NAME_MAP = {
+    'denr_ncr_nec': 'DENR NCR NEC',
+    'denr_ncr_prcmo': 'DENR NCR PRCMO',
+    'denr_nec': 'DENR NCR NEC',
+    'denr_prcmo': 'DENR NCR PRCMO',
+    'meo_s': 'MEO South',
+    'meo_e': 'MEO East',
+    'meo_w': 'MEO West',
+    'meo_n': 'MEO North'
+};
+
+function formatOfficeCode(officeCode) {
+    return OFFICE_NAME_MAP[officeCode] || officeCode || '';
+}
+
+function formatOfficeText(text) {
+    let out = text || '';
+    Object.keys(OFFICE_NAME_MAP).forEach(function(code){
+        const name = OFFICE_NAME_MAP[code];
+        out = out.split(code).join(name);
+    });
+    return out;
+}
+
 $(document).ready(function() {
     // Load user office and batches on page load
     loadUserOffice();
@@ -174,7 +199,7 @@ $(document).ready(function() {
                 if (response.success) {
                     Swal.fire({
                         title: 'Batch Created!',
-                        html: `<b>${response.batch_name}</b><br>Batch Number: <b>${response.batch_number}</b><br>Office: <b>${response.assigned_office}</b>`,
+                        html: `<b>${response.batch_name}</b><br>Batch Number: <b>${response.batch_number}</b><br>Office: <b>${formatOfficeCode(response.assigned_office)}</b>`,
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {
@@ -186,7 +211,7 @@ $(document).ready(function() {
                 } else {
                     Swal.fire({
                         title: 'Error',
-                        text: response.error || 'An error occurred while creating the batch.',
+                        text: formatOfficeText(response.error || 'An error occurred while creating the batch.'),
                         icon: 'error',
                         confirmButtonText: 'OK'
                     });
@@ -195,7 +220,7 @@ $(document).ready(function() {
             error: function(xhr, status, error) {
                 Swal.fire({
                     title: 'Error',
-                    text: 'An error occurred while creating the batch. Please try again.',
+                    text: formatOfficeText('An error occurred while creating the batch. Please try again.'),
                     icon: 'error',
                     confirmButtonText: 'OK'
                 });
@@ -267,11 +292,12 @@ function renderBatchesTable() {
     let tableBody = '';
     batchesData.forEach(function(batch) {
         const createdDate = new Date(batch.created_at).toLocaleDateString();
+        const officeDisplay = formatOfficeCode(batch.batch_assigned_office);
         tableBody += `
             <tr>
                 <td class="text-center">${batch.batch_number}</td>
                 <td>${batch.batch_name}</td>
-                <td class="text-center">${batch.batch_assigned_office}</td>
+                <td class="text-center">${officeDisplay}</td>
                 <td class="text-center">${createdDate}</td>
                 <td class="text-center">
                     <button class="btn btn-sm btn-primary" onclick="editBatch(${batch.id}, '${batch.batch_name}')">
@@ -346,7 +372,7 @@ function updateBatch() {
         error: function() {
             Swal.fire({
                 title: 'Error',
-                text: 'An error occurred while updating the batch.',
+                text: formatOfficeText('An error occurred while updating the batch.'),
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
@@ -415,7 +441,7 @@ function confirmDeleteBatch() {
         error: function() {
             Swal.fire({
                 title: 'Error',
-                text: 'An error occurred while deleting the batch.',
+                text: formatOfficeText('An error occurred while deleting the batch.'),
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
