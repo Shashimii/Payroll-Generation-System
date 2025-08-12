@@ -129,14 +129,14 @@
                                 </p>
                             </a>
                             <ul class="nav nav-treeview">
-                                {% if request.session.role != 'employee' %}
+                                {% comment %} {% if request.session.role != 'employee' %}
                                 <li class="nav-item">
                                     <a href="{% url 'payslip' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_adjustment' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Make Adjustments</p>
                                     </a>
                                 </li>
-                                {% endif %}
+                                {% endif %} {% endcomment %}
 
                                 {% if user_role not in hide_generate_payslip %}
                                 <li class="nav-item">
