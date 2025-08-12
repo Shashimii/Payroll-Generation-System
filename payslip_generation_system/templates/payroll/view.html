@@ -6,6 +6,13 @@
         Back
     </button>
 
+    <div class="d-flex gap-2 mb-3">
+        <button id="exportExcelBtn" class="btn btn-primary">
+            <i class="fa-solid fa-file-excel"></i>
+            Export to Excel
+        </button>
+    </div>
+
 
 <h2 id="payrollTitle">General Payroll DENR NCR</h2>
 <h4>{{ cutoff_month }} {{ cutoff }} Cutoff {{ cutoff_year }} — Batch {{ batch_number }}</h4>
@@ -420,6 +427,333 @@ $('#approvePayrollBtn').click(function () {
 
     
 });
+
+// Excel Export Functionality
+$('#exportExcelBtn').click(function() {
+    exportToExcel();
+});
+
+function exportToExcel() {
+    // Get the current payroll data
+    const cutoff = $('#cutoff').val();
+    const cutoffMonth = $('#cutoff_month').val();
+    const cutoffYear = $('#cutoff_year').val();
+    const batchNumber = $('#batch_number').val();
+    const assignedOffice = $('#assigned_office').val();
+    const payrollTitle = $('#payrollTitle').text();
+    
+    // Get employee data from the table
+    const employees = [];
+    $('.employee-row').each(function() {
+        const row = $(this);
+        employees.push({
+            fullname: row.find('td:eq(1)').text(),
+            position: row.find('td:eq(2)').text(),
+            salary: parseFloat(row.find('td:eq(3)').text().replace('₱', '').replace(',', '')) || 0,
+            tax: parseFloat(row.find('td:eq(4)').text().replace('₱', '').replace(',', '')) || 0,
+            philhealth: parseFloat(row.find('td:eq(5)').text().replace('₱', '').replace(',', '')) || 0,
+            sss: parseFloat(row.find('td:eq(6)').text().replace('₱', '').replace(',', '')) || 0,
+            late: parseFloat(row.find('td:eq(7)').text().replace('₱', '').replace(',', '')) || 0,
+            absent: parseFloat(row.find('td:eq(8)').text().replace('₱', '').replace(',', '')) || 0,
+            income: parseFloat(row.find('td:eq(9)').text().replace('₱', '').replace(',', '')) || 0,
+            deductions: parseFloat(row.find('td:eq(10)').text().replace('₱', '').replace(',', '')) || 0,
+            netPay: parseFloat(row.find('td:eq(11)').text().replace('₱', '').replace(',', '')) || 0
+        });
+    });
+
+    if (employees.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Data',
+            text: 'No employee data available to export.',
+            confirmButtonColor: '#ffc107'
+        });
+        return;
+    }
+
+    // Create workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Payroll');
+
+    // Set column widths
+    worksheet.columns = [
+        { header: 'Seq No.', key: 'seqNo', width: 8 },
+        { header: 'Last Name', key: 'lastName', width: 20 },
+        { header: 'First Name', key: 'firstName', width: 20 },
+        { header: 'Position', key: 'position', width: 25 },
+        { header: 'Monthly Rate', key: 'monthlyRate', width: 15 },
+        { header: 'With Sworn Declaration? (Y/N)', key: 'swornDeclaration', width: 25 },
+        { header: 'Salaries/Wages Earned', key: 'salariesEarned', width: 20 },
+        { header: 'Absence', key: 'absence', width: 12 },
+        { header: 'Undertime', key: 'undertime', width: 12 },
+        { header: 'Adjustments from previous payroll, if any', key: 'adjustments', width: 30 },
+        { header: 'Total Gross Amount Earned', key: 'grossAmount', width: 22 },
+        { header: 'PHILHEALTH (CURRENT PAYROLL)', key: 'philhealthCurrent', width: 25 },
+        { header: 'PERCENTAGE TAX', key: 'percentageTax', width: 18 },
+        { header: 'PHILHEALTH (PREVIOUS PAYROLL)', key: 'philhealthPrevious', width: 25 },
+        { header: 'Total Deductions', key: 'totalDeductions', width: 18 },
+        { header: 'Net Amount Due', key: 'netAmount', width: 18 },
+        { header: 'Seq No.', key: 'seqNo2', width: 8 },
+        { header: 'Signature', key: 'signature', width: 20 }
+    ];
+
+    // Add title rows
+    worksheet.mergeCells('I1:L1');
+    worksheet.getCell('I1').value = 'GENERAL PAYROLL';
+    worksheet.getCell('I1').font = { bold: true, size: 14 };
+    worksheet.getCell('I1').alignment = { horizontal: 'center' };
+
+    worksheet.mergeCells('I2:L2');
+    worksheet.getCell('I2').value = 'DENR-NCR';
+    worksheet.getCell('I2').font = { bold: true, size: 12 };
+    worksheet.getCell('I2').alignment = { horizontal: 'center' };
+
+    worksheet.mergeCells('I3:L3');
+    worksheet.getCell('I3').value = `${cutoffMonth.toUpperCase()} ${cutoff} ${cutoffYear}`;
+    worksheet.getCell('I3').font = { bold: true, size: 12 };
+    worksheet.getCell('I3').alignment = { horizontal: 'center' };
+
+    // Add entity information
+    worksheet.mergeCells('A5:H5');
+    worksheet.getCell('A5').value = `Entity Name: ${assignedOffice.replace(/_/g, ' ').toUpperCase()}`;
+    worksheet.getCell('A5').font = { bold: true };
+
+    worksheet.mergeCells('A6:H6');
+    worksheet.getCell('A6').value = 'We acknowledge receipt of cash shown opposite our name as full compensation for services rendered for the period covered.';
+
+    worksheet.mergeCells('S5:T5');
+    worksheet.getCell('S5').value = 'Sheet 1 of 1';
+
+    // Add headers starting from row 8
+    const headerRow = worksheet.getRow(8);
+    headerRow.font = { bold: true };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Add employee data starting from row 10
+    let currentRow = 10;
+    let totalSalaries = 0;
+    let totalGross = 0;
+    let totalPhilhealth = 0;
+    let totalTax = 0;
+    let totalDeductions = 0;
+    let totalNet = 0;
+
+    employees.forEach((emp, index) => {
+        const row = worksheet.getRow(currentRow);
+        
+        // Split full name into last and first name
+        const nameParts = emp.fullname.split(' ');
+        const lastName = nameParts[0] || '';
+        const firstName = nameParts.slice(1).join(' ') || '';
+
+        // Calculate monthly rate (assuming salary is per cutoff, multiply by 2 for monthly)
+        const monthlyRate = emp.salary * 2;
+        
+        // Calculate salaries earned (per cutoff)
+        const salariesEarned = emp.salary;
+        
+        // Calculate gross amount
+        const grossAmount = salariesEarned + emp.income;
+        
+        // Calculate total deductions
+        const totalDeduction = emp.tax + emp.philhealth + emp.sss + emp.late + emp.absent + emp.deductions;
+        
+        // Calculate net amount
+        const netAmount = grossAmount - totalDeduction;
+
+        row.getCell('A').value = index + 1;
+        row.getCell('B').value = lastName;
+        row.getCell('C').value = firstName;
+        row.getCell('D').value = emp.position;
+        row.getCell('E').value = monthlyRate;
+        row.getCell('E').numFmt = '#,##0.00';
+        row.getCell('F').value = 'Y'; // Default to Yes for sworn declaration
+        row.getCell('G').value = salariesEarned;
+        row.getCell('G').numFmt = '#,##0.00';
+        row.getCell('H').value = emp.absent > 0 ? emp.absent : '-';
+        row.getCell('I').value = emp.late > 0 ? emp.late : '-';
+        row.getCell('J').value = emp.income > 0 ? emp.income : '-';
+        row.getCell('J').numFmt = '#,##0.00';
+        row.getCell('K').value = emp.deductions > 0 ? emp.deductions : '-';
+        row.getCell('K').numFmt = '#,##0.00';
+        row.getCell('L').value = grossAmount;
+        row.getCell('L').numFmt = '#,##0.00';
+        row.getCell('M').value = emp.philhealth > 0 ? emp.philhealth : '-';
+        row.getCell('M').numFmt = '#,##0.00';
+        row.getCell('N').value = emp.tax > 0 ? emp.tax : '-';
+        row.getCell('N').numFmt = '#,##0.00';
+        row.getCell('O').value = '-'; // Previous payroll philhealth
+        row.getCell('P').value = totalDeduction;
+        row.getCell('P').numFmt = '#,##0.00';
+        row.getCell('Q').value = netAmount;
+        row.getCell('Q').numFmt = '#,##0.00';
+        row.getCell('R').value = index + 1;
+        row.getCell('S').value = ''; // Signature placeholder
+
+        // Accumulate totals
+        totalSalaries += salariesEarned;
+        totalGross += grossAmount;
+        totalPhilhealth += emp.philhealth;
+        totalTax += emp.tax;
+        totalDeductions += totalDeduction;
+        totalNet += netAmount;
+
+        currentRow++;
+    });
+
+    // Add totals row
+    const totalRow = worksheet.getRow(currentRow);
+    totalRow.font = { bold: true };
+    
+    worksheet.mergeCells(`A${currentRow}:F${currentRow}`);
+    totalRow.getCell('A').value = 'Total';
+    
+    totalRow.getCell('G').value = totalSalaries;
+    totalRow.getCell('G').numFmt = '#,##0.00';
+    totalRow.getCell('L').value = totalGross;
+    totalRow.getCell('L').numFmt = '#,##0.00';
+    totalRow.getCell('M').value = totalPhilhealth;
+    totalRow.getCell('M').numFmt = '#,##0.00';
+    totalRow.getCell('N').value = totalTax;
+    totalRow.getCell('N').numFmt = '#,##0.00';
+    totalRow.getCell('P').value = totalDeductions;
+    totalRow.getCell('P').numFmt = '#,##0.00';
+    totalRow.getCell('Q').value = totalNet;
+    totalRow.getCell('Q').numFmt = '#,##0.00';
+
+    // Add certification sections
+    const certRow = currentRow + 2;
+    
+    // Section A
+    worksheet.mergeCells(`A${certRow}:H${certRow}`);
+    worksheet.getCell(`A${certRow}`).value = 'A. CERTIFIED: Services duly rendered as stated';
+    worksheet.getCell(`A${certRow}`).font = { bold: true };
+    
+    worksheet.mergeCells(`A${certRow + 4}:H${certRow + 4}`);
+    worksheet.getCell(`A${certRow + 4}`).value = 'JAN S. BAUTISTA';
+    worksheet.getCell(`A${certRow + 4}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`A${certRow + 5}:H${certRow + 5}`);
+    worksheet.getCell(`A${certRow + 5}`).value = 'Chief, Administrative Division';
+    worksheet.getCell(`A${certRow + 5}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`A${certRow + 7}:H${certRow + 7}`);
+    worksheet.getCell(`A${certRow + 7}`).value = 'Date:';
+
+    // Section B
+    worksheet.mergeCells(`A${certRow + 9}:H${certRow + 9}`);
+    worksheet.getCell(`A${certRow + 9}`).value = 'B. CERTIFIED: Supporting documents complete and proper, and cash available in the amount of P';
+    worksheet.getCell(`A${certRow + 9}`).font = { bold: true };
+    
+    worksheet.mergeCells(`A${certRow + 13}:H${certRow + 13}`);
+    worksheet.getCell(`A${certRow + 13}`).value = 'JAHYA M. CABAEL';
+    worksheet.getCell(`A${certRow + 13}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`A${certRow + 14}:H${certRow + 14}`);
+    worksheet.getCell(`A${certRow + 14}`).value = 'OIC, Accounting Section';
+    worksheet.getCell(`A${certRow + 14}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`A${certRow + 16}:H${certRow + 16}`);
+    worksheet.getCell(`A${certRow + 16}`).value = 'Date:';
+
+    // Section C
+    worksheet.mergeCells(`I${certRow}:T${certRow}`);
+    worksheet.getCell(`I${certRow}`).value = 'C. APPROVED FOR PAYMENT:';
+    worksheet.getCell(`I${certRow}`).font = { bold: true };
+    
+    worksheet.mergeCells(`I${certRow + 1}:K${certRow + 1}`);
+    worksheet.getCell(`I${certRow + 1}`).value = 'Amount:';
+    
+    worksheet.mergeCells(`Q${certRow + 1}:T${certRow + 1}`);
+    worksheet.getCell(`Q${certRow + 1}`).value = `P${totalNet.toFixed(2)}`;
+    worksheet.getCell(`Q${certRow + 1}`).alignment = { horizontal: 'right' };
+    
+    worksheet.mergeCells(`I${certRow + 4}:T${certRow + 4}`);
+    worksheet.getCell(`I${certRow + 4}`).value = 'ERLINDA O. DAQUIGAN';
+    worksheet.getCell(`I${certRow + 4}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`I${certRow + 5}:T${certRow + 5}`);
+    worksheet.getCell(`I${certRow + 5}`).value = 'OIC, Assistant Regional Director for Management Services';
+    worksheet.getCell(`I${certRow + 5}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`I${certRow + 7}:T${certRow + 7}`);
+    worksheet.getCell(`I${certRow + 7}`).value = 'Date:';
+
+    // Section D
+    worksheet.mergeCells(`I${certRow + 9}:P${certRow + 9}`);
+    worksheet.getCell(`I${certRow + 9}`).value = 'D. CERTIFIED: Each employee whose name appears above has been paid the amount indicated opposite his/her name';
+    worksheet.getCell(`I${certRow + 9}`).font = { bold: true };
+    
+    worksheet.mergeCells(`I${certRow + 13}:P${certRow + 13}`);
+    worksheet.getCell(`I${certRow + 13}`).value = 'MYRA H. RAMOS';
+    worksheet.getCell(`I${certRow + 13}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`I${certRow + 14}:P${certRow + 14}`);
+    worksheet.getCell(`I${certRow + 14}`).value = 'Disbursing Officer';
+    worksheet.getCell(`I${certRow + 14}`).alignment = { horizontal: 'center' };
+    
+    worksheet.mergeCells(`I${certRow + 16}:P${certRow + 16}`);
+    worksheet.getCell(`I${certRow + 16}`).value = 'Date:';
+
+    // Section E
+    worksheet.mergeCells(`Q${certRow + 9}:T${certRow + 9}`);
+    worksheet.getCell(`Q${certRow + 9}`).value = 'E.';
+    worksheet.getCell(`Q${certRow + 9}`).font = { bold: true };
+    
+    worksheet.mergeCells(`Q${certRow + 10}:T${certRow + 10}`);
+    worksheet.getCell(`Q${certRow + 10}`).value = 'ORS No.:';
+    
+    worksheet.mergeCells(`Q${certRow + 11}:T${certRow + 11}`);
+    worksheet.getCell(`Q${certRow + 11}`).value = 'Date:';
+    
+    worksheet.mergeCells(`Q${certRow + 12}:T${certRow + 12}`);
+    worksheet.getCell(`Q${certRow + 12}`).value = 'JEV No.:';
+    
+    worksheet.mergeCells(`Q${certRow + 13}:T${certRow + 13}`);
+    worksheet.getCell(`Q${certRow + 13}`).value = 'Date:';
+
+    // Apply borders to the main data area
+    for (let row = 8; row <= currentRow; row++) {
+        for (let col = 1; col <= 20; col++) {
+            const cell = worksheet.getCell(row, col);
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+        }
+    }
+
+    // Generate filename
+    const filename = `Payroll_${cutoffMonth}_${cutoff}_${cutoffYear}_Batch${batchNumber}.xlsx`;
+
+    // Save the file
+    workbook.xlsx.writeBuffer().then(function(buffer) {
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Export Successful!',
+            text: `Payroll data exported to ${filename}`,
+            confirmButtonColor: '#28a745'
+        });
+    }).catch(function(error) {
+        console.error('Export error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Export Failed',
+            text: 'Failed to export payroll data. Please try again.',
+            confirmButtonColor: '#d33'
+        });
+    });
+}
 
 </script>
 
