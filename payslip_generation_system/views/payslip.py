@@ -160,16 +160,24 @@ def generate(request):
         basic_salary_cutoff = basic_salary / 2  
 
         # Deduction Conditions
-        # Salary
+        # if (employee.tax_declaration == "yes"):
+        #         tax_deduction = Decimal('0.00')
+        # else:
+        #     if (basic_salary_annual >= 250000):
+        #         tax_deduction = basic_salary_cutoff * Decimal('0.027')
+        #     else:
+        #         tax_deduction = basic_salary_cutoff * Decimal('0.00')
+        
+        # TAX DEDUCTION
         if (employee.tax_declaration == "yes"):
                 tax_deduction = Decimal('0.00')
         else:
             if (basic_salary_annual >= 250000):
-                tax_deduction = basic_salary_cutoff * Decimal('0.027') # TAX
+                tax_deduction = basic_salary_cutoff * Decimal('0.03') # TAX
             else:
                 tax_deduction = basic_salary_cutoff * Decimal('0.00')
         
-        # Philhealth 
+        # PHILHEALTH DEDUCTION 
         if employee.has_philhealth == "yes":
             if basic_salary_cutoff > Decimal('9999'):
                 philhealth = basic_salary_cutoff * Decimal('0.05')
@@ -178,7 +186,7 @@ def generate(request):
         else:
             philhealth = Decimal('0')
                 
-        #late
+        # LATE DEDUCTION
         late_adjustments = Adjustment.objects.filter(
             employee=employee,
             name="Late",
@@ -188,7 +196,7 @@ def generate(request):
             # Adjusted condition to match selected month
         )
 
-        #Absent
+        # ABSENT DEDUCTION
         absent_adjustments = Adjustment.objects.filter(
             employee=employee,
             name="Absent",
@@ -207,7 +215,7 @@ def generate(request):
         # Format the salary period
         salary_period = f"{selected_month} {current_year} - {selected_cutoff} Cutoff"
         
-        #adjustment_minus
+        # OTHER ADJUSTMENTS DEDUCTIONS
         all_adjustment_minus = Adjustment.objects.filter(
             employee=employee,
             type="Deduction",
@@ -217,11 +225,11 @@ def generate(request):
             # Adjusted condition to match selected month
         ).exclude(name__in=["Late", "Absent"])
         
-        # Sum the amount for all adjustments
+        # TOTAL DEDUCTIONS
         total_adjustment_amount_minus = all_adjustment_minus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         total_deductions = tax_deduction + philhealth + late_amt_total + absent_amt_total + total_adjustment_amount_minus
 
-        #adjustment_plus
+        # OTHER ADJUSTMENTS INCOME
         all_adjustment_plus = Adjustment.objects.filter(
             employee=employee,
             type="Income",
@@ -231,9 +239,8 @@ def generate(request):
             # Adjusted condition to match selected month
         )
         
-        # Sum the amount for all adjustments
+        # TOTAL ADJUSTMENTS INCOME
         total_adjustment_amount_plus = all_adjustment_plus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-        
         total_add = total_adjustment_amount_plus
         
         context = {
