@@ -49,6 +49,10 @@ urlpatterns = [
     path('payroll/approve_show', views.payroll.approve_show, name='payroll_approve_show'),
     path('payroll/release', views.payroll.release, name='payroll_release'),
 
+    # Batch
+    path('batch/', views.batch.index, name='batch_index'),
+    path('batch/create', views.batch.create, name='batch_create'),
+
     # Payslip
     path('payslip/', views.payslip.index, name='payslip'),
     path('payslip/create', views.payslip.create, name='payslip_create'),

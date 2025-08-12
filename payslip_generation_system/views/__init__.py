@@ -6,3 +6,4 @@ from .dashboard import dashboard
 from .employee import index
 from .payslip import index
 from .payroll import index
+from .batch import index
