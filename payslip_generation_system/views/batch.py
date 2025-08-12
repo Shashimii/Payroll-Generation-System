@@ -51,13 +51,6 @@ def create(request):
                 'error': 'Batch name is required.'
             })
         
-        # Check if batch name already exists
-        if Batch.objects.filter(batch_name=batch_name).exists():
-            return JsonResponse({
-                'success': False,
-                'error': 'A batch with this name already exists.'
-            })
-        
         try:
             # Get the current user's role and assigned office
             user_role = request.session.get('role', '')
@@ -67,7 +60,14 @@ def create(request):
             if not assigned_office:
                 assigned_office = 'general'
             
-            # Get the next available batch number
+            # Check if batch name already exists for this specific office
+            if Batch.objects.filter(batch_name=batch_name, batch_assigned_office=assigned_office).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': f'A batch with the name "{batch_name}" already exists in your office ({assigned_office}). Please choose a different name.'
+                })
+            
+            # Get the next available batch number (globally unique across all offices)
             last_batch = Batch.objects.order_by('-batch_number').first()
             next_batch_number = 1 if not last_batch else last_batch.batch_number + 1
             
@@ -89,7 +89,7 @@ def create(request):
         except Exception as e:
             return JsonResponse({
                 'success': False,
-                'error': f'An error occurred: {str(e)}'
+                'error': f'An error occurred while creating the batch: {str(e)}'
             })
     
     # If not POST request, return method not allowed
@@ -192,11 +192,11 @@ def update_batch(request):
                     'error': 'Batch not found or access denied.'
                 })
             
-            # Check if the new name already exists (excluding current batch)
-            if Batch.objects.exclude(id=batch_id).filter(batch_name=batch_name).exists():
+            # Check if the new name already exists in this office (excluding current batch)
+            if Batch.objects.exclude(id=batch_id).filter(batch_name=batch_name, batch_assigned_office=assigned_office).exists():
                 return JsonResponse({
                     'success': False,
-                    'error': 'A batch with this name already exists.'
+                    'error': f'A batch with the name "{batch_name}" already exists in your office ({assigned_office}). Please choose a different name.'
                 })
             
             # Update the batch
