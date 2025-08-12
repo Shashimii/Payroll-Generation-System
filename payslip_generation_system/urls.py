@@ -52,6 +52,10 @@ urlpatterns = [
     # Batch
     path('batch/', views.batch.index, name='batch_index'),
     path('batch/create', views.batch.create, name='batch_create'),
+    path('batch/get-user-office', views.batch.get_user_office, name='batch_get_user_office'),
+    path('batch/list', views.batch.list_batches, name='batch_list'),
+    path('batch/update', views.batch.update_batch, name='batch_update'),
+    path('batch/delete', views.batch.delete_batch, name='batch_delete'),
 
     # Payslip
     path('payslip/', views.payslip.index, name='payslip'),

@@ -20,6 +20,20 @@ def get_user_assigned_office(user_role):
     }
     return role_to_office.get(user_role)
 
+def get_formatted_office_name(office_code):
+    """
+    Helper function to get formatted office name from office code
+    """
+    office_name_map = {
+        'denr_ncr_nec': 'DENR NCR NEC',
+        'denr_ncr_prcmo': 'DENR NCR PRCMO',
+        'meo_s': 'MEO South',
+        'meo_e': 'MEO East',
+        'meo_w': 'MEO West',
+        'meo_n': 'MEO North',
+    }
+    return office_name_map.get(office_code, office_code)
+
 @login_required
 def index(request):
         return render(request, 'batch/create.html', {
@@ -79,4 +93,176 @@ def create(request):
             })
     
     # If not POST request, return method not allowed
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def get_user_office(request):
+    """
+    Get the current user's assigned office
+    """
+    if request.method == 'GET':
+        user_role = request.session.get('role', '')
+        assigned_office = get_user_assigned_office(user_role)
+        formatted_office_name = get_formatted_office_name(assigned_office) if assigned_office else 'Unknown'
+        
+        return JsonResponse({
+            'success': True,
+            'assigned_office': assigned_office or 'general',
+            'formatted_office_name': formatted_office_name
+        })
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def list_batches(request):
+    """
+    List batches created by the current user (based on their assigned office)
+    """
+    if request.method == 'GET':
+        try:
+            user_role = request.session.get('role', '')
+            assigned_office = get_user_assigned_office(user_role)
+            
+            if not assigned_office:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'User role not found or invalid.'
+                })
+            
+            # Get batches for the user's assigned office
+            batches = Batch.objects.filter(batch_assigned_office=assigned_office).order_by('-created_at')
+            
+            batches_data = []
+            for batch in batches:
+                batches_data.append({
+                    'id': batch.id,
+                    'batch_number': batch.batch_number,
+                    'batch_name': batch.batch_name,
+                    'batch_assigned_office': batch.batch_assigned_office,
+                    'created_at': batch.created_at.isoformat(),
+                    'updated_at': batch.updated_at.isoformat()
+                })
+            
+            return JsonResponse({
+                'success': True,
+                'batches': batches_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'An error occurred: {str(e)}'
+            })
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def update_batch(request):
+    """
+    Update an existing batch
+    """
+    if request.method == 'POST':
+        batch_id = request.POST.get('batch_id')
+        batch_name = request.POST.get('batch_name')
+        
+        # Validate required fields
+        if not batch_id or not batch_name:
+            return JsonResponse({
+                'success': False,
+                'error': 'Batch ID and name are required.'
+            })
+        
+        try:
+            # Get the current user's role and assigned office
+            user_role = request.session.get('role', '')
+            assigned_office = get_user_assigned_office(user_role)
+            
+            if not assigned_office:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'User role not found or invalid.'
+                })
+            
+            # Get the batch and verify it belongs to the user's office
+            try:
+                batch = Batch.objects.get(id=batch_id, batch_assigned_office=assigned_office)
+            except Batch.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Batch not found or access denied.'
+                })
+            
+            # Check if the new name already exists (excluding current batch)
+            if Batch.objects.exclude(id=batch_id).filter(batch_name=batch_name).exists():
+                return JsonResponse({
+                    'success': False,
+                    'error': 'A batch with this name already exists.'
+                })
+            
+            # Update the batch
+            batch.batch_name = batch_name
+            batch.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Batch updated successfully!'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'An error occurred: {str(e)}'
+            })
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+def delete_batch(request):
+    """
+    Delete an existing batch
+    """
+    if request.method == 'POST':
+        batch_id = request.POST.get('batch_id')
+        
+        # Validate required fields
+        if not batch_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Batch ID is required.'
+            })
+        
+        try:
+            # Get the current user's role and assigned office
+            user_role = request.session.get('role', '')
+            assigned_office = get_user_assigned_office(user_role)
+            
+            if not assigned_office:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'User role not found or invalid.'
+                })
+            
+            # Get the batch and verify it belongs to the user's office
+            try:
+                batch = Batch.objects.get(id=batch_id, batch_assigned_office=assigned_office)
+            except Batch.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Batch not found or access denied.'
+                })
+            
+            # Delete the batch
+            batch.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Batch deleted successfully!'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'An error occurred: {str(e)}'
+            })
+    
     return JsonResponse({'error': 'Invalid request method'}, status=405)
