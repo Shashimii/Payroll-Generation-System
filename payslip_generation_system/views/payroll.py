@@ -521,10 +521,7 @@ def batch_data(request):
         if (employee.tax_declaration == "yes"):
                 tax_deduction = Decimal('0.00')
         else:
-            if (basic_salary_annual >= 250000):
-                tax_deduction = basic_salary_cutoff * Decimal('0.03') # TAX
-            else:
-                tax_deduction = basic_salary_cutoff * Decimal('0.00')
+            tax_deduction = basic_salary_cutoff * Decimal('0.03') # TAX
 
         # Philhealth - fetch from Philhealth adjustments
         # philhealth_adjustments = Adjustment.objects.filter(
