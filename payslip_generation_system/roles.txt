@@ -8,6 +8,7 @@
 - checker (Finance)
 - accounting (Cashier)
 - preparator_denr_nec (DENR NCR NEC)
+- preparator_denr_prcmo (DENR NCR PRCMO)
 - preparator_meo_s (MEO South)
 - preparator_meo_e (MEO East)
 - preparator_meo_w (MEO West)
