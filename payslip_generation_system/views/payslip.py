@@ -20,7 +20,7 @@ def index(request):
     return render(request, 'payslip/index.html')
 
 @login_required
-@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
 def create(request):
     # Role
     role = request.session.get('role')
@@ -33,6 +33,7 @@ def create(request):
     
     # Offices
     denrncrnec = 'denr_ncr_nec'
+    denrncrprcmo = 'denr_ncr_prcmo'
     meos = 'meo_s'
     meoe = 'meo_e'
     meow = 'moe_w'
@@ -48,6 +49,8 @@ def create(request):
             employees = Employee.objects.all()
         case "preparator_denr_nec":
             employees = Employee.objects.filter(assigned_office=denrncrnec).all()
+        case "preparator_denr_prcmo":
+            employees = Employee.objects.filter(assigned_office=denrncrprcmo).all()
         case "preparator_meo_s":
             employees = Employee.objects.filter(assigned_office=meos).all()
         case "preparator_meo_e":
@@ -87,7 +90,7 @@ def create(request):
     })
 
 @login_required
-@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
 def generate(request):
     role = request.session.get('role', '').lower()
 
@@ -376,6 +379,7 @@ def employee_data(request):
     
     # Offices
     denrncrnec = 'denr_ncr_nec'
+    denrncrprcmo = 'denr_ncr_prcmo'
     meos = 'meo_s'
     meoe = 'meo_e'
     meow = 'moe_w'
@@ -383,6 +387,7 @@ def employee_data(request):
 
     OFFICE_NAME_MAP = {
         'denr_ncr_nec': 'DENR NCR NEC',
+        'denr_ncr_prcmo': 'DENR NCR PRCMO',
         'meo_e': 'MEO East',
         'meo_s': 'MEO South',
         'meo_w': 'MEO West',
@@ -400,6 +405,8 @@ def employee_data(request):
             queryset = Employee.objects.values(*fields)
         case "preparator_denr_nec":
             queryset = Employee.objects.filter(assigned_office=denrncrnec).values(*fields)
+        case "preparator_denr_prcmo":
+            queryset = Employee.objects.filter(assigned_office=denrncrprcmo).values(*fields)
         case "preparator_meo_s":
             queryset = Employee.objects.filter(assigned_office=meos).values(*fields)
         case "preparator_meo_e":
@@ -418,6 +425,7 @@ def employee_data(request):
         
     SEARCH_OFFICE_NAME_MAP = {
         'DENR NCR NEC': 'denr_ncr_nec',
+        'DENR NCR PRCMO': 'denr_ncr_prcmo',
         'MEO East': 'meo_e',
         'MEO South': 'meo_s',
         'MEO West': 'meo_w',
@@ -537,6 +545,7 @@ def adjustment_data(request, emp_id):
     restricted_roles = [
         'employee',
         'preparator_denr_nec',
+        'preparator_denr_prcmo',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',

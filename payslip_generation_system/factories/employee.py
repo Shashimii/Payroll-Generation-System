@@ -23,7 +23,7 @@ class EmployeeFactory(factory.django.DjangoModelFactory):
     salary = factory.LazyAttribute(lambda x: fake.pydecimal(left_digits=5, right_digits=2, positive=True))
     tax_declaration = factory.Iterator(['yes', 'no'])
     eligibility = factory.Iterator(['yes', 'no'])
-    assigned_office = factory.Iterator(['denr_ncr_nec', 'meo_s', 'meo_e', 'meo_w', 'meo_n'])
+    assigned_office = factory.Iterator(['denr_ncr_nec', 'denr_ncr_prcmo', 'meo_s', 'meo_e', 'meo_w', 'meo_n'])
     has_philhealth = factory.Iterator(['yes', 'no'])
     employee_type = factory.Iterator(['COS', 'ER'])
     user = None

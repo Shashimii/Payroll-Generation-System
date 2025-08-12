@@ -95,6 +95,7 @@ def store(request):
         # admin (System IT only)
         # checker
         # preparator_denr_nec
+        # preparator_denr_prcmo
         # preparator_meo_s = 43
         # preparator_meo_e = 42
         # preparator_meo_w = 44
@@ -259,6 +260,7 @@ def data(request):
 
     # Offices
     denrncrnec = 'denr_ncr_nec'
+    denrncrprcmo = 'denr_ncr_prcmo'
     meos = 'meo_s'
     meoe = 'meo_e'
     meow = 'meo_w'
@@ -274,6 +276,8 @@ def data(request):
             queryset = Employee.objects.values(*fields)
         case "preparator_denr_nec":
             queryset = Employee.objects.filter(assigned_office=denrncrnec).values(*fields)
+        case "preparator_denr_prcmo":
+            queryset = Employee.objects.filter(assigned_office=denrncrprcmo).values(*fields)
         case "preparator_meo_s":
             queryset = Employee.objects.filter(assigned_office=meos).values(*fields)
         case "preparator_meo_e":
@@ -292,6 +296,7 @@ def data(request):
 
     SEARCH_OFFICE_NAME_MAP = {
         'DENR NCR NEC': 'denr_ncr_nec',
+        'DENR NCR PRCMO': 'denr_ncr_prcmo',
         'MEO East': 'meo_e',
         'MEO South': 'meo_s',
         'MEO West': 'meo_w',
@@ -335,6 +340,7 @@ def data(request):
 
     OFFICE_NAME_MAP = {
         'denr_ncr_nec': 'DENR NCR NEC',
+        'denr_ncr_prcmo': 'DENR NCR PRCMO',
         'meo_e': 'MEO East',
         'meo_s': 'MEO South',
         'meo_w': 'MEO West',
@@ -380,6 +386,7 @@ def data(request):
 def show(request, emp_id):
     OFFICE_NAME_MAP = {
     'denr_ncr_nec': 'DENR NCR NEC',
+    'denr_ncr_prcmo': 'DENR NCR PRCMO',
     'meo_e': 'MEO East',
     'meo_s': 'MEO South',
     'meo_w': 'MEO West',

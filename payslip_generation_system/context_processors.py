@@ -17,6 +17,7 @@ def global_user_context(request):
         'accounting',
         'employee',
         'preparator_denr_nec',
+        'preparator_denr_prcmo',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
@@ -32,6 +33,7 @@ def global_user_context(request):
         'checker',
         'accounting',
         'preparator_denr_nec',
+        'preparator_denr_prcmo',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
@@ -48,6 +50,7 @@ def global_user_context(request):
     hide_check_adjustments = [
         'accounting',
         'preparator_denr_nec',
+        'preparator_denr_prcmo',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
@@ -58,6 +61,7 @@ def global_user_context(request):
     hide_release_payslips = [
         'checker',
         'preparator_denr_nec',
+        'preparator_denr_prcmo',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
@@ -67,6 +71,7 @@ def global_user_context(request):
 
     hide_generate_payslip = [
         'preparator_denr_nec',
+        'preparator_denr_prcmo',
         'preparator_meo_s',
         'preparator_meo_e',
         'preparator_meo_w',
@@ -78,6 +83,7 @@ def global_user_context(request):
         'checker': 'Checker',
         'accounting': 'Accounting',
         'preparator_denr_nec': 'Preparator: DENR NCR NEC',
+        'preparator_denr_prcmo': 'Preparator: DENR NCR PRCMO',
         'preparator_meo_s': 'Preparator: MEO South',
         'preparator_meo_e': 'Preparator: MEO East',
         'preparator_meo_w': 'Preparator: MEO West',

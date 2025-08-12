@@ -38,6 +38,7 @@ class BatchAssignment(models.Model):
 
     ASSIGNED_OFFICE_CHOICES = [
         ('denr_ncr_nec', 'DENR NCR NEC'),
+        ('denr_ncr_prcmo', 'DENR NCR PRCMO'),
         ('meo_s', 'MEO SOUTH'),
         ('meo_e', 'MEO EAST'),
         ('meo_w', 'MEO WEST'),

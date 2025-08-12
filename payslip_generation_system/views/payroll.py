@@ -22,6 +22,7 @@ def get_user_assigned_office(user_role):
     """
     role_to_office = {
         'preparator_denr_nec': 'denr_ncr_nec',
+        'preparator_denr_prcmo': 'denr_ncr_prcmo',
         'preparator_meo_s': 'meo_s',
         'preparator_meo_e': 'meo_e',
         'preparator_meo_w': 'meo_w',
@@ -35,6 +36,7 @@ def get_formatted_office_name(office_code):
     """
     office_name_map = {
         'denr_ncr_nec': 'DENR NCR NEC',
+        'denr_ncr_prcmo': 'DENR NCR PRCMO',
         'meo_s': 'MEO South',
         'meo_e': 'MEO East',
         'meo_w': 'MEO West',
@@ -51,6 +53,7 @@ def get_payroll_title(office_code):
     
     office_name_map = {
         'denr_ncr_nec': 'General Payroll DENR NCR NEC',
+        'denr_ncr_prcmo': 'General Payroll DENR NCR PRCMO',
         'meo_s': 'General Payroll DENR NCR MEO South',
         'meo_e': 'General Payroll DENR NCR MEO East',
         'meo_w': 'General Payroll DENR NCR MEO West',

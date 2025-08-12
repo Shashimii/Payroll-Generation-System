@@ -43,12 +43,12 @@ def logout(request):
     return redirect('login')
 
 @login_required
-@restrict_roles(disallowed_roles=['preparator_denr_nec','preparator_meo_s','preparator_meo_e','preparator_meo_w','preparator_meo_n','accounting','checker','employee'])
+@restrict_roles(disallowed_roles=['preparator_denr_nec','preparator_denr_prcmo','preparator_meo_s','preparator_meo_e','preparator_meo_w','preparator_meo_n','accounting','checker','employee'])
 def create(request):
     return render(request, 'auth/create.html')
 
 @login_required
-@restrict_roles(disallowed_roles=['preparator_denr_nec','preparator_meo_s','preparator_meo_e','preparator_meo_w','preparator_meo_n','accounting','checker','employee'])
+@restrict_roles(disallowed_roles=['preparator_denr_nec','preparator_denr_prcmo','preparator_meo_s','preparator_meo_e','preparator_meo_w','preparator_meo_n','accounting','checker','employee'])
 def store(request):
     if request.method == 'POST':
         # Formatted
@@ -78,6 +78,7 @@ def store(request):
         # admin (System IT only)
         # checker
         # preparator_denr_nec
+        # preparator_denr_prcmo
         # preparator_meo_s = 43
         # preparator_meo_e = 42
         # preparator_meo_w = 44
