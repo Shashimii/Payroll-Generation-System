@@ -6,12 +6,12 @@
         Back
     </button>
 
-    <div class="d-flex gap-2 mb-3">
+    {% comment %} <div class="d-flex gap-2 mb-3">
         <button id="exportExcelBtn" class="btn btn-primary">
             <i class="fa-solid fa-file-excel"></i>
             Export to Excel
         </button>
-    </div>
+    </div> {% endcomment %}
 
 
 <h2 id="payrollTitle">General Payroll DENR NCR</h2>
@@ -429,12 +429,12 @@ $('#approvePayrollBtn').click(function () {
 });
 
 // Excel Export Functionality
-$('#exportExcelBtn').click(function() {
+{% comment %} $('#exportExcelBtn').click(function() {
     exportToExcel();
-});
+}); {% endcomment %}
 
-function exportToExcel() {
-    // Get the current payroll data
+{% comment %} function exportToExcel() {
+    // Current Cutoff Data
     const cutoff = $('#cutoff').val();
     const cutoffMonth = $('#cutoff_month').val();
     const cutoffYear = $('#cutoff_year').val();
@@ -442,22 +442,23 @@ function exportToExcel() {
     const assignedOffice = $('#assigned_office').val();
     const payrollTitle = $('#payrollTitle').text();
     
-    // Get employee data from the table
+    // Get Employee Data From the Table
     const employees = [];
     $('.employee-row').each(function() {
         const row = $(this);
         employees.push({
-            fullname: row.find('td:eq(1)').text(),
-            position: row.find('td:eq(2)').text(),
-            salary: parseFloat(row.find('td:eq(3)').text().replace('₱', '').replace(',', '')) || 0,
-            tax: parseFloat(row.find('td:eq(4)').text().replace('₱', '').replace(',', '')) || 0,
-            philhealth: parseFloat(row.find('td:eq(5)').text().replace('₱', '').replace(',', '')) || 0,
-            sss: parseFloat(row.find('td:eq(6)').text().replace('₱', '').replace(',', '')) || 0,
-            late: parseFloat(row.find('td:eq(7)').text().replace('₱', '').replace(',', '')) || 0,
-            absent: parseFloat(row.find('td:eq(8)').text().replace('₱', '').replace(',', '')) || 0,
-            income: parseFloat(row.find('td:eq(9)').text().replace('₱', '').replace(',', '')) || 0,
-            deductions: parseFloat(row.find('td:eq(10)').text().replace('₱', '').replace(',', '')) || 0,
-            netPay: parseFloat(row.find('td:eq(11)').text().replace('₱', '').replace(',', '')) || 0
+            sequence: row.find('td:eq(0)').text().trim(),
+            fullname: row.find('td:eq(1)').text().trim(),
+            position: row.find('td:eq(2)').text().trim(),
+            salary: parseFloat(row.find('td:eq(3)').text().replace(/[₱,]/g, '')) || 0,
+            tax: parseFloat(row.find('td:eq(4)').text().replace(/[₱,]/g, '')) || 0,
+            philhealth: parseFloat(row.find('td:eq(5)').text().replace(/[₱,]/g, '')) || 0,
+            sss: parseFloat(row.find('td:eq(6)').text().replace(/[₱,]/g, '')) || 0,
+            late: parseFloat(row.find('td:eq(7)').text().replace(/[₱,]/g, '')) || 0,
+            absent: parseFloat(row.find('td:eq(8)').text().replace(/[₱,]/g, '')) || 0,
+            adjustmentIncome: parseFloat(row.find('td:eq(9)').text().replace(/[₱,]/g, '')) || 0,
+            adjustmentDeduction: parseFloat(row.find('td:eq(10)').text().replace(/[₱,]/g, '')) || 0,
+            netPay: parseFloat(row.find('td:eq(11)').text().replace(/[₱,]/g, '')) || 0
         });
     });
 
@@ -471,33 +472,33 @@ function exportToExcel() {
         return;
     }
 
-    // Create workbook and worksheet
+    // Create Workbook and Worksheet
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Payroll');
 
-    // Set column widths
+    // Column Width
     worksheet.columns = [
-        { header: 'Seq No.', key: 'seqNo', width: 8 },
-        { header: 'Last Name', key: 'lastName', width: 20 },
-        { header: 'First Name', key: 'firstName', width: 20 },
-        { header: 'Position', key: 'position', width: 25 },
-        { header: 'Monthly Rate', key: 'monthlyRate', width: 15 },
-        { header: 'With Sworn Declaration? (Y/N)', key: 'swornDeclaration', width: 25 },
-        { header: 'Salaries/Wages Earned', key: 'salariesEarned', width: 20 },
-        { header: 'Absence', key: 'absence', width: 12 },
-        { header: 'Undertime', key: 'undertime', width: 12 },
-        { header: 'Adjustments from previous payroll, if any', key: 'adjustments', width: 30 },
-        { header: 'Total Gross Amount Earned', key: 'grossAmount', width: 22 },
-        { header: 'PHILHEALTH (CURRENT PAYROLL)', key: 'philhealthCurrent', width: 25 },
-        { header: 'PERCENTAGE TAX', key: 'percentageTax', width: 18 },
-        { header: 'PHILHEALTH (PREVIOUS PAYROLL)', key: 'philhealthPrevious', width: 25 },
-        { header: 'Total Deductions', key: 'totalDeductions', width: 18 },
-        { header: 'Net Amount Due', key: 'netAmount', width: 18 },
-        { header: 'Seq No.', key: 'seqNo2', width: 8 },
-        { header: 'Signature', key: 'signature', width: 20 }
+        { key: 'seqNo', width: 4 },
+        { key: 'lastName', width: 15 },
+        { key: 'firstName', width: 15 },
+        { key: 'position', width: 20 },
+        { key: 'monthlyRate', width: 15 },
+        { key: 'sworn', width: 10 },
+        { key: 'salariesEarned', width: 15 },
+        { key: 'absence', width: 12 },
+        { key: 'undertime', width: 12 },
+        { key: 'adjustments', width: 15 },
+        { key: 'grossAmount', width: 15 },
+        { key: 'philhealthCurrent', width: 15 },
+        { key: 'percentageTax', width: 15 },
+        { key: 'philhealthPrevious', width: 15 },
+        { key: 'totalDeductions', width: 18 },
+        { key: 'netAmount', width: 18 },
+        { key: 'seqNo2', width: 8 },
     ];
 
-    // Add title rows
+
+    // Title Rows
     worksheet.mergeCells('I1:L1');
     worksheet.getCell('I1').value = 'GENERAL PAYROLL';
     worksheet.getCell('I1').font = { bold: true, size: 14 };
@@ -521,16 +522,78 @@ function exportToExcel() {
     worksheet.mergeCells('A6:H6');
     worksheet.getCell('A6').value = 'We acknowledge receipt of cash shown opposite our name as full compensation for services rendered for the period covered.';
 
-    worksheet.mergeCells('S5:T5');
-    worksheet.getCell('S5').value = 'Sheet 1 of 1';
+    worksheet.mergeCells('Q5:R5');
+    worksheet.getCell('Q5').value = 'Sheet 1 of 1';
 
-    // Add headers starting from row 8
-    const headerRow = worksheet.getRow(8);
-    headerRow.font = { bold: true };
-    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    // Table Headers
 
-    // Add employee data starting from row 10
-    let currentRow = 10;
+    // Merge Header Cells
+    worksheet.mergeCells('A8:A10'); // Seq No.
+    worksheet.mergeCells('B8:B10'); // Last Name
+    worksheet.mergeCells('C8:C10'); // First Name
+    worksheet.mergeCells('D8:D10'); // Position
+    worksheet.mergeCells('E8:E10'); // Monthly Rate
+    worksheet.mergeCells('F8:F10'); // Sworn declaration
+    worksheet.mergeCells('G8:G10'); // Salaries/Wages
+    worksheet.mergeCells('H8:H10'); // Absence
+    worksheet.mergeCells('I8:I10'); // Late/Undertime
+    worksheet.mergeCells('J8:J10'); // Income Adjustments
+    worksheet.mergeCells('K8:K10'); // Deduction Adjustments
+
+    // Header Cells Value
+    const headers = {
+        'A8': 'Seq No.',
+        'B8': 'Last Name',
+        'C8': 'First Name',
+        'D8': 'Position',
+        'E8': 'Monthly Rate',
+        'F8': 'With Sworn Declaration (Y/N)',
+        'G8': 'Salaries/Wages Earned',
+        'H8': 'Absence',
+        'I8': 'Late/Undertime',
+        'J8': 'Income Adjustments',
+        'K8': 'Deduction Adjustments'
+    };
+
+    // Apply styles and set values
+    Object.keys(headers).forEach(cell => {
+        const targetCell = worksheet.getCell(cell);
+        targetCell.value = headers[cell];
+        targetCell.font = { name: 'Aptos Narrow', size: 8, bold: true }; // size changed from 4 → 8 (4 is extremely small)
+        targetCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    });
+
+    // Adjust row heights for better wrapping
+    worksheet.getRow(9).height = 30;
+    worksheet.getRow(10).height = 30;
+
+
+
+    /*
+    worksheet.mergeCells('G8:K8');
+    worksheet.getCell('G8').value = 'Salaries/Wages Earn Absence';
+    worksheet.getCell('G8').alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.getCell('G8').font = { bold: true };
+
+    // Subheaders row 9
+    worksheet.getCell('G9').value = 'Salaries/Wages';
+    worksheet.getCell('H9').value = 'Absence';
+    worksheet.getCell('I9').value = 'Undertime';
+    worksheet.getCell('J9').value = 'Adjustments';
+    worksheet.getCell('K9').value = 'Gross Amount';
+    
+        
+    // Style the sub-headers
+    for (let col = 7; col <= 11; col++) {
+        const cell = worksheet.getCell(9, col);
+        cell.font = { bold: true, size: 10 };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    }
+
+    */
+
+    // Add employee data starting from row 11
+    let currentRow = 11;
     let totalSalaries = 0;
     let totalGross = 0;
     let totalPhilhealth = 0;
@@ -553,15 +616,15 @@ function exportToExcel() {
         const salariesEarned = emp.salary;
         
         // Calculate gross amount
-        const grossAmount = salariesEarned + emp.income;
+        const grossAmount = salariesEarned + emp.adjustmentIncome;
         
         // Calculate total deductions
-        const totalDeduction = emp.tax + emp.philhealth + emp.sss + emp.late + emp.absent + emp.deductions;
+        const totalDeduction = emp.tax + emp.philhealth + emp.sss + emp.late + emp.absent + emp.adjustmentDeduction;
         
         // Calculate net amount
         const netAmount = grossAmount - totalDeduction;
 
-        row.getCell('A').value = index + 1;
+        row.getCell('A').value = emp.sequence;
         row.getCell('B').value = lastName;
         row.getCell('C').value = firstName;
         row.getCell('D').value = emp.position;
@@ -571,24 +634,23 @@ function exportToExcel() {
         row.getCell('G').value = salariesEarned;
         row.getCell('G').numFmt = '#,##0.00';
         row.getCell('H').value = emp.absent > 0 ? emp.absent : '-';
+        row.getCell('H').numFmt = '#,##0.00';
         row.getCell('I').value = emp.late > 0 ? emp.late : '-';
-        row.getCell('J').value = emp.income > 0 ? emp.income : '-';
+        row.getCell('I').numFmt = '#,##0.00';
+        row.getCell('J').value = emp.adjustmentIncome > 0 ? emp.adjustmentIncome : '-';
         row.getCell('J').numFmt = '#,##0.00';
-        row.getCell('K').value = emp.deductions > 0 ? emp.deductions : '-';
+        row.getCell('K').value = grossAmount;
         row.getCell('K').numFmt = '#,##0.00';
-        row.getCell('L').value = grossAmount;
+        row.getCell('L').value = emp.philhealth > 0 ? emp.philhealth : '-';
         row.getCell('L').numFmt = '#,##0.00';
-        row.getCell('M').value = emp.philhealth > 0 ? emp.philhealth : '-';
+        row.getCell('M').value = emp.tax > 0 ? emp.tax : '-';
         row.getCell('M').numFmt = '#,##0.00';
-        row.getCell('N').value = emp.tax > 0 ? emp.tax : '-';
-        row.getCell('N').numFmt = '#,##0.00';
-        row.getCell('O').value = '-'; // Previous payroll philhealth
-        row.getCell('P').value = totalDeduction;
+        row.getCell('N').value = '-'; // Previous payroll philhealth
+        row.getCell('O').value = totalDeduction;
+        row.getCell('O').numFmt = '#,##0.00';
+        row.getCell('P').value = netAmount;
         row.getCell('P').numFmt = '#,##0.00';
-        row.getCell('Q').value = netAmount;
-        row.getCell('Q').numFmt = '#,##0.00';
-        row.getCell('R').value = index + 1;
-        row.getCell('S').value = ''; // Signature placeholder
+        row.getCell('Q').value = emp.sequence;
 
         // Accumulate totals
         totalSalaries += salariesEarned;
@@ -610,16 +672,21 @@ function exportToExcel() {
     
     totalRow.getCell('G').value = totalSalaries;
     totalRow.getCell('G').numFmt = '#,##0.00';
-    totalRow.getCell('L').value = totalGross;
+    totalRow.getCell('H').value = '';
+    totalRow.getCell('I').value = '';
+    totalRow.getCell('J').value = '';
+    totalRow.getCell('K').value = totalGross;
+    totalRow.getCell('K').numFmt = '#,##0.00';
+    totalRow.getCell('L').value = totalPhilhealth;
     totalRow.getCell('L').numFmt = '#,##0.00';
-    totalRow.getCell('M').value = totalPhilhealth;
+    totalRow.getCell('M').value = totalTax;
     totalRow.getCell('M').numFmt = '#,##0.00';
-    totalRow.getCell('N').value = totalTax;
-    totalRow.getCell('N').numFmt = '#,##0.00';
-    totalRow.getCell('P').value = totalDeductions;
+    totalRow.getCell('N').value = '';
+    totalRow.getCell('O').value = totalDeductions;
+    totalRow.getCell('O').numFmt = '#,##0.00';
+    totalRow.getCell('P').value = totalNet;
     totalRow.getCell('P').numFmt = '#,##0.00';
-    totalRow.getCell('Q').value = totalNet;
-    totalRow.getCell('Q').numFmt = '#,##0.00';
+    totalRow.getCell('Q').value = '';
 
     // Add certification sections
     const certRow = currentRow + 2;
@@ -672,11 +739,11 @@ function exportToExcel() {
     worksheet.getCell(`I${certRow + 4}`).value = 'ERLINDA O. DAQUIGAN';
     worksheet.getCell(`I${certRow + 4}`).alignment = { horizontal: 'center' };
     
-    worksheet.mergeCells(`I${certRow + 5}:T${certRow + 5}`);
+    worksheet.mergeCells(`I${certRow + 5}:R${certRow + 5}`);
     worksheet.getCell(`I${certRow + 5}`).value = 'OIC, Assistant Regional Director for Management Services';
     worksheet.getCell(`I${certRow + 5}`).alignment = { horizontal: 'center' };
     
-    worksheet.mergeCells(`I${certRow + 7}:T${certRow + 7}`);
+    worksheet.mergeCells(`I${certRow + 7}:R${certRow + 7}`);
     worksheet.getCell(`I${certRow + 7}`).value = 'Date:';
 
     // Section D
@@ -696,25 +763,25 @@ function exportToExcel() {
     worksheet.getCell(`I${certRow + 16}`).value = 'Date:';
 
     // Section E
-    worksheet.mergeCells(`Q${certRow + 9}:T${certRow + 9}`);
+    worksheet.mergeCells(`Q${certRow + 9}:R${certRow + 9}`);
     worksheet.getCell(`Q${certRow + 9}`).value = 'E.';
     worksheet.getCell(`Q${certRow + 9}`).font = { bold: true };
     
-    worksheet.mergeCells(`Q${certRow + 10}:T${certRow + 10}`);
+    worksheet.mergeCells(`Q${certRow + 10}:R${certRow + 10}`);
     worksheet.getCell(`Q${certRow + 10}`).value = 'ORS No.:';
     
-    worksheet.mergeCells(`Q${certRow + 11}:T${certRow + 11}`);
+    worksheet.mergeCells(`Q${certRow + 11}:R${certRow + 11}`);
     worksheet.getCell(`Q${certRow + 11}`).value = 'Date:';
     
-    worksheet.mergeCells(`Q${certRow + 12}:T${certRow + 12}`);
+    worksheet.mergeCells(`Q${certRow + 12}:R${certRow + 12}`);
     worksheet.getCell(`Q${certRow + 12}`).value = 'JEV No.:';
     
-    worksheet.mergeCells(`Q${certRow + 13}:T${certRow + 13}`);
+    worksheet.mergeCells(`Q${certRow + 13}:R${certRow + 13}`);
     worksheet.getCell(`Q${certRow + 13}`).value = 'Date:';
 
     // Apply borders to the main data area
     for (let row = 8; row <= currentRow; row++) {
-        for (let col = 1; col <= 20; col++) {
+        for (let col = 1; col <= 18; col++) {
             const cell = worksheet.getCell(row, col);
             cell.border = {
                 top: { style: 'thin' },
@@ -753,7 +820,7 @@ function exportToExcel() {
             confirmButtonColor: '#d33'
         });
     });
-}
+} {% endcomment %}
 
 </script>
 
