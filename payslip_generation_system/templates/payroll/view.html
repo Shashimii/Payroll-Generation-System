@@ -429,11 +429,11 @@ $('#approvePayrollBtn').click(function () {
 });
 
 // Excel Export Functionality
-{% comment %} $('#exportExcelBtn').click(function() {
+$('#exportExcelBtn').click(function() {
     exportToExcel();
-}); {% endcomment %}
+});
 
-{% comment %} function exportToExcel() {
+function exportToExcel() {
     // Current Cutoff Data
     const cutoff = $('#cutoff').val();
     const cutoffMonth = $('#cutoff_month').val();
@@ -820,7 +820,7 @@ $('#approvePayrollBtn').click(function () {
             confirmButtonColor: '#d33'
         });
     });
-} {% endcomment %}
+}
 
 </script>
 
