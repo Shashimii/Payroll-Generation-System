@@ -135,9 +135,15 @@ def update(request, emp_id):
     if request.method == "POST":
         employee = get_object_or_404(Employee, id=emp_id)
 
-        # Existing Check
+        # Existing Check - exclude current user when checking for duplicates
         check_username = request.POST.get('fullname').replace(" ", "")
-        if User.objects.filter(username=check_username).exists():
+        existing_user_query = User.objects.filter(username=check_username)
+        
+        # If employee has a user_id, exclude that user from the duplicate check
+        if employee.user_id:
+            existing_user_query = existing_user_query.exclude(id=employee.user_id)
+        
+        if existing_user_query.exists():
             messages.error(request, 'Full Name already exists.')
             return redirect('employee_edit', emp_id)
         
@@ -181,7 +187,7 @@ def update(request, emp_id):
         employee.contact = contact
         employee.education = education
         employee.gender = gender
-        employee_number = employee_number
+        employee.employee_number = employee_number
         employee.position = position
         employee.date_hired = date_hired
         employee.division = division
