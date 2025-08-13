@@ -53,16 +53,7 @@
     var username = $('#loginUsername').val();
     var password = $('#loginPassword').val();
 
-    if (username === "" || password === "") {
-      Swal.fire({
-        title: "Error",
-        text: "Please fill in all fields.",
-        icon: "error",
-        confirmButtonColor: "#d33",
-      });
-      return;
-    }
-
+    // Remove client-side validation since backend now handles it
     $.ajax({
       type: "POST",
       url: "{% url 'login' %}",
@@ -81,17 +72,52 @@
               window.location.href = response.redirect_url;
           });
         } else {
+          // Handle different error types with appropriate styling
+          var icon = "error";
+          var title = "Authentication Failed";
+          var confirmButtonColor = "#d33";
+          
+          if (response.error_type === 'empty_username') {
+            icon = "info";
+            title = "Username Required";
+            confirmButtonColor = "#17a2b8";
+            $('#loginUsername').focus();
+          } else if (response.error_type === 'empty_password') {
+            icon = "info";
+            title = "Password Required";
+            confirmButtonColor = "#17a2b8";
+            $('#loginPassword').focus();
+          } else if (response.error_type === 'username_not_found') {
+            icon = "warning";
+            title = "Username Not Found";
+            confirmButtonColor = "#f39c12";
+            // Clear username field for username not found errors
+            $('#loginUsername').val('').focus();
+          } else if (response.error_type === 'incorrect_password') {
+            icon = "error";
+            title = "Incorrect Password";
+            confirmButtonColor = "#e74c3c";
+            // Clear password field for incorrect password errors
+            $('#loginPassword').val('').focus();
+          }
+          
           Swal.fire({
-            title: "Error",
+            title: title,
             text: response.message,
-            icon: "error",
-            confirmButtonColor: "#d33",
+            icon: icon,
+            confirmButtonColor: confirmButtonColor,
+            confirmButtonText: "Try Again",
+            footer: response.error_type === 'username_not_found' ? 
+              '<small>Tip: Make sure you\'re using the correct username format</small>' : 
+              response.error_type === 'incorrect_password' ?
+              '<small>Tip: Check your password and make sure Caps Lock is off</small>' :
+              '<small>Please fill in all required fields</small>'
           });
         }
       },
       error: function(xhr, status, error) {
         Swal.fire({
-          title: "Error",
+          title: "System Error",
           text: "There was an error while processing your request. Please try again later.",
           icon: "error",
           confirmButtonColor: "#d33",

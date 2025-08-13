@@ -13,9 +13,32 @@ def login(request):
         return redirect('dashboard') 
     
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
 
+        # Check for empty fields
+        if not username:
+            return JsonResponse({
+                'success': False,
+                'message': 'Username is required. Please enter your username.',
+                'error_type': 'empty_username'
+            })
+        
+        if not password:
+            return JsonResponse({
+                'success': False,
+                'message': 'Password is required. Please enter your password.',
+                'error_type': 'empty_password'
+            })
+
+        # Check if username exists first
+        if not User.objects.filter(username=username).exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'Username not found. Please check your username and try again.',
+                'error_type': 'username_not_found'
+            })
+        
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth_login(request, user)
@@ -33,7 +56,12 @@ def login(request):
             })
 
         else:
-            return render(request, 'auth/login.html', {'error': 'Invalid Credentials'})
+            # Password is incorrect for existing username
+            return JsonResponse({
+                'success': False,
+                'message': 'Incorrect password. Please check your password and try again.',
+                'error_type': 'incorrect_password'
+            })
     
     return render(request, 'auth/login.html')
 
