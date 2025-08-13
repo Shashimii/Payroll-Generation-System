@@ -1470,8 +1470,21 @@ def data(request):
                 approval_status = ""
                 if total_adjustments > 0 and approved_adjustments == total_adjustments:
                     approval_status = "Approved"
+
+                # Get the batch names of the batch
+                batch_obj = Batch.objects.filter(
+                    batch_number=batch_number,
+                    batch_assigned_office=office
+                ).first()
+                
+                # If not found with office filter, try without office filter
+                if not batch_obj:
+                    batch_obj = Batch.objects.filter(batch_number=batch_number).first()
+                
+                batch_name = batch_obj.batch_name if batch_obj else f"Batch {batch_number}"  
                 
                 valid_batches.append({
+                    'batch_name': batch_name,
                     'batch_number': batch_number,
                     'cutoff': pending_batch['cutoff'],
                     'cutoff_month': pending_batch['month'],
@@ -1495,12 +1508,31 @@ def data(request):
     return JsonResponse({'batches': unique_batches}, status=200)
 
 def show(request):
+    batch_number = request.GET.get('batch_number')
+    assigned_office = request.GET.get('assigned_office')
+    
+    # If batch_name is not provided in URL, try to fetch it from the database
+    batch_name = request.GET.get('batch_name')
+    if not batch_name and batch_number:
+        try:
+            from payslip_generation_system.models.batch import Batch
+            batch_obj = Batch.objects.filter(batch_number=batch_number).first()
+            if batch_obj:
+                batch_name = batch_obj.batch_name
+        except Exception:
+            batch_name = None
+    
+    # If still no batch_name, provide a fallback
+    if not batch_name and batch_number:
+        batch_name = f"Batch {batch_number}"
+    
     context = {
         'cutoff': request.GET.get('cutoff'),
         'cutoff_month': request.GET.get('cutoff_month'),
         'cutoff_year': request.GET.get('cutoff_year'),
-        'batch_number': request.GET.get('batch_number'),
-        'assigned_office': request.GET.get('assigned_office'),
+        'batch_number': batch_number,
+        'batch_name': batch_name,
+        'assigned_office': assigned_office,
     }
     return render(request, 'payroll/view.html', context)
 

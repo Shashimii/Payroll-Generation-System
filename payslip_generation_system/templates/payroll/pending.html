@@ -4,7 +4,7 @@
 
 <div class="row">
     <div class="col-12">
-        <h3><i class="fas fa-exclamation-circle text-warning"></i> Pending Adjustment Batches</h3>
+        <h3><i class="fas fa-exclamation-circle text-warning"></i> Pending Payroll Batches/Clusters</h3>
         <ul class="list-group mt-3" id="pendingBatchList">
             <li class="list-group-item text-center text-muted">Loading...</li>
         </ul>
@@ -21,7 +21,7 @@ $(document).ready(function () {
         list.empty();
 
         if (response.batches.length === 0) {
-            list.append('<li class="list-group-item text-center text-muted">No batches with pending adjustments.</li>');
+            list.append('<li class="list-group-item text-center text-muted">No pending payroll batches/clusters.</li>');
         } else {
             response.batches.forEach(function (batch) {
             list.append(`
@@ -31,11 +31,12 @@ $(document).ready(function () {
                 data-month="${batch.cutoff_month}" 
                 data-year="${batch.cutoff_year}" 
                 data-batch="${batch.batch_number}"
+                data-batch-name="${batch.batch_name || 'Batch ' + batch.batch_number}"
                 data-assigned-office="${batch.assigned_office || ''}"
             >
                 <div class="batch-text">
                 <span>${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span><br>
-                <strong>Batch ${batch.batch_number}</strong><br>
+                <strong>${batch.batch_name || 'Batch ' + batch.batch_number}</strong><br>
                 <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
                 </div>
                 <div class="batch-status">
@@ -60,10 +61,11 @@ $('#pendingBatchList').on('click', '.pending-batch-item', function () {
     const month = $(this).data('month');
     const year = $(this).data('year');
     const batch = $(this).data('batch');
+    const batchName = $(this).data('batch-name');
     const assignedOffice = $(this).data('assigned-office');
 
 
-    const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}&assigned_office=${assignedOffice}`;
+    const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}&batch_name=${encodeURIComponent(batchName || `Batch ${batch}`)}&assigned_office=${assignedOffice}`;
     window.location.href = url;
 });
 </script>
