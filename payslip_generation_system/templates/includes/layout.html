@@ -127,6 +127,7 @@
                             </ul>
                         </li>
 
+                        {% if user_role not in hide_generate_payslip %}
                         <!-- Payslip Menu -->
                         <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_adjustment' or request.resolver_match.url_name == 'payslip_generate' %}menu-open{% endif %}">
                             <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_adjustment' or request.resolver_match.url_name == 'payslip_generate' %}active{% endif %}">
@@ -146,16 +147,15 @@
                                 </li>
                                 {% endif %} {% endcomment %}
 
-                                {% if user_role not in hide_generate_payslip %}
                                 <li class="nav-item">
                                     <a href="{% url 'payslip_create' %}" class="nav-link {% if request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_generate' %}active{% endif %}">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Generate Payslip</p>
                                     </a>
                                 </li>
-                                {% endif %}
                             </ul>
                         </li>
+                        {% endif %}
 
                         <!-- Logout -->
                         <li class="nav-item">
