@@ -17,55 +17,33 @@ $(document).ready(function () {
         url: '/payroll/approve_data',
         method: 'GET',
         success: function (response) {
-        const list = $('#pendingBatchList');
-        list.empty();
+            const list = $('#pendingBatchList');
+            list.empty();
 
-        // Check if response contains office_approval_status (for cashier role)
-        if (response.office_approval_status) {
-            if (response.office_approval_status.length === 0) {
-                list.append('<li class="list-group-item text-center text-muted">No offices with all batches approved.</li>');
-            } else {
-                response.office_approval_status.forEach(function (office) {
-                list.append(`
-                <li 
-                    class="list-group-item d-flex justify-content-between align-items-center office-approval-item"
-                    data-assigned-office="${office.assigned_office || ''}"
-                >
-                    <div class="batch-text">
-                    <span>${office.message}</span><br>
-                    <small class="text-muted">${office.formatted_office_name || 'N/A'}</small>
-                    </div>
-                    <span class="badge bg-success text-white">${office.approval_status || 'All Approved'}</span>
-                </li>
-                `);
-                });
-            }
-        } else {
-            // Original logic for other roles
-            if (response.batches.length === 0) {
+            if (!response.approved_batches || response.approved_batches.length === 0) {
                 list.append('<li class="list-group-item text-center text-muted">No Approved Payroll Batches.</li>');
-            } else {
-                response.batches.forEach(function (batch) {
-                list.append(`
-                <li 
-                    class="list-group-item d-flex justify-content-between align-items-center pending-batch-item"
-                    data-cutoff="${batch.cutoff}" 
-                    data-month="${batch.cutoff_month}" 
-                    data-year="${batch.cutoff_year}" 
-                    data-batch="${batch.batch_number}"
-                    data-assigned-office="${batch.assigned_office || ''}"
-                >
-                    <div class="batch-text">
-                    <span>${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span><br>
-                    <strong>Batch ${batch.batch_number}</strong><br>
-                    <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
-                    </div>
-                    <span class="badge bg-success text-white">${batch.approval_status || 'Approved'}</span>
-                </li>
-                `);
-                });
+                return;
             }
-        }
+
+            // Loop through the approved_batches list
+            response.approved_batches.forEach(function (batch) {
+                list.append(`
+                    <li 
+                        class="list-group-item d-flex justify-content-between align-items-center pending-batch-item"
+                        data-batch="${batch.batch_number}"
+                        data-assigned-office="${batch.batch_assigned_office || ''}"
+                        data-month="${batch.month || ''}"
+                        data-cutoff="${batch.cutoff || ''}"
+                        data-year="${batch.cutoff_year || ''}"
+                    >
+                        <div class="batch-text">
+                            <strong>${batch.batch_name}</strong><br>
+                            <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
+                        </div>
+                        <span class="badge bg-success text-white">Approved</span>
+                    </li>
+                `);
+            });
         },
         error: function () {
             $('#pendingBatchList').html('<li class="list-group-item text-center text-danger">Error loading data.</li>');
