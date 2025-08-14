@@ -73,6 +73,9 @@ urlpatterns = [
     path('payslip/adjustments/credit/<int:adj_id>/', views.payslip.adjustment_credit, name='adjustment_credit'),
     # path('payslip/adjustments/archive/<int:adj_id>/', views.payslip.adjustment_archive, name='adjustment_archive'),
     # path('payslip/adjustments/unarchive/<int:adj_id>/', views.payslip.adjustment_unarchive, name='adjustment_unarchive'),
+
+    # Single Function Paths
+    path('payroll/release-multiple', views.payroll.release_multiple_batch, name='payroll_release_multiple_batch'),
 ]
 
 if settings.DEBUG:

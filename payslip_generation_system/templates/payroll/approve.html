@@ -11,6 +11,10 @@
     </div>
 </div>
 
+<button id="approveBtn" class="btn btn-success floating-approve-btn" style="display:none;">
+    Approve Selected
+</button>
+
 <script>
 $(document).ready(function () {
     $.ajax({
@@ -36,11 +40,23 @@ $(document).ready(function () {
                         data-cutoff="${batch.cutoff || ''}"
                         data-year="${batch.cutoff_year || ''}"
                     >
-                        <div class="batch-text">
-                            <strong>${batch.batch_name}</strong><br>
-                            <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <label class="form-check-label ms-2 batch-text flex-grow-1" 
+                                for="batch-${batch.batch_number}-${batch.cutoff}-${batch.month}-${batch.cutoff_year}">
+                                <strong>${batch.batch_name}</strong><br>
+                                <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
+                            </label>
                         </div>
-                        <span class="badge bg-success text-white">Approved</span>
+                        <div style="display:flex; align-items:center; gap:1rem;">
+                            <span class="badge bg-success text-white">Approved</span>
+                            <div class="form-check" style="display:flex; justify-content:center; align-items:center;">
+                                <input 
+                                    type="checkbox" 
+                                    class="form-check-input batch-checkbox"
+                                    id="batch-${batch.batch_number}-${batch.cutoff}-${batch.month}-${batch.cutoff_year}"
+                                >
+                            </div>
+                        </div>
                     </li>
                 `);
             });
@@ -49,6 +65,10 @@ $(document).ready(function () {
             $('#pendingBatchList').html('<li class="list-group-item text-center text-danger">Error loading data.</li>');
         }
     });
+});
+
+$('#pendingBatchList').on('click', '.batch-checkbox', function (e) {
+    e.stopPropagation();
 });
 
 $('#pendingBatchList').on('click', '.pending-batch-item', function () {
@@ -140,30 +160,129 @@ $('#pendingBatchList').on('click', '.office-approval-item', function () {
         window.location.href = url;
     }
 });
+
+function approveSelectedBatches() {
+    const selectedBatches = [];
+
+    // Loop through checked checkboxes
+    document.querySelectorAll('.batch-checkbox:checked').forEach(checkbox => {
+        const item = checkbox.closest('.pending-batch-item');
+        selectedBatches.push({
+            batch_number: item.dataset.batch,
+            month: item.dataset.month,
+            cutoff: item.dataset.cutoff,
+            cutoff_year: item.dataset.year
+        });
+    });
+
+    console.log(selectedBatches);
+
+    if (selectedBatches.length === 0) {
+        alert('Please select at least one batch.');
+        return;
+    }
+
+    $.ajax({
+        url: '{% url "payroll_release_multiple_batch" %}',
+        method: 'POST',
+        contentType: 'application/json',
+        dataType: 'json', // Force jQuery to parse as JSON
+        data: JSON.stringify({
+            batches: selectedBatches,
+            status: 'Approved'
+        }),
+        success: function(response) {
+            Swal.fire({
+                title: 'Success!',
+                text: `${response.updated} adjustment(s) updated successfully.`,
+                icon: 'success',
+                confirmButtonColor: '#4caf50'
+            }).then(() => {
+                location.reload();
+            });
+        },
+        error: function(xhr) {
+            let errorMessage = 'An error occurred while processing the request.';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMessage = xhr.responseJSON.error;
+            }
+            Swal.fire({
+                title: 'Error!',
+                text: errorMessage,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+
+}
+
+// Show/Hide button based on checkbox selection
+$('#pendingBatchList').on('change', '.batch-checkbox', function () {
+    const checkedCount = $('.batch-checkbox:checked').length;
+    if (checkedCount > 0) {
+        $('#approveBtn').fadeIn();
+    } else {
+        $('#approveBtn').fadeOut();
+    }
+});
+
+// Button click handler
+$('#approveBtn').on('click', function () {
+    approveSelectedBatches();
+});
+
+
 </script>
 
 <style>
-  .list-group-item {
-    border-bottom: 1px solid #dee2e6;
-    transition: background-color 0.2s, color 0.2s;
-  }
+.list-group-item {
+  border-bottom: 1px solid #dee2e6;
+  transition: background-color 0.2s, color 0.2s;
+  padding: 0.75rem 1rem;
+}
 
-  .pending-batch-item:hover,
-  .office-approval-item:hover {
-    background-color: #4caf50 !important;
-    color: white !important;
-  }
+.pending-batch-item:hover {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
 
-  .pending-batch-item:hover .batch-text strong,
-  .pending-batch-item:hover .batch-text small,
-  .office-approval-item:hover .batch-text strong,
-  .office-approval-item:hover .batch-text small {
-    color: white !important;
-  }
+.pending-batch-item:hover .batch-text strong,
+.pending-batch-item:hover .batch-text small {
+  color: white !important;
+}
 
-  .list-group-item:last-child {
-    border-bottom: none;
-  }
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.form-check-input {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.form-check-label {
+  cursor: pointer;
+}
+
+.floating-approve-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    z-index: 9999;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+    border-radius: 50px;
+}
+
+
+.badge {
+  font-size: 0.8rem;
+  padding: 0.4em 0.6em;
+}
+
 </style>
 
 {% endblock %}

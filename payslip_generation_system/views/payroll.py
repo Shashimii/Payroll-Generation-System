@@ -1817,3 +1817,29 @@ def removed_employee_data(request):
         'formatted_office_name': get_formatted_office_name(batch_assigned_office),
         'payroll_title': get_payroll_title(batch_assigned_office),
     })
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def release_multiple_batch(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body or '{}')
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+        batches = data.get('batches', [])
+
+        updated_count = 0
+        for batch in batches:
+            filter_kwargs = {
+                'batch_number': batch.get('batch_number'),
+                'cutoff': batch.get('cutoff'),
+                'month': batch.get('month'),
+                'cutoff_year': batch.get('cutoff_year'),
+                'status': 'Approved',
+            }
+            updated_count += Adjustment.objects.filter(**filter_kwargs).update(status='Credited')
+
+        return JsonResponse({'status': 'OK', 'updated': updated_count}, status=200)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
