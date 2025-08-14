@@ -134,6 +134,10 @@
     </div>
 </div>
 
+{% comment %} <button class="btn btn-sm btn-danger ml-1" onclick="deleteBatch(${batch.id}, '${batch.batch_name}')">
+    <i class="fas fa-trash"></i> Delete
+</button> {% endcomment %}
+
 <script>
 let currentUserOffice = '';
 let batchesData = [];
@@ -302,9 +306,6 @@ function renderBatchesTable() {
                 <td class="text-center">
                     <button class="btn btn-sm btn-primary" onclick="editBatch(${batch.id}, '${batch.batch_name}')">
                         <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-danger ml-1" onclick="deleteBatch(${batch.id}, '${batch.batch_name}')">
-                        <i class="fas fa-trash"></i> Delete
                     </button>
                 </td>
             </tr>
