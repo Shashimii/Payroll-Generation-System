@@ -549,6 +549,19 @@ def batch_data(request):
         else:
             philhealth = Decimal('0')
 
+        # PREVIOUS PHILHEALTH
+        philhealth_previous = Adjustment.objects.filter(
+            employee=employee,
+            name__icontains="Philhealth",  # Matches any name containing "Philhealth"
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        if url_assigned_office:
+            philhealth_previous = philhealth_previous.filter(assigned_office=url_assigned_office)
+        additional_philhealth = philhealth_previous.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
         # SSS - fetch from SSS adjustments
         sss_adjustments = Adjustment.objects.filter(
             employee=employee,
@@ -664,6 +677,7 @@ def batch_data(request):
         emp_data['basic_salary_cutoff'] = f"{basic_salary_cutoff:.2f}"
         emp_data['tax_deduction'] = f"{tax_deduction:.2f}"
         emp_data['philhealth'] = f"{philhealth:.2f}"
+        emp_data['previous_philhealth'] = f"{additional_philhealth}"
         emp_data['sss'] = f"{sss:.2f}"
         emp_data['late_amount'] = f"{late_amt_total:.2f}"
         emp_data['late_minutes'] = f"{late_min_total:.2f}"
