@@ -78,6 +78,10 @@ def global_user_context(request):
         'preparator_meo_n',
     ]
 
+    hide_payroll = [
+        'employee'
+    ]
+
     ROLE_FORMAT = {
         'admin': 'System Admin',
         'checker': 'Checker',
@@ -113,5 +117,6 @@ def global_user_context(request):
         'hide_check_adjustments': hide_check_adjustments,
         'hide_release_payslips': hide_release_payslips,
         'restricted_roles': restricted_roles,
+        'hide_payroll': hide_payroll,
     }
 

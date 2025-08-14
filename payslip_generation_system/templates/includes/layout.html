@@ -79,6 +79,7 @@
                         {% endif %}
 
                         <!-- Payroll Menu -->
+                        {% if user_role not in hide_payroll %}
                         <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' or request.resolver_match.url_name == 'batch_index' %}menu-open{% endif %}">
                             <a href="#" class="nav-link {% if request.resolver_match.url_name == 'payroll' or request.resolver_match.url_name == 'payroll_pending' or request.resolver_match.url_name == 'payroll_approved_list' or request.resolver_match.url_name == 'batch_index' %}active{% endif %}">
                                 <i class="nav-icon fa-solid fa-address-card"></i>
@@ -126,7 +127,7 @@
                                 {% endif %}
                             </ul>
                         </li>
-
+                        {% endif %}
                         {% if user_role not in hide_generate_payslip %}
                         <!-- Payslip Menu -->
                         <li class="nav-item has-treeview {% if request.resolver_match.url_name == 'payslip' or request.resolver_match.url_name == 'payslip_create' or request.resolver_match.url_name == 'payslip_adjustment' or request.resolver_match.url_name == 'payslip_generate' %}menu-open{% endif %}">
