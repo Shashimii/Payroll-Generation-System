@@ -70,12 +70,13 @@ def global_user_context(request):
     ]
 
     hide_generate_payslip = [
-        'preparator_denr_nec',
-        'preparator_denr_prcmo',
-        'preparator_meo_s',
-        'preparator_meo_e',
-        'preparator_meo_w',
-        'preparator_meo_n',
+        # 'preparator_denr_nec',
+        # 'preparator_denr_prcmo',
+        # 'preparator_meo_s',
+        # 'preparator_meo_e',
+        # 'preparator_meo_w',
+        # 'preparator_meo_n',
+        'accounting'
     ]
 
     hide_payroll = [

@@ -20,7 +20,7 @@ def index(request):
     return render(request, 'payslip/index.html')
 
 @login_required
-@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+# @restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
 def create(request):
     # Role
     role = request.session.get('role')
@@ -90,7 +90,7 @@ def create(request):
     })
 
 @login_required
-@restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
+# @restrict_roles(disallowed_roles=['preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n'])
 def generate(request):
     role = request.session.get('role', '').lower()
 
@@ -128,7 +128,7 @@ def generate(request):
                 cutoff_year=current_year,
                 status="Credited"
             ).exists()
-        elif role in ['admin', 'checker', 'accounting']:
+        elif role in ['admin', 'checker', 'accounting', 'preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n']:
             has_adjustments = Adjustment.objects.filter(
                 employee=employee,
                 month=selected_month,
@@ -138,7 +138,7 @@ def generate(request):
             ).exists()
 
         if not has_adjustments:
-            if role in ['admin', 'checker', 'accounting']:
+            if role in ['admin', 'checker', 'accounting', 'preparator_denr_nec', 'preparator_denr_prcmo', 'preparator_meo_s', 'preparator_meo_e', 'preparator_meo_w', 'preparator_meo_n']:
                 has_adjustments = Adjustment.objects.filter(
                     employee=employee,
                     month=selected_month,
