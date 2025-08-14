@@ -328,25 +328,30 @@ def batch_data(request):
     # Get assigned office for the current user
     assigned_office = get_user_assigned_office(user_role)
     
-    # If we have url_assigned_office (coming from pending page), filter by employees with pending adjustments for that office
+    # If we have url_assigned_office (coming from pending page), filter by employees with pending or approved adjustments for that office
     if url_assigned_office:
-        # Get employees with pending adjustments for the specific assigned_office
-        employees_with_pending = Adjustment.objects.filter(
+        # Get employees with pending or approved adjustments for the specific assigned_office
+        # For checker role, show both pending and approved adjustments
+        status_filter = ["Pending"]
+        if user_role in ['admin', 'checker', 'accounting']:
+            status_filter.append("Approved")
+            
+        employees_with_adjustments = Adjustment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             month=cutoff_month,
             cutoff_year=cutoff_year,
-            status="Pending",
+            status__in=status_filter,
             assigned_office=url_assigned_office
         ).values_list('employee_id', flat=True).distinct()
         
-        # Filter assignments to only include employees with pending adjustments for the specific office
+        # Filter assignments to only include employees with pending or approved adjustments for the specific office
         assignments = BatchAssignment.objects.filter(
             batch_number=batch_number,
             cutoff=cutoff,
             cutoff_month=cutoff_month,
             cutoff_year=cutoff_year,
-            employee_id__in=employees_with_pending,
+            employee_id__in=employees_with_adjustments,
             assigned_office=url_assigned_office
         ).select_related('employee').annotate(
             late_order=Case(
@@ -375,7 +380,7 @@ def batch_data(request):
         batch_assigned_office = url_assigned_office
     else:
         # Filter assignments based on user role
-        if assigned_office and user_role != 'admin' and user_role != 'checker':
+        if assigned_office and user_role not in ['admin', 'checker', 'accounting']:
             # For office-specific preparators, show only their office batches
             assignments = BatchAssignment.objects.filter(
                 batch_number=batch_number,
@@ -448,31 +453,30 @@ def batch_data(request):
     office_to_check = url_assigned_office if url_assigned_office else assigned_office
 
     # Filter adjustment status checks by assigned_office
+    adjustment_filter = {
+        'batch_number': batch_number,
+        'cutoff': cutoff,
+        'month': cutoff_month,
+        'cutoff_year': cutoff_year,
+    }
+    
+    # Only filter by assigned_office if we have a specific office to check
+    if office_to_check:
+        adjustment_filter['assigned_office'] = office_to_check
+    
     has_pending_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status="Pending",
-        assigned_office=office_to_check
+        **adjustment_filter,
+        status="Pending"
     ).exists()
 
     has_approved_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status="Approved",
-        assigned_office=office_to_check
+        **adjustment_filter,
+        status="Approved"
     ).exists()
 
     has_credited_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status="Credited",
-        assigned_office=office_to_check
+        **adjustment_filter,
+        status="Credited"
     ).exists()
 
     # Filter remarks based on user role and assigned office
@@ -698,21 +702,22 @@ def batch_data(request):
         is_last_batch = last_batch_overall and last_batch_overall.batch_number == batch_number
 
     # Check if all adjustments in this batch are approved
-    total_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        assigned_office=office_to_check
-    ).count()
+    approval_filter = {
+        'batch_number': batch_number,
+        'cutoff': cutoff,
+        'month': cutoff_month,
+        'cutoff_year': cutoff_year,
+    }
+    
+    # Only filter by assigned_office if we have a specific office to check
+    if office_to_check:
+        approval_filter['assigned_office'] = office_to_check
+    
+    total_adjustments = Adjustment.objects.filter(**approval_filter).count()
     
     approved_adjustments = Adjustment.objects.filter(
-        batch_number=batch_number,
-        cutoff=cutoff,
-        month=cutoff_month,
-        cutoff_year=cutoff_year,
-        status__in=["Approved", "Credited"],
-        assigned_office=office_to_check
+        **approval_filter,
+        status__in=["Approved", "Credited"]
     ).count()
     
     # Set approval status
@@ -1544,75 +1549,39 @@ def approved_list(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def approve_data(request):
-    user_role = request.session.get('role', '')
-    assigned_office = get_user_assigned_office(user_role)
+    # Get approved batches with all needed Adjustment fields
+    approved_adjustments = (
+        Adjustment.objects.filter(status="Approved")
+        .values('batch_number', 'month', 'cutoff', 'cutoff_year')
+        .distinct()
+    )
 
-    # For office-specific preparators, show only their office
-    if assigned_office and user_role not in ['admin', 'checker', 'accounting']:
-        all_offices = [assigned_office]
-    else:
-        all_offices = (
-            BatchAssignment.objects.exclude(batch_number=0)
-            .values_list('assigned_office', flat=True)
-            .distinct()
-        )
+    # Get batch details for those batch_numbers
+    batch_numbers = [adj['batch_number'] for adj in approved_adjustments]
 
-    # Make sure offices are unique
-    all_offices = list(set(all_offices))
+    batch_details = (
+        Batch.objects.filter(batch_number__in=batch_numbers)
+        .values('batch_number', 'batch_name', 'batch_assigned_office')
+        .order_by('batch_number')
+    )
 
-    office_approval_status = []
+    # Convert to list so we can modify
+    batch_list = list(batch_details)
 
-    for office in all_offices:
-        office_batches = BatchAssignment.objects.filter(
-            assigned_office=office
-        ).exclude(batch_number=0).values(
-            'batch_number',
-            'cutoff',
-            'cutoff_month',
-            'cutoff_year'
-        ).distinct()
+    # Merge the month, cutoff, and cutoff_year into batch_list
+    for batch in batch_list:
+        adj_info = next((a for a in approved_adjustments if a['batch_number'] == batch['batch_number']), None)
+        if adj_info:
+            batch['month'] = adj_info['month']
+            batch['cutoff'] = adj_info['cutoff']
+            batch['cutoff_year'] = adj_info['cutoff_year']
 
-        all_batches_approved = True
+        # Apply formatted office name
+        batch['formatted_office_name'] = get_formatted_office_name(batch['batch_assigned_office'])
 
-        for batch in office_batches:
-            employee_ids = BatchAssignment.objects.filter(
-                batch_number=batch['batch_number'],
-                cutoff=batch['cutoff'],
-                cutoff_month=batch['cutoff_month'],
-                cutoff_year=batch['cutoff_year'],
-                assigned_office=office
-            ).values_list('employee_id', flat=True)
-
-            if not employee_ids:
-                continue
-
-            approved_adjustments = Adjustment.objects.filter(
-                employee_id__in=employee_ids,
-                cutoff=batch['cutoff'],
-                month=batch['cutoff_month'],
-                cutoff_year=batch['cutoff_year'],
-                status="Approved",
-                assigned_office=office
-            ).values('employee_id').distinct().count()
-
-            if approved_adjustments != len(employee_ids):
-                all_batches_approved = False
-                break
-
-        if all_batches_approved and office_batches.exists():
-            # Only add if not already in the list
-            if not any(o['assigned_office'] == office for o in office_approval_status):
-                office_approval_status.append({
-                    'assigned_office': office,
-                    'formatted_office_name': get_formatted_office_name(office),
-                    'payroll_title': get_payroll_title(office),
-                    'approval_status': "All Approved",
-                    'message': f"All the payrolls on {get_formatted_office_name(office)} is Approved waiting for the Allowing the generation of payslips"
-                })
-
-    return JsonResponse({'office_approval_status': office_approval_status}, status=200)
-
-
+    return JsonResponse({
+        'approved_batches': batch_list
+    }, status=200)
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
@@ -1810,8 +1779,6 @@ def removed_employee_data(request):
             'previous_batch': previous_batch,
             'previous_batch_submitted': previous_batch_submitted
         })
-
-    print(employees) # Debug
 
     # Check if all adjustments in this batch are approved
     total_adjustments = Adjustment.objects.filter(
