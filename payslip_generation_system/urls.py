@@ -76,6 +76,7 @@ urlpatterns = [
 
     # Single Function Paths
     path('payroll/release-multiple', views.payroll.release_multiple_batch, name='payroll_release_multiple_batch'),
+    path('payroll/excel', views.excel.data, name='payroll_excel_data'),
 ]
 
 if settings.DEBUG:
