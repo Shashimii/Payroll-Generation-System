@@ -1633,25 +1633,205 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
 
         startRow += 2;
 
-        // Certification blocks (simplified)
-        ws.mergeCells(`A${startRow}:I${startRow}`);
+        // Certification blocks - Section A (Left side, top)
+        ws.mergeCells(`A${startRow}:F${startRow}`);
         ws.getCell(`A${startRow}`).value = 'A. CERTIFIED: Services duly rendered as stated';
         ws.getCell(`A${startRow}`).font = { bold: true };
-        ws.mergeCells(`K${startRow}:P${startRow}`);
-        ws.getCell(`K${startRow}`).value = 'C. APPROVED FOR PAYMENT:';
-        ws.getCell(`K${startRow}`).font = { bold: true };
-
-        startRow += 6;
-        ws.mergeCells(`K${startRow}:P${startRow}`);
-        ws.getCell(`K${startRow}`).value = '#NAME?';
-        ws.getCell(`K${startRow}`).alignment = { horizontal: 'center' };
-        ws.getCell(`K${startRow}`).font = { bold: true };
-
-        // Right-side totals label
-        ws.mergeCells(`Q${startRow - 6}:R${startRow - 6}`);
-        ws.getCell(`Q${startRow - 6}`).value = totals.net;
-        ws.getCell(`Q${startRow - 6}`).numFmt = '#,##0.00';
-        ws.getCell(`Q${startRow - 6}`).alignment = { horizontal: 'right' };
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = ''; // Blank line for signature
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'JAN S. BAUTISTA';
+        ws.getCell(`A${startRow}`).font = { bold: true };
+        ws.getCell(`A${startRow}`).alignment = { horizontal: 'center' };
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'Chief, Administrative Division';
+        ws.getCell(`A${startRow}`).alignment = { horizontal: 'center' };
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'Date:';
+        ws.getCell(`A${startRow}`).alignment = { horizontal: 'center' };
+        
+        // Section B (Left side, bottom)
+        startRow += 2;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'B. CERTIFIED: Supporting documents complete and proper, and cash available in the amount of P';
+        ws.getCell(`A${startRow}`).font = { bold: true };
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = ''; // Blank line for signature
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'JAHYA M. CABAEL';
+        ws.getCell(`A${startRow}`).font = { bold: true };
+        ws.getCell(`A${startRow}`).alignment = { horizontal: 'center' };
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'OIC, Accounting Section';
+        ws.getCell(`A${startRow}`).alignment = { horizontal: 'center' };
+        
+        startRow += 1;
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'Date:';
+        ws.getCell(`A${startRow}`).alignment = { horizontal: 'center' };
+        
+        // Section C (Right side, top) - APPROVED FOR PAYMENT
+        const sectionCStartRow = startRow - 8; // Align with Section A
+        ws.mergeCells(`G${sectionCStartRow}:L${sectionCStartRow}`);
+        ws.getCell(`G${sectionCStartRow}`).value = 'C. APPROVED FOR PAYMENT:';
+        ws.getCell(`G${sectionCStartRow}`).font = { bold: true };
+        
+        const nameRow = sectionCStartRow + 4;
+        ws.mergeCells(`G${nameRow}:L${nameRow}`);
+        ws.getCell(`G${nameRow}`).value = 'ERLINDA O. DAQUIGAN';
+        ws.getCell(`G${nameRow}`).font = { bold: true };
+        ws.getCell(`G${nameRow}`).alignment = { horizontal: 'center' };
+        
+        const titleRow = nameRow + 1;
+        ws.mergeCells(`G${titleRow}:L${titleRow}`);
+        ws.getCell(`G${titleRow}`).value = 'OIC, Assistant Regional Director for Management Services';
+        ws.getCell(`G${titleRow}`).alignment = { horizontal: 'center' };
+        
+        const dateRow = titleRow + 1;
+        ws.mergeCells(`G${dateRow}:L${dateRow}`);
+        ws.getCell(`G${dateRow}`).value = 'Date:';
+        ws.getCell(`G${dateRow}`).alignment = { horizontal: 'center' };
+        
+        // Section D (Right side, middle) - CERTIFIED: Each employee has been paid
+        const sectionDStartRow = sectionCStartRow + 8; // Align with Section B
+        ws.mergeCells(`G${sectionDStartRow}:L${sectionDStartRow}`);
+        ws.getCell(`G${sectionDStartRow}`).value = 'D. CERTIFIED: Each employee whose name appears above has been paid the amount indicated opposite the amount indicate opposite on his/her name';
+        ws.getCell(`G${sectionDStartRow}`).font = { bold: true };
+        ws.getCell(`G${sectionDStartRow}`).alignment = { wrapText: true };
+        
+        const sectionDNameRow = sectionDStartRow + 2;
+        ws.mergeCells(`G${sectionDNameRow}:L${sectionDNameRow}`);
+        ws.getCell(`G${sectionDNameRow}`).value = 'MYRA H. RAMOS';
+        ws.getCell(`G${sectionDNameRow}`).font = { bold: true };
+        ws.getCell(`G${sectionDNameRow}`).alignment = { horizontal: 'center' };
+        
+        const sectionDTitleRow = sectionDNameRow + 1;
+        ws.mergeCells(`G${sectionDTitleRow}:L${sectionDTitleRow}`);
+        ws.getCell(`G${sectionDTitleRow}`).value = 'Disbursing Officer';
+        ws.getCell(`G${sectionDTitleRow}`).alignment = { horizontal: 'center' };
+        
+        const sectionDDateRow = sectionDTitleRow + 1;
+        ws.mergeCells(`G${sectionDDateRow}:L${sectionDDateRow}`);
+        ws.getCell(`G${sectionDDateRow}`).value = 'Date:';
+        ws.getCell(`G${sectionDDateRow}`).alignment = { horizontal: 'center' };
+        
+        // Section E (Right side, far right) - ORS and JEV details
+        const sectionEStartRow = sectionCStartRow + 4; // Align with the name row
+        ws.getCell(`N${sectionEStartRow}`).value = 'E.';
+        ws.getCell(`N${sectionEStartRow}`).font = { bold: true };
+        
+        const orsRow = sectionEStartRow + 1;
+        ws.getCell(`N${orsRow}`).value = 'ORS No.:';
+        ws.getCell(`N${orsRow}`).font = { bold: true };
+        ws.getCell(`O${orsRow}`).value = '2025-6-0279';
+        
+        const orsDateRow = orsRow + 1;
+        ws.getCell(`N${orsDateRow}`).value = 'Date:';
+        ws.getCell(`N${orsDateRow}`).font = { bold: true };
+        
+        const jevRow = orsDateRow + 1;
+        ws.getCell(`N${jevRow}`).value = 'JEV No.:';
+        ws.getCell(`N${jevRow}`).font = { bold: true };
+        
+        const jevDateRow = jevRow + 1;
+        ws.getCell(`N${jevRow}`).value = 'Date:';
+        ws.getCell(`N${jevDateRow}`).font = { bold: true };
+        
+        // Right-side totals label - aligned with the name row
+        ws.mergeCells(`Q${nameRow}:R${nameRow}`);
+        ws.getCell(`Q${nameRow}`).value = totals.net;
+        ws.getCell(`Q${nameRow}`).numFmt = '#,##0.00';
+        ws.getCell(`Q${nameRow}`).alignment = { horizontal: 'right' };
+        ws.getCell(`Q${nameRow}`).font = { bold: true };
+        
+        // Add borders to certification sections - only add borders to cells that aren't already merged
+        const addBorders = (startR, endR, startC, endC) => {
+          for (let r = startR; r <= endR; r++) {
+            for (let c = startC; c <= endC; c++) {
+              try {
+                const cell = ws.getCell(r, c);
+                if (!cell.border) cell.border = {};
+                cell.border.top = { style: 'thin' };
+                cell.border.left = { style: 'thin' };
+                cell.border.bottom = { style: 'thin' };
+                cell.border.right = { style: 'thin' };
+              } catch (e) {
+                // Skip if cell is already merged or has issues
+                console.log(`Skipping border for cell ${r},${c}: ${e.message}`);
+              }
+            }
+          }
+        };
+        
+        // Add borders to left side sections (A and B) - only for non-merged cells
+        for (let r = sectionCStartRow; r <= sectionCStartRow + 8; r++) {
+          for (let c = 1; c <= 6; c++) {
+            try {
+              const cell = ws.getCell(r, c);
+              if (!cell.border) cell.border = {};
+              cell.border.top = { style: 'thin' };
+              cell.border.left = { style: 'thin' };
+              cell.border.bottom = { style: 'thin' };
+              cell.border.right = { style: 'thin' };
+            } catch (e) {
+              // Skip merged cells
+            }
+          }
+        }
+        
+        // Add borders to right side sections (C and D) - only for non-merged cells
+        for (let r = sectionCStartRow; r <= sectionCStartRow + 8; r++) {
+          for (let c = 7; c <= 12; c++) {
+            try {
+              const cell = ws.getCell(r, c);
+              if (!cell.border) cell.border = {};
+              cell.border.top = { style: 'thin' };
+              cell.border.left = { style: 'thin' };
+              cell.border.bottom = { style: 'thin' };
+              cell.border.right = { style: 'thin' };
+            } catch (e) {
+              // Skip merged cells
+            }
+          }
+        }
+        
+        // Add borders to Section E - only for non-merged cells
+        for (let r = sectionEStartRow; r <= sectionEStartRow + 4; r++) {
+          for (let c = 14; c <= 15; c++) {
+            try {
+              const cell = ws.getCell(r, c);
+              if (!cell.border) cell.border = {};
+              cell.border.top = { style: 'thin' };
+              cell.border.left = { style: 'thin' };
+              cell.border.bottom = { style: 'thin' };
+              cell.border.right = { style: 'thin' };
+            } catch (e) {
+              // Skip merged cells
+            }
+          }
+        }
+        
+        // Set row heights for better spacing
+        for (let r = sectionCStartRow; r <= sectionCStartRow + 8; r++) {
+          ws.getRow(r).height = 20;
+        }
+        for (let r = sectionEStartRow; r <= sectionEStartRow + 4; r++) {
+          ws.getRow(r).height = 20;
+        }
 
         // File name
         const safeOffice = (assigned_office || 'OFFICE').toString().replace(/\W+/g, '_').toUpperCase();
