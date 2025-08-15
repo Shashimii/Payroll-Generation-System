@@ -1427,9 +1427,250 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
       cutoff_year: cutoff_year,
       batch_number: batch_number,
       assigned_office: assigned_office,
+      csrfmiddlewaretoken: '{{ csrf_token }}',
     },
-    success: function (response) {
-      console.log('worked', response);
+    success: async function (response) {
+      try {
+        const employees = response?.employees || [];
+
+        // Build workbook
+        const workbook = new ExcelJS.Workbook();
+        const ws = workbook.addWorksheet('GENERAL PAYROLL');
+
+        // Column widths to roughly match layout in the screenshot
+        ws.columns = [
+          { header: '', key: 'seq', width: 6 },
+          { header: '', key: 'last_name', width: 18 },
+          { header: '', key: 'first_name', width: 22 },
+          { header: '', key: 'position', width: 24 },
+          { header: '', key: 'monthly_rate', width: 14 },
+          { header: '', key: 'sworn', width: 10 },
+          { header: '', key: 'wages', width: 14 },
+          { header: '', key: 'absence', width: 10 },
+          { header: '', key: 'late', width: 12 },
+          { header: '', key: 'adjustments', width: 18 },
+          { header: '', key: 'gross', width: 16 },
+          { header: '', key: 'philhealth_curr', width: 18 },
+          { header: '', key: 'tax', width: 14 },
+          { header: '', key: 'philhealth_prev', width: 18 },
+          { header: '', key: 'total_deductions', width: 16 },
+          { header: '', key: 'net_amount', width: 16 },
+          { header: '', key: 'seq2', width: 6 },
+          { header: '', key: 'signature', width: 18 },
+        ];
+
+        // Title
+        ws.mergeCells('A3:R3');
+        ws.getCell('A3').value = 'GENERAL PAYROLL';
+        ws.getCell('A3').alignment = { horizontal: 'center' };
+        ws.getCell('A3').font = { size: 14, bold: true };
+
+        ws.mergeCells('A4:R4');
+        ws.getCell('A4').value = 'DENR-NCR';
+        ws.getCell('A4').alignment = { horizontal: 'center' };
+        ws.getCell('A4').font = { size: 12, bold: true };
+
+        ws.mergeCells('A5:R5');
+        ws.getCell('A5').value = `${cutoff_month?.toUpperCase?.() || cutoff_month} ${cutoff} CUT-OFF, ${cutoff_year}`;
+        ws.getCell('A5').alignment = { horizontal: 'center' };
+        ws.getCell('A5').font = { size: 12, bold: true };
+
+        // Entity name
+        ws.getCell('A7').value = 'Entity Name:';
+        ws.getCell('A7').font = { bold: true };
+        ws.mergeCells('B7:R7');
+        ws.getCell('B7').value = assigned_office?.toString()?.replaceAll('_', ' ').toUpperCase();
+
+        // Note under header
+        ws.mergeCells('A8:R8');
+        ws.getCell('A8').value = 'We acknowledge receipt of cash shown opposite our name as full compensation for services rendered for the period covered.';
+
+        // Table header (two-row header similar to the screenshot)
+        // First header row
+        ws.mergeCells('A10:A12'); ws.getCell('A10').value = 'Seq No.';
+        ws.mergeCells('B10:B12'); ws.getCell('B10').value = 'Last Name';
+        ws.mergeCells('C10:C12'); ws.getCell('C10').value = 'First Name';
+        ws.mergeCells('D10:D12'); ws.getCell('D10').value = 'Position';
+        ws.mergeCells('E10:E12'); ws.getCell('E10').value = 'Monthly Rate';
+        ws.mergeCells('F10:F12'); ws.getCell('F10').value = 'With Sworn Declaration? (Y/N)';
+        ws.mergeCells('G10:G12'); ws.getCell('G10').value = 'Salaries/ Wages Earned';
+        ws.mergeCells('H10:H12'); ws.getCell('H10').value = 'Absence';
+        ws.mergeCells('I10:I12'); ws.getCell('I10').value = 'Late/ Undertime';
+        ws.mergeCells('J10:J12'); ws.getCell('J10').value = 'Adjustments from previous payroll, if any (Over)/Under Payments';
+        ws.mergeCells('K10:K12'); ws.getCell('K10').value = 'Total Gross Amount Earned';
+        ws.mergeCells('L10:L12'); ws.getCell('L10').value = 'PHILHEALTH (CURRENT PAYROLL)';
+        ws.mergeCells('M10:M12'); ws.getCell('M10').value = 'PERCENTAGE TAX';
+        ws.mergeCells('N10:N12'); ws.getCell('N10').value = 'PHILHEALTH (PREVIOUS PAYROLL/S)';
+        ws.mergeCells('O10:O12'); ws.getCell('O10').value = 'Total Deductions';
+        ws.mergeCells('P10:P12'); ws.getCell('P10').value = 'Net Amount Due';
+        ws.mergeCells('Q10:Q12'); ws.getCell('Q10').value = 'Seq No.';
+        ws.mergeCells('R10:R12'); ws.getCell('R10').value = 'Signature';
+
+        // Style header cells
+        for (let col = 1; col <= 18; col++) {
+          const cell = ws.getCell(10, col);
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.font = { bold: true };
+          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        }
+        for (let rowNum = 11; rowNum <= 12; rowNum++) {
+          const row = ws.getRow(rowNum);
+          row.height = 5; // spacer to simulate multi-row header height
+        }
+
+        // Helper: split name into last/first using a simple heuristic
+        const splitName = (fullname) => {
+          if (!fullname) return { first: '', last: '' };
+          const parts = fullname.trim().split(/\s+/);
+          if (parts.length === 1) return { first: parts[0], last: '' };
+          const last = parts[parts.length - 1];
+          const first = parts.slice(0, -1).join(' ');
+          return { first, last };
+        };
+
+        let startRow = 13;
+        let index = 1;
+        let totals = {
+          wages: 0,
+          adjustments: 0,
+          gross: 0,
+          philhealth_curr: 0,
+          tax: 0,
+          philhealth_prev: 0,
+          deductions: 0,
+          net: 0,
+        };
+
+        employees.forEach((e) => {
+          const name = splitName(e.fullname);
+          const monthlyRate = Number(e.salary || 0);
+          const wages = monthlyRate / 2; // half-month
+          const sworn = (e.tax_declaration || '').toString().toLowerCase() === 'yes' ? 'Y' : 'N';
+
+          const sums = (e.adjustments || []).reduce(
+            (acc, a) => {
+              const amt = Number(a.amount || 0);
+              if ((a.type || '').toLowerCase() === 'deduction') acc.deductions += Math.abs(amt);
+              else acc.income += amt;
+              return acc;
+            },
+            { income: 0, deductions: 0 }
+          );
+          const netAdjustments = (sums.income - sums.deductions);
+          const gross = wages + Math.max(0, netAdjustments);
+
+          // Optional: basic PhilHealth estimate (set to 0 if not participating)
+          const hasPhilHealth = (e.has_philhealth || '').toString().toLowerCase() === 'yes';
+          const philhealthCurr = hasPhilHealth ? 0 : 0; // keep 0 until formula is finalized
+          const tax = 0; // left blank for now
+          const philhealthPrev = 0;
+          const totalDeductions = philhealthCurr + tax + philhealthPrev + Math.max(0, -netAdjustments);
+          const netAmount = gross - totalDeductions;
+
+          const row = ws.getRow(startRow);
+          row.getCell('A').value = index;
+          row.getCell('B').value = name.last;
+          row.getCell('C').value = name.first;
+          row.getCell('D').value = e.position || '';
+          row.getCell('E').value = monthlyRate;
+          row.getCell('F').value = sworn;
+          row.getCell('G').value = wages;
+          row.getCell('H').value = '-';
+          row.getCell('I').value = '-';
+          row.getCell('J').value = netAdjustments || 0;
+          row.getCell('K').value = gross;
+          row.getCell('L').value = philhealthCurr || '';
+          row.getCell('M').value = tax || '';
+          row.getCell('N').value = philhealthPrev || '';
+          row.getCell('O').value = totalDeductions;
+          row.getCell('P').value = netAmount;
+          row.getCell('Q').value = index;
+          row.getCell('R').value = '';
+
+          // Align/format numbers
+          ['E','G','J','K','L','M','N','O','P'].forEach((c) => {
+            row.getCell(c).numFmt = '#,##0.00';
+            row.getCell(c).alignment = { horizontal: 'right' };
+          });
+          ['A','B','C','D','F','H','I','Q','R'].forEach((c) => {
+            row.getCell(c).alignment = { horizontal: c === 'D' ? 'left' : 'center' };
+          });
+
+          // Borders for the row
+          for (let col = 1; col <= 18; col++) {
+            row.getCell(col).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          }
+
+          totals.wages += wages;
+          totals.adjustments += netAdjustments;
+          totals.gross += gross;
+          totals.philhealth_curr += philhealthCurr;
+          totals.tax += tax;
+          totals.philhealth_prev += philhealthPrev;
+          totals.deductions += totalDeductions;
+          totals.net += netAmount;
+
+          startRow += 1;
+          index += 1;
+        });
+
+        // Total row
+        const totalRow = ws.getRow(startRow);
+        ws.mergeCells(`A${startRow}:I${startRow}`);
+        totalRow.getCell('A').value = 'Total';
+        totalRow.getCell('A').font = { bold: true };
+        totalRow.getCell('J').value = totals.adjustments; totalRow.getCell('J').numFmt = '#,##0.00';
+        totalRow.getCell('K').value = totals.gross; totalRow.getCell('K').numFmt = '#,##0.00';
+        totalRow.getCell('L').value = totals.philhealth_curr; totalRow.getCell('L').numFmt = '#,##0.00';
+        totalRow.getCell('M').value = totals.tax; totalRow.getCell('M').numFmt = '#,##0.00';
+        totalRow.getCell('N').value = totals.philhealth_prev; totalRow.getCell('N').numFmt = '#,##0.00';
+        totalRow.getCell('O').value = totals.deductions; totalRow.getCell('O').numFmt = '#,##0.00';
+        totalRow.getCell('P').value = totals.net; totalRow.getCell('P').numFmt = '#,##0.00';
+        for (let col = 1; col <= 18; col++) {
+          totalRow.getCell(col).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'double' }, right: { style: 'thin' } };
+          if (col >= 10 && col <= 16) totalRow.getCell(col).font = { bold: true };
+        }
+
+        startRow += 2;
+
+        // Certification blocks (simplified)
+        ws.mergeCells(`A${startRow}:I${startRow}`);
+        ws.getCell(`A${startRow}`).value = 'A. CERTIFIED: Services duly rendered as stated';
+        ws.getCell(`A${startRow}`).font = { bold: true };
+        ws.mergeCells(`K${startRow}:P${startRow}`);
+        ws.getCell(`K${startRow}`).value = 'C. APPROVED FOR PAYMENT:';
+        ws.getCell(`K${startRow}`).font = { bold: true };
+
+        startRow += 6;
+        ws.mergeCells(`K${startRow}:P${startRow}`);
+        ws.getCell(`K${startRow}`).value = '#NAME?';
+        ws.getCell(`K${startRow}`).alignment = { horizontal: 'center' };
+        ws.getCell(`K${startRow}`).font = { bold: true };
+
+        // Right-side totals label
+        ws.mergeCells(`Q${startRow - 6}:R${startRow - 6}`);
+        ws.getCell(`Q${startRow - 6}`).value = totals.net;
+        ws.getCell(`Q${startRow - 6}`).numFmt = '#,##0.00';
+        ws.getCell(`Q${startRow - 6}`).alignment = { horizontal: 'right' };
+
+        // File name
+        const safeOffice = (assigned_office || 'OFFICE').toString().replace(/\W+/g, '_').toUpperCase();
+        const fileName = `GENERAL_PAYROLL_${safeOffice}_${cutoff_month}_${cutoff}_${cutoff_year}_BATCH_${batch_number}.xlsx`;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Excel generation failed', text: 'Please try again.' });
+      }
     },
     error: function () {
       alert('Failed to load adjustments.');
