@@ -6,7 +6,6 @@
   <div class="card-header">
       <h3 class="card-title mb-0">Payroll | Summary Templates</h3>
       <div class="card-tools row g-2 align-items-center">
-          
           <div class="col-auto">
               <select id="cutoff_month" class="form-control" name="cutoff_month">
                   <option selected disabled>Month</option>
@@ -41,7 +40,6 @@
                   {% endfor %}
               </select>
           </div>
-
       </div>
   </div>
 
@@ -78,6 +76,12 @@
 
   </div>
 </div>
+
+<button id="exportExcelBtn" class="btn btn-primary btn-block">
+    <i class="fa-solid fa-file-excel"></i>
+    Export to Excel
+</button>
+
 {% comment %} 
 <div class="card card-outline card-success collapsed-card">
   <div class="card-header">
@@ -184,6 +188,13 @@
   </div>
 </div>
 
+<!-- current payroll information -->
+<input type="text" id="payrollCutoff" value="" />
+<input type="text" id="payrollCutoffMonth" value="" />
+<input type="text" id="payrollCutoffYear" value="" />
+<input type="text" id="payrollBatchNumber" value="" />
+<input type="text" id="payrollAssignedOffice" value="" />
+
 <script>
 // Money formatting function
 function formatMoney(amount) {
@@ -213,8 +224,6 @@ $(document).ready(function () {
   sessionStorageLoad();
   loadBatchData(); 
   loadRemovedEmployeeData(); 
-
-
 
   // Unrefactored
   $(document).on('click', '#saveAdjustmentsBtn', function () {
@@ -384,6 +393,16 @@ $('#batch_number, #cutoff_period, #cutoff_month, #cutoff_year').on('change', fun
 });
 
 // onclick
+$('#exportExcelBtn').on('click', function () {
+  let cutoff = $('#payrollCutoff').val();
+  let cutoffMonth = $('#payrollCutoffMonth').val();
+  let cutoffYear = $('#payrollCutoffYear').val();
+  let batchNumber = $('#payrollBatchNumber').val();
+  let assignedOffice = $('#payrollAssignedOffice').val();
+
+  generatePayrollExcel(cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice);
+});
+
 $(document).on('click', '.show_employee', function () {
   const employeeId = $(this).data('id');
   const cutoff = $(this).data('cutoff');
@@ -553,6 +572,13 @@ function loadBatchData () {
       success: function (response) {
           // Store current batch data for use in late/unlate functions
           currentBatchData = response;
+
+          // Store current payroll information
+          $('#payrollCutoff').val(response.cutoff)
+          $('#payrollCutoffMonth').val(response.cutoff_month)
+          $('#payrollCutoffYear').val(response.cutoff_year)
+          $('#payrollBatchNumber').val(response.batch_number)
+          $('#payrollAssignedOffice').val(response.assigned_office)
           
           // Update payroll title and cutoff info
           $('#payrollTitle').text(response.payroll_title || 'General Payroll DENR-NCR');
@@ -1390,6 +1416,57 @@ function sessionStorageSave() {
   sessionStorage.setItem('cutoff_month', $('#cutoff_month').val());
   sessionStorage.setItem('cutoff_year', $('#cutoff_year').val());
 }
+
+function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, assigned_office) {
+  $.ajax({
+    url: "{% url 'payroll_excel_data' %}",
+    method: 'POST',
+    data: {
+      cutoff: cutoff,
+      cutoff_month: cutoff_month,
+      cutoff_year: cutoff_year,
+      batch_number: batch_number,
+      assigned_office: assigned_office,
+    },
+    success: function (response) {
+      console.log('worked', response);
+    },
+    error: function () {
+      alert('Failed to load adjustments.');
+    }
+  });
+}
+
+
+    {% comment %} $.ajax({
+    url: `/employee/show/${employeeId}/`,
+    method: 'GET',
+    success: function (response) {
+      const emp = response.employee;
+
+      // Fill modal fields
+      $('#modalShowAdjustmentCutoff').val(cutoff);
+      $('#modalShowAdjustmentCutoffMonth').val(cutoffMonth);
+      $('#modalShowAdjustmentCutoffYear').val(cutoffYear);
+      $('#modalShowAdjustmentBatchNumber').val(batchNumber);
+      $('#modalShowAdjustmentEmployeeId').val(employeeId);
+      $('.modalFullname').text(emp.fullname);
+      $('.modalPosition').text(emp.position);
+      $('.modalSalary').text(emp.salary);
+      $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
+
+      // Second: Load adjustments for this employee
+
+
+      // Finally, show the modal
+      $('#showAdjustmentModal').modal('show');
+    },
+    error: function () {
+      alert('Failed to load employee data.');
+    }
+  }); {% endcomment %}
+
+
 
 function sessionStorageLoad() {
   if (sessionStorage.getItem('batch_number')) $('#batch_number').val(sessionStorage.getItem('batch_number'));
