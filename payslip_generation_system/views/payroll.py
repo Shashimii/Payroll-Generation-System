@@ -1952,7 +1952,7 @@ def move_employee_available_batches(request):
             cutoff=cutoff,
             month=cutoff_month,
             cutoff_year=cutoff_year,
-            status="Pending"
+            status__in=["Pending", "Approved", "Credited"]
         ).values("batch_number")
 
         forbidden_batch_numbers = set([adj["batch_number"] for adj in pending_adjustments])

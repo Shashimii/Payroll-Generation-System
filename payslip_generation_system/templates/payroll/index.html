@@ -79,7 +79,7 @@
 
 <button id="exportExcelBtn" class="btn btn-primary btn-block">
     <i class="fa-solid fa-file-excel"></i>
-    Export to Excel
+    Export to Excel (Beta)
 </button>
 
 {% comment %} 
@@ -225,11 +225,11 @@
 </div>
 
 <!-- current payroll information -->
-<input type="text" id="payrollCutoff" value="" />
-<input type="text" id="payrollCutoffMonth" value="" />
-<input type="text" id="payrollCutoffYear" value="" />
-<input type="text" id="payrollBatchNumber" value="" />
-<input type="text" id="payrollAssignedOffice" value="" />
+<input type="hidden" id="payrollCutoff" value="" />
+<input type="hidden" id="payrollCutoffMonth" value="" />
+<input type="hidden" id="payrollCutoffYear" value="" />
+<input type="hidden" id="payrollBatchNumber" value="" />
+<input type="hidden" id="payrollAssignedOffice" value="" />
 
 <script>
 // Money formatting function
@@ -842,7 +842,7 @@ function appendRemoveBatchButton(month, cutoff, year, assignedOffice) {
             data-cutoff="${cutoff}" 
             data-year="${year}"
             data-office="${assignedOffice || ''}">
-            <i class="fas fa-trash-alt mr-1"></i> Remove Batch
+            <i class="fas fa-trash-alt mr-1"></i> Remove All Batch For the Current Payroll
         </button>
     `;
     $('#removeBatchBtn').html(removeBtnHTML);
