@@ -1857,3 +1857,114 @@ def release_multiple_batch(request):
         return JsonResponse({'status': 'OK', 'updated': updated_count}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def move_employee(request, emp_id):
+    if request.method == 'POST':
+        try:
+            employee = get_object_or_404(Employee, id=emp_id)
+            batch_id = request.POST.get('batch_id')
+            cutoff = request.POST.get('cutoff')
+            cutoff_month = request.POST.get('cutoff_month')
+            cutoff_year = request.POST.get('cutoff_year')
+            old_batch_number = request.POST.get('batch_number')
+            assigned_office = request.POST.get('assigned_office')
+            
+            if not batch_id:
+                return JsonResponse({'success': False, 'error': 'Batch ID is required.'})
+            
+            # Batch
+            batch = get_object_or_404(Batch, id=batch_id)
+            
+            # Check if the batch belongs to the user's office prevent cross batching
+            user_role = request.session.get('role', '')
+            user_office = get_user_assigned_office(user_role)
+
+            # Error Handling on invalid batch
+            if not user_office or batch.batch_assigned_office != user_office:
+                return JsonResponse({'success': False, 'error': 'You can only assign employees to batches in your office.'})
+            
+            # Batch Assignment
+            assignment = BatchAssignment.objects.filter(
+                employee_id=employee.id,
+                cutoff=cutoff,
+                cutoff_month=cutoff_month,
+                cutoff_year=cutoff_year,
+                batch_number = old_batch_number,
+                assigned_office = assigned_office,
+            ).first()
+
+            if not assignment:
+                return JsonResponse({'success': False, 'error': 'Batch assignment not found'})
+            
+            assignment.batch_number = batch.batch_number
+            assignment.save()
+
+            # Adjustments
+            Adjustment.objects.filter(
+                employee_id=employee.id,
+                cutoff=cutoff,
+                month=cutoff_month,
+                cutoff_year=cutoff_year,
+                batch_number = old_batch_number,
+                assigned_office = assigned_office,
+            ).update(batch_number=batch.batch_number)
+
+            # Employee
+            employee.batch_number = batch.batch_number
+            employee.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Employee {employee.fullname} has been assigned to batch {batch.batch_name} (#{batch.batch_number})'
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'})
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+@login_required
+@restrict_roles(disallowed_roles=['employee'])
+def move_employee_available_batches(request):
+    try:
+        user_role = request.session.get('role', '')
+        user_office = get_user_assigned_office(user_role)
+
+        if not user_office:
+            return JsonResponse({'success': False, 'error': 'Unable to determine your office.'})
+        
+        # Get cutoff values from request
+        cutoff = request.GET.get('cutoff')
+        cutoff_month = request.GET.get('cutoff_month')
+        cutoff_year = request.GET.get('cutoff_year')
+        batch_number = request.GET.get('batch_number')
+        
+        # Get all batches for the office
+        batches = Batch.objects.filter(batch_assigned_office=user_office).order_by('batch_number')
+
+        # Find pending adjustments matching same cutoff data
+        pending_adjustments = Adjustment.objects.filter(
+            assigned_office=user_office,
+            cutoff=cutoff,
+            month=cutoff_month,
+            cutoff_year=cutoff_year,
+            status="Pending"
+        ).values("batch_number")
+
+        forbidden_batch_numbers = set([adj["batch_number"] for adj in pending_adjustments])
+
+        batch_data = []
+        for batch in batches:
+            if batch.batch_number not in forbidden_batch_numbers:
+                batch_data.append({
+                    'id': batch.id,
+                    'batch_number': batch.batch_number,
+                    'batch_name': batch.batch_name
+                })
+
+        return JsonResponse({'success': True, 'batches': batch_data})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'})

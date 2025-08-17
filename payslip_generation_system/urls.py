@@ -50,6 +50,8 @@ urlpatterns = [
     path('payroll/approve_office_to_credited', views.payroll.approve_office_to_credited, name='payroll_approve_office_to_credited'),
     path('payroll/approve_show', views.payroll.approve_show, name='payroll_approve_show'),
     path('payroll/release', views.payroll.release, name='payroll_release'),
+    path('payroll/move_employee/<int:emp_id>/', views.payroll.move_employee, name='payroll_move_employee'),
+    path('payroll/move_employee_available_batches', views.payroll.move_employee_available_batches, name='payroll_available_batches'),
 
     # Batch
     path('batch/', views.batch.index, name='batch_index'),

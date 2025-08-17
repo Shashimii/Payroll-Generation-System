@@ -188,6 +188,42 @@
   </div>
 </div>
 
+<!-- Move Employee -->
+<div class="modal fade" id="setBatchModal" tabindex="-1" role="dialog" aria-labelledby="setBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="setBatchModalLabel">Set Employee Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="setBatchForm">
+                    <div class="form-group">
+                        <label for="moveEmployeeBatchName">Employee Name:</label>
+                        <input type="text" class="form-control" id="moveEmployeeBatchName" readonly>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="moveEmployeeBatchSelect">Select Batch:</label>
+                        <select class="form-control" id="moveEmployeeBatchSelect" required>
+                            <option value="">Choose a batch...</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="moveEmployeeId">
+                    <input type="hidden" id="moveEmployeeCutoff">
+                    <input type="hidden" id="moveEmployeeCutoffMonth">
+                    <input type="hidden" id="moveEmployeeCutoffYear">
+                    <input type="hidden" id="moveEmployeeBatchNumber">
+                    <input type="hidden" id="moveEmployeeAssignedOffice">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveMoveEmployeeBtn">Save Batch</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- current payroll information -->
 <input type="text" id="payrollCutoff" value="" />
 <input type="text" id="payrollCutoffMonth" value="" />
@@ -423,6 +459,31 @@ $(document).on('click', '.show_adjustments', function () {
 
   showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice);
 });
+
+$(document).on('click', '.move_employees', function () {
+  const employeeId = $(this).data('id');
+  const employeeName = $(this).data('name');
+  const cutoff = $(this).data('cutoff');
+  const cutoffMonth = $(this).data('month');
+  const cutoffYear = $(this).data('year');
+  const batchNumber = $(this).data('batch');
+  const assignedOffice = $(this).data('office');
+
+  moveEmployee(employeeId, employeeName, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice);
+});
+
+$(document).on('click', '#saveMoveEmployeeBtn', function () {
+  const employeeId = $(this).data('id');
+  const employeeName = $(this).data('name');
+  const cutoff = $(this).data('cutoff');
+  const cutoffMonth = $(this).data('month');
+  const cutoffYear = $(this).data('year');
+  const batchNumber = $(this).data('batch');
+  const assignedOffice = $(this).data('office');
+
+  saveMoveEmployee(employeeId, employeeName, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice)
+});
+
 
 $(document).on('click', '#submitAdjustment', function () {
   const cutoff = $(this).attr('data-cutoff');
@@ -668,7 +729,7 @@ function loadBatchData () {
                           <td>${emp.tax_declaration === 'yes' ? 'YES' : 'NO'}</td>
                             <td class="${emp.has_adjustments ? 'text-green' : 'text-red'}">${emp.has_adjustments ? 'YES' : 'NO'}</td>
                             <td>
-                              <button class='btn btn-secondary btn-sm show_adjustments' 
+                              <button class='btn btn-success btn-sm show_adjustments' 
                                 data-id='${emp.id}'
                                 data-cutoff='${response.cutoff}'
                                 data-month='${response.cutoff_month}'
@@ -678,6 +739,18 @@ function loadBatchData () {
                                 ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
                               >
                                 Adjustments
+                              </button>
+                              <button class='btn btn-info btn-sm move_employees' 
+                                data-id='${emp.id}'
+                                data-name='${emp.fullname}'
+                                data-cutoff='${response.cutoff}'
+                                data-month='${response.cutoff_month}'
+                                data-year='${response.cutoff_year}'
+                                data-batch='${response.batch_number}'
+                                data-office='${response.assigned_office || ''}'
+                                ${(response.has_pending_adjustments || response.has_approved_adjustments || response.has_credited_adjustments) ? 'disabled title="Adjustments are either being checked, approved, or credited."' : ''}
+                              >
+                                Change Batch
                               </button>
                               <!---
                               ${lateButton}
@@ -946,7 +1019,7 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
                 deletedAdjustmentIds.push(adj.id);
               }
 
-                             // Generate unique ID only for dynamic adjustments (not fixed-name ones)
+                // Generate unique ID only for dynamic adjustments (not fixed-name ones)
                let uniqueId = null;
                if (!isLate && !isAbsent && !isPhilhealth && !isSSS && !isTAX) {
                  const timestamp = Date.now();
@@ -1065,6 +1138,103 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
   });
 }
 
+function moveEmployee(employeeId, employeeName, cutoff, cutoffMonth, cutoffYear, batchNumber, assignedOffice) {
+  $('#setBatchModal').modal('show');
+  $('#moveEmployeeBatchName').val(employeeName)
+  $('#moveEmployeeId').val(employeeId)
+  $('#moveEmployeeCutoff').val(cutoff)
+  $('#moveEmployeeCutoffMonth').val(cutoffMonth)
+  $('#moveEmployeeCutoffYear').val(cutoffYear)
+  $('#moveEmployeeBatchNumber').val(batchNumber)
+  $('#moveEmployeeAssignedOffice').val(assignedOffice)
+
+  loadAvailableBatches(cutoff, cutoffMonth, cutoffYear, batchNumber);
+}
+
+function loadAvailableBatches(cutoff, cutoffMonth, cutoffYear) {
+  $.ajax({
+      url: '{% url "payroll_available_batches" %}',
+      method: 'GET',
+      data: {
+          cutoff: cutoff,
+          cutoff_month: cutoffMonth,
+          cutoff_year: cutoffYear,
+      },
+      success: function(response) {
+          if (response.success) {
+              const batchSelect = $('#moveEmployeeBatchSelect');
+              batchSelect.empty();
+              batchSelect.append('<option value="">Choose a batch...</option>');
+              
+              response.batches.forEach(function(batch) {
+                  batchSelect.append(`<option value="${batch.id}">${batch.batch_name} (#${batch.batch_number})</option>`);
+              });
+          } else {
+              Swal.fire('Error', response.error || 'Failed to load batches', 'error');
+          }
+      },
+      error: function() {
+          Swal.fire('Error', 'Failed to load batches. Please try again.', 'error');
+      }
+  });
+}
+
+function saveMoveEmployee() {
+  const employeeId = $('#moveEmployeeId').val();
+  const cutoff = $('#moveEmployeeCutoff').val();
+  const cutoffMonth = $('#moveEmployeeCutoffMonth').val();
+  const cutoffYear = $('#moveEmployeeCutoffYear').val();
+  const batchNumber = $('#moveEmployeeBatchNumber').val();
+  const assignedOffice = $('#moveEmployeeAssignedOffice').val();
+  const batchId = $('#moveEmployeeBatchSelect').val();
+
+  if (!batchId) {
+    Swal.fire('Warning', 'Please select a batch.', 'warning');
+    return;
+  }
+
+  $('#saveMoveEmployeeBtn').prop('disabled', true).text('Saving...');
+
+  $.ajax({
+    url: `/payroll/move_employee/${employeeId}/`,
+    method: 'POST',
+    data: {
+        batch_id: batchId,
+        cutoff: cutoff,
+        cutoff_month: cutoffMonth,
+        cutoff_year: cutoffYear,
+        batch_number: batchNumber,
+        assigned_office: assignedOffice,
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    },
+    success: function(response) {
+        if (response.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: response.message,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                // Close modal and refresh table
+                $('#setBatchModal').modal('hide');
+                loadBatchData();
+            });
+        } else {
+            Swal.fire('Error', response.error || 'Failed to assign batch', 'error');
+        }
+    },
+    error: function() {
+        Swal.fire('Error', 'Failed to assign batch. Please try again.', 'error');
+    },
+    complete: function() {
+        // Re-enable button
+        $('#saveMoveEmployeeBtn').prop('disabled', false).text('Save Batch');
+    }
+});
+}
+
+
+// Unused function may removed in future
 function lateEmployee(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber) {
   $.ajax({
     url: `/payroll/batch/late`, 
@@ -1259,6 +1429,7 @@ function loadRemovedEmployeeData () {
       }
   })
 }
+// Unused function may removed in future End
 
 function appendAdjustmentRow(name, type, isNameEditable, buttonId) {
   const isLate = name.toLowerCase() === 'late';

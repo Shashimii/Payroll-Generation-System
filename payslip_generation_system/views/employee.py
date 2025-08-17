@@ -9,7 +9,7 @@ from django.db.models import Q, Sum
 from payslip_generation_system.models import Employee, EmployeeAttachment, UserRole
 from payslip_generation_system.decorators import restrict_roles
 from django.contrib.auth.models import User
-
+from payslip_generation_system.models.batch import Batch
 from django.contrib.auth.decorators import login_required
 
 @login_required
@@ -466,8 +466,6 @@ def assign_batch(request, emp_id):
             if not batch_id:
                 return JsonResponse({'success': False, 'error': 'Batch ID is required.'})
             
-            # Get the batch
-            from payslip_generation_system.models.batch import Batch
             batch = get_object_or_404(Batch, id=batch_id)
             
             # Check if the batch belongs to the user's office
