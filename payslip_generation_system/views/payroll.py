@@ -212,6 +212,7 @@ def approve(request):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+# Will Be Refactored Soon - Shashimii@08172025
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def reject(request):
@@ -279,6 +280,7 @@ def reject(request):
         return JsonResponse({'status': 'OK'}, status=200)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+# Will Be Refactored Soon - Shashimii@08172025 End
 
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
