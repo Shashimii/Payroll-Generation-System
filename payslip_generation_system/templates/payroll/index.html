@@ -1608,12 +1608,12 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         const workbook = new ExcelJS.Workbook();
         const ws = workbook.addWorksheet('GENERAL PAYROLL');
 
-        // Column widths to roughly match layout in the screenshot
+        // Column Widths
         ws.columns = [
           { header: '', key: 'seq', width: 6 },
           { header: '', key: 'last_name', width: 18 },
-          { header: '', key: 'first_name', width: 22 },
-          { header: '', key: 'position', width: 24 },
+          { header: '', key: 'first_name', width: 18 },
+          { header: '', key: 'position', width: 15 },
           { header: '', key: 'monthly_rate', width: 14 },
           { header: '', key: 'sworn', width: 10 },
           { header: '', key: 'wages', width: 14 },
@@ -1621,6 +1621,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           { header: '', key: 'late', width: 12 },
           { header: '', key: 'adjustments', width: 18 },
           { header: '', key: 'gross', width: 16 },
+          { header: '', key: 'sss', width: 18 },
           { header: '', key: 'philhealth_curr', width: 18 },
           { header: '', key: 'tax', width: 14 },
           { header: '', key: 'philhealth_prev', width: 18 },
@@ -1628,36 +1629,39 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           { header: '', key: 'net_amount', width: 16 },
           { header: '', key: 'seq2', width: 6 },
           { header: '', key: 'signature', width: 18 },
+          { header: '', key: 'has_philhealth', width: 18 },
+
         ];
 
-        // Title
-        ws.mergeCells('A3:R3');
-        ws.getCell('A3').value = 'GENERAL PAYROLL';
+        // Title: General Payroll Text
+        ws.mergeCells('A1:T1');
+        ws.getCell('A1').value = 'GENERAL PAYROLL';
+        ws.getCell('A1').alignment = { horizontal: 'center' };
+        ws.getCell('A1').font = { size: 14, bold: true };
+
+        // Title: DENR-NCR Text
+        ws.mergeCells('A2:T2');
+        ws.getCell('A2').value = 'DENR-NCR';
+        ws.getCell('A2').alignment = { horizontal: 'center' };
+        ws.getCell('A2').font = { size: 12, bold: true };
+
+        // Title: Month Cutoff Text
+        ws.mergeCells('A3:T3');
+        ws.getCell('A3').value = `${cutoff_month?.toUpperCase?.() || cutoff_month} ${cutoff} CUT-OFF, ${cutoff_year}`;
         ws.getCell('A3').alignment = { horizontal: 'center' };
-        ws.getCell('A3').font = { size: 14, bold: true };
+        ws.getCell('A3').font = { size: 12, bold: true };
 
-        ws.mergeCells('A4:R4');
-        ws.getCell('A4').value = 'DENR-NCR';
-        ws.getCell('A4').alignment = { horizontal: 'center' };
-        ws.getCell('A4').font = { size: 12, bold: true };
-
-        ws.mergeCells('A5:R5');
-        ws.getCell('A5').value = `${cutoff_month?.toUpperCase?.() || cutoff_month} ${cutoff} CUT-OFF, ${cutoff_year}`;
-        ws.getCell('A5').alignment = { horizontal: 'center' };
-        ws.getCell('A5').font = { size: 12, bold: true };
-
-        // Entity name
-        ws.getCell('A7').value = 'Entity Name:';
-        ws.getCell('A7').font = { bold: true };
+        // Entity Name
+        ws.getCell('A5').value = 'Entity Name:';
+        ws.getCell('A5').font = { bold: true };
         ws.mergeCells('B7:R7');
         ws.getCell('B7').value = assigned_office?.toString()?.replaceAll('_', ' ').toUpperCase();
 
-        // Note under header
+        // Note Under Entity Name
         ws.mergeCells('A8:R8');
         ws.getCell('A8').value = 'We acknowledge receipt of cash shown opposite our name as full compensation for services rendered for the period covered.';
 
-        // Table header (two-row header similar to the screenshot)
-        // First header row
+        // Table Header Values and Row Merging
         ws.mergeCells('A10:A12'); ws.getCell('A10').value = 'Seq No.';
         ws.mergeCells('B10:B12'); ws.getCell('B10').value = 'Last Name';
         ws.mergeCells('C10:C12'); ws.getCell('C10').value = 'First Name';
@@ -1669,16 +1673,23 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         ws.mergeCells('I10:I12'); ws.getCell('I10').value = 'Late/ Undertime';
         ws.mergeCells('J10:J12'); ws.getCell('J10').value = 'Adjustments from previous payroll, if any (Over)/Under Payments';
         ws.mergeCells('K10:K12'); ws.getCell('K10').value = 'Total Gross Amount Earned';
-        ws.mergeCells('L10:L12'); ws.getCell('L10').value = 'PHILHEALTH (CURRENT PAYROLL)';
-        ws.mergeCells('M10:M12'); ws.getCell('M10').value = 'PERCENTAGE TAX';
-        ws.mergeCells('N10:N12'); ws.getCell('N10').value = 'PHILHEALTH (PREVIOUS PAYROLL/S)';
-        ws.mergeCells('O10:O12'); ws.getCell('O10').value = 'Total Deductions';
-        ws.mergeCells('P10:P12'); ws.getCell('P10').value = 'Net Amount Due';
-        ws.mergeCells('Q10:Q12'); ws.getCell('Q10').value = 'Seq No.';
-        ws.mergeCells('R10:R12'); ws.getCell('R10').value = 'Signature';
+        ws.mergeCells('L10:L12'); ws.getCell('L10').value = 'SSS PREMIUM';
+        ws.mergeCells('M10:M12'); ws.getCell('M10').value = 'PHILHEALTH (CURRENT PAYROLL)';
+        ws.mergeCells('N10:N12'); ws.getCell('N10').value = 'PERCENTAGE TAX';
+        ws.mergeCells('O10:O12'); ws.getCell('O10').value = 'PHILHEALTH (PREVIOUS PAYROLL/S)';
+        ws.mergeCells('P10:P12'); ws.getCell('P10').value = 'Total Deductions';
+        ws.mergeCells('Q10:Q12'); ws.getCell('Q10').value = 'Net Amount Due';
+        ws.mergeCells('R10:R12'); ws.getCell('R10').value = 'Seq No.';
+        ws.mergeCells('S10:S12'); ws.getCell('S10').value = 'Signature';
+        ws.mergeCells('T10:T12'); ws.getCell('T10').value = 'SUBJECT TO PHILHEALTH DEDUCTION';
+
+
+        // Table Header Row height
+        ws.getRow(10).height = 60;
+                
 
         // Style header cells
-        for (let col = 1; col <= 18; col++) {
+        for (let col = 1; col <= 20; col++) {
           const cell = ws.getCell(10, col);
           cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
           cell.font = { bold: true };
@@ -2003,6 +2014,15 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         for (let r = sectionEStartRow; r <= sectionEStartRow + 4; r++) {
           ws.getRow(r).height = 20;
         }
+
+        // text font
+        ws.eachRow((row) => {
+          row.eachCell((cell) => {
+            cell.font = { name: 'Aptos Narrow', size: 10 };
+          });
+        });
+
+        ws.getRow(10).font = { name: 'Aptos Narrow', size: 9, bold: true };
 
         // File name
         const safeOffice = (assigned_office || 'OFFICE').toString().replace(/\W+/g, '_').toUpperCase();
