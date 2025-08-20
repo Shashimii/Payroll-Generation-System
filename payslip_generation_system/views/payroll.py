@@ -544,10 +544,7 @@ def batch_data(request):
 
         # PHILHEALTH DEDUCTION 
         if employee.has_philhealth == "yes":
-            if basic_salary_cutoff > Decimal('9999'):
-                philhealth = basic_salary_cutoff * Decimal('0.05')
-            else:
-                philhealth = Decimal('500')
+            philhealth = basic_salary_cutoff * Decimal('0.05')
         else:
             philhealth = Decimal('0')
 

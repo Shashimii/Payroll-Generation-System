@@ -65,10 +65,7 @@ def data(request):
 
             # Philhealth Current
             if emp.has_philhealth == "yes":
-                if basic_salary_cutoff > Decimal('9999'):
-                    philhealth_current = (basic_salary_cutoff * Decimal('0.05')).quantize(Decimal('0.01'))
-                else:
-                    philhealth_current = Decimal('500.00')
+                philhealth_current = (basic_salary_cutoff * Decimal('0.05')).quantize(Decimal('0.01'))
 
             # Philhealth Previous
             philhealth_previous = sum(

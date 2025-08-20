@@ -182,13 +182,8 @@ def generate(request):
         
         # PHILHEALTH DEDUCTION 
         if employee.has_philhealth == "yes":
-            if basic_salary_cutoff > Decimal('9999'):
-                philhealth = basic_salary_cutoff * Decimal('0.05')
-            else:
-                philhealth = Decimal('500')
-        else:
-            philhealth = Decimal('0')
-                
+            philhealth = basic_salary_cutoff * Decimal('0.05')
+
         # LATE DEDUCTION
         late_adjustments = Adjustment.objects.filter(
             employee=employee,
