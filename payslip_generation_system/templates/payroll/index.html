@@ -1766,18 +1766,24 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
             },
             { income: 0, deductions: 0 }
           );
-          const netAdjustments = (sums.income - sums.deductions);
+          const netAdjustments = sums.income
           const gross = wages + Math.max(0, netAdjustments);
-
+          
+          // Refactor this
           let absence = e.adjustments.find(a => a.name === "Absent");
           let late = e.adjustments.find(a => a.name === "Late");
           let sss = e.adjustments.find(a => a.name === "SSS");
 
+          const absenceAmt = absence ? Number(absence.amount) : 0;
+          const lateAmt = late ? Number(late.amount) : 0;
+          const sssAmt = sss ? Number(sss.amount) : 0;
+          const income = sums.income;
           const hasPhilHealth = (e.has_philhealth || '').toString().toLowerCase() === 'yes';
-          const philhealthCurr = e.philhealth_current;
-          const tax = e.tax_amount;
-          const philhealthPrev = e.philhealth_previous
-          const totalDeductions = philhealthCurr + tax + philhealthPrev + Math.max(0, -netAdjustments);
+          const philhealthCurr = Number(e.philhealth_current || 0);
+          const tax = Number(e.tax_amount || 0);
+          const philhealthPrev = Number(e.philhealth_previous || 0);
+
+          const totalDeductions = philhealthCurr + tax + philhealthPrev + absenceAmt + lateAmt + sssAmt - netAdjustments;
           const netAmount = gross - totalDeductions;
 
           const row = ws.getRow(startRow);
@@ -1788,26 +1794,29 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           row.getCell('F').value = monthlyRate;
           row.getCell('G').value = sworn;
           row.getCell('H').value = gross;
-          row.getCell('I').value = absence ? absence.amount : '';
-          row.getCell('J').value = late ? late.amount : '';
-          row.getCell('K').value = '';
+          row.getCell('I').value = (absence && Number(absence.amount) !== 0) ? absence.amount : '';
+          row.getCell('J').value = (late && Number(late.amount) !== 0) ? late.amount : '';
+          row.getCell('K').value = (income && Number(income) !== 0) ? income : '';
           row.getCell('L').value = gross;
           row.getCell('M').value = (sss && Number(sss.amount) !== 0) ? sss.amount : '';
-          row.getCell('N').value = '';
-          row.getCell('O').value = '';
-          row.getCell('P').value = '';
-          row.getCell('Q').value = totalDeductions;
-          row.getCell('R').value = '';
+          row.getCell('N').value = (philhealthCurr && Number(philhealthCurr) !== 0 ? philhealthCurr : '');
+          row.getCell('O').value = (tax && Number(tax) !== 0 ? tax :'');
+          row.getCell('P').value = (philhealthPrev && Number(philhealthPrev) !== 0 ? philhealthPrev : '');
+          row.getCell('Q').value = (totalDeductions && Number(totalDeductions) !== 0 ? totalDeductions : '');
+          row.getCell('R').value = (netAmount && Number(netAmount) !== 0 ? netAmount : '');
           row.getCell('S').value = index;
           row.getCell('T').value = hasPhilHealth ? 'Y' : 'N';
 
-          // Align/format numbers
-          ['E','G','J','K','L','M','N','O','P'].forEach((c) => {
+          // Align/format numbers (apply numeric format only to numeric columns)
+          const numericCols = ['F','H','I','J','K','L','M','N','O','P','Q','R'];
+          numericCols.forEach((c) => {
             row.getCell(c).numFmt = '#,##0.00';
             row.getCell(c).alignment = { horizontal: 'right' };
           });
-          ['A','B','C','D','F','H','I','Q','R'].forEach((c) => {
-            row.getCell(c).alignment = { horizontal: c === 'D' ? 'left' : 'center' };
+          // Align text columns
+          ['A','B','C','D','E','G','S','T'].forEach((c) => {
+            const align = (c === 'D' || c === 'E') ? 'left' : 'center';
+            row.getCell(c).alignment = { horizontal: align };
           });
           totals.wages += wages;
           totals.adjustments += netAdjustments;

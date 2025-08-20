@@ -35,6 +35,10 @@ def data(request):
             basic_salary = emp.salary
             basic_salary_cutoff = basic_salary / 2
 
+            # Reset per-employee computed values
+            tax_amount = Decimal('0.00')
+            philhealth_current = Decimal('0.00')
+
             # Fetch Employee Adjustment
             adjustments = Adjustment.objects.filter(
                 employee=emp,
@@ -49,7 +53,7 @@ def data(request):
                 {
                     'name': adj.name,
                     'type': adj.type,
-                    'amount': adj.amount,
+                    'amount': float(adj.amount),
                     'details': adj.details,
                 }
                 for adj in adjustments
@@ -57,33 +61,32 @@ def data(request):
 
             # Tax
             if emp.tax_declaration == "no":
-                tax_amount = basic_salary_cutoff * Decimal('0.03')
+                tax_amount = (basic_salary_cutoff * Decimal('0.03')).quantize(Decimal('0.01'))
 
             # Philhealth Current
             if emp.has_philhealth == "yes":
                 if basic_salary_cutoff > Decimal('9999'):
-                    philhealth_current = basic_salary_cutoff * Decimal('0.05')
+                    philhealth_current = (basic_salary_cutoff * Decimal('0.05')).quantize(Decimal('0.01'))
                 else:
-                    philhealth_current = Decimal('500')
+                    philhealth_current = Decimal('500.00')
 
             # Philhealth Previous
-            philhealth_adjustments = [
-                adj for adj in adjustments_data if "philhealth" in adj['name'].lower() # get all adjustments that has "Philhealth"
-            ]
-
-            philhealth_previous = sum(Decimal(adj['amount']) for adj in philhealth_adjustments)
+            philhealth_previous = sum(
+                (adj.amount for adj in adjustments if "philhealth" in (adj.name or "").lower()),
+                Decimal('0.00')
+            ).quantize(Decimal('0.01'))
 
 
             employees_data.append({
                 'employee_id': emp.id,
                 'fullname': emp.fullname,
                 'position': getattr(emp, 'position', ''),
-                'salary': getattr(emp, 'salary', 0),
+                'salary': float(getattr(emp, 'salary', 0)),
                 'tax_declaration': getattr(emp, 'tax_declaration', ''),
                 'has_philhealth': getattr(emp, 'has_philhealth', ''),
-                'tax_amount': f"{tax_amount:.2f}",
-                'philhealth_current': f"{philhealth_current:.2f}",
-                'philhealth_previous': f"{philhealth_previous:.2f}",
+                'tax_amount': float(tax_amount.quantize(Decimal('0.01'))),
+                'philhealth_current': float(philhealth_current.quantize(Decimal('0.01'))),
+                'philhealth_previous': float(philhealth_previous.quantize(Decimal('0.01'))),
                 'adjustments': adjustments_data
             })
 
