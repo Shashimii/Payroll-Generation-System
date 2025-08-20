@@ -1769,7 +1769,6 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           const netAdjustments = sums.income
           const gross = wages + Math.max(0, netAdjustments);
           
-          // Refactor this
           let absence = e.adjustments.find(a => a.name === "Absent");
           let late = e.adjustments.find(a => a.name === "Late");
           let sss = e.adjustments.find(a => a.name === "SSS");
@@ -1794,11 +1793,11 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           row.getCell('F').value = monthlyRate;
           row.getCell('G').value = sworn;
           row.getCell('H').value = gross;
-          row.getCell('I').value = (absence && Number(absence.amount) !== 0) ? absence.amount : '';
-          row.getCell('J').value = (late && Number(late.amount) !== 0) ? late.amount : '';
+          row.getCell('I').value = (absenceAmt && Number(absenceAmt) !== 0) ? absenceAmt : '';
+          row.getCell('J').value = (lateAmt && Number(lateAmt) !== 0) ? lateAmt : '';
           row.getCell('K').value = (income && Number(income) !== 0) ? income : '';
           row.getCell('L').value = gross;
-          row.getCell('M').value = (sss && Number(sss.amount) !== 0) ? sss.amount : '';
+          row.getCell('M').value = (sssAmt && Number(sssAmt) !== 0) ? sssAmt : '';
           row.getCell('N').value = (philhealthCurr && Number(philhealthCurr) !== 0 ? philhealthCurr : '');
           row.getCell('O').value = (tax && Number(tax) !== 0 ? tax :'');
           row.getCell('P').value = (philhealthPrev && Number(philhealthPrev) !== 0 ? philhealthPrev : '');
