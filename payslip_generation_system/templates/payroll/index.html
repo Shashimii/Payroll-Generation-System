@@ -1602,7 +1602,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
     },
     success: async function (response) {
       try {
-        // Excel Configurations
+        // Excel File Configurations
 
         // Data
         const employees = response?.employees || [];
@@ -1610,441 +1610,230 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         // Workbook
         const workbook = new ExcelJS.Workbook();
         const ws = workbook.addWorksheet('GENERAL PAYROLL');
-
-        // Column Widths
+        
+        // Column keys
         ws.columns = [
-          { header: '', key: 'A', width: 5 },
-          { header: '', key: 'B', width: 6 },
-          { header: '', key: 'C', width: 7 },
-          { header: '', key: 'D', width: 15 },
-          { header: '', key: 'E', width: 15 },
-          { header: '', key: 'F', width: 15 },
-          { header: '', key: 'G', width: 10 },
-          { header: '', key: 'H', width: 10 },
-          { header: '', key: 'I', width: 10 },
-          { header: '', key: 'J', width: 10 },
-          { header: '', key: 'K', width: 10 },
-          { header: '', key: 'L', width: 12 },
-          { header: '', key: 'M', width: 12 },
-          { header: '', key: 'N', width: 12 },
-          { header: '', key: 'O', width: 12 },
-          { header: '', key: 'P', width: 14 },
-          { header: '', key: 'Q', width: 15 },
-          { header: '', key: 'R', width: 15 },
-          { header: '', key: 'S', width: 5 },
-          { header: '', key: 'T', width: 12 },
+          { key: "seqFirst", width: 4 },
+          { key: "lastName", width: 8 },
+          { key: "lastNameMerged", width: 10 },
+          { key: "firstName", width: 20 },
+          { key: "position", width: 14 },
+          { key: "monthlyRate", width: 12 },
+          { key: "hasTax", width: 9 },
+          { key: "salary", width: 12 },
+          { key: "absence", width: 11 },
+          { key: "late", width: 9 },
+          { key: "adjustment", width: 11 },
+          { key: "totalGross", width: 13 },
+          { key: "sss", width: 12 },
+          { key: "philhealthCurrent", width: 12 },
+          { key: "tax", width: 12 },
+          { key: "ewt", width: 12},
+          { key: "philhealthPrevious", width: 12 },
+          { key: "totalDeduction", width: 12 },
+          { key: "netAmountDue", width: 14 },
+          { key: "seqSecond", width: 4 },
+          { key: "signature", width: 10 },
+          { key: "signatureMerged", width: 4},
+          { key: "absenceDoNot", width: 13 },
+          { key: "lateDoNot", width: 13 },
+          { key: "hasPhilhealth", width: 14 }
         ];
 
-        // Section 1 Payroll Informations
+        // Full Box Border Style
+        const boxBorder = {
+          top: { style: "medium" },
+          left: { style: "medium" },
+          bottom: { style: "medium" },
+          right: { style: "medium" }
+        };
+        
+        // General Payroll information
 
-        // Title: General Payroll Text
-        ws.mergeCells('A1:T1');
-        ws.getCell('A1').value = 'GENERAL PAYROLL';
-        ws.getCell('A1').alignment = { horizontal: 'center' };
-        ws.getCell('A1').font = { size: 14, bold: true };
+        // Merge
+        ws.mergeCells('A1:Q1');
+        ws.mergeCells('A2:Q2');
+        ws.mergeCells('H3:K3');
+        ws.mergeCells('A5:B5');
+        ws.mergeCells('C5:G5');
+        ws.mergeCells('A6:I6');
+        ws.mergeCells('S6:T6');
 
-        // Title: DENR-NCR Text
-        ws.mergeCells('A2:T2');
-        ws.getCell('A2').value = 'DENR-NCR';
-        ws.getCell('A2').alignment = { horizontal: 'center' };
-        ws.getCell('A2').font = { size: 12, bold: true };
+        // Text
+        ws.getCell('A1').value = "GENERAL PAYROLL";
+        ws.getCell('A2').value = "DENR-NCR";
+        ws.getCell('H3').value = "JULY-16-31, 2025";
+        ws.getCell('A5').value = "Entity Name: ";
+        ws.getCell('C5').value = "Pasig River Coordinating and Management Office - EED Cluster 2-1";
+        ws.getCell('A6').value = "We acknowledge receipt of cash shown opposite our name as full compensation for services rendered for the period covered.";
+        ws.getCell('S6').value = "Sheet 1 of 1";
 
-        // Title: Month Cutoff Text
-        ws.mergeCells('A3:T3');
-        ws.getCell('A3').value = `${cutoff_month?.toUpperCase?.() || cutoff_month} ${cutoff} CUT-OFF, ${cutoff_year}`;
-        ws.getCell('A3').alignment = { horizontal: 'center' };
-        ws.getCell('A3').font = { size: 12, bold: true };
+        // Text Style
+        ws.getCell('A1').font = { bold: true, size: 11 };
+        ws.getCell('A2').font = { size: 11 };
+        ws.getCell('H3').font = { bold: true, size: 11, underline: "single" };
+        ws.getCell('A5').font = { bold: true, size: 10 }; 
+        ws.getCell('C5').font = { bold: true, size: 11 };
+        ws.getCell('A6').font = { size: 10 };
+        ws.getCell('S6').font = { bold: true, size: 10 };
 
-        // Entity Name
-        ws.mergeCells('A5:B5'); ws.getCell('A5').value = 'Entity Name:'; ws.getCell('A5').font = { bold: true };
-        ws.mergeCells('C5:G5'); ws.getCell('C5').value = assigned_office?.toString()?.replaceAll('_', ' ').toUpperCase();
+        // Text Alignment
+        ws.getCell("A1").alignment = { horizontal: "center", vertical: "middle" };
+        ws.getCell("A2").alignment = { horizontal: "center", vertical: "middle" };
+        ws.getCell("H3").alignment = { horizontal: "center", vertical: "middle"};
+        ws.getCell("A5").alignment = { horizontal: "left", vertical: "middle"};
+        ws.getCell("C5").alignment = { horizontal: "left", vertical: "middle"};
+        ws.getCell("A6").alignment = { horizontal: "left", vertical: "middle"};
+        ws.getCell("S6").alignment = { horizontal: "right", vertical: "middle"};
 
-        // Note Under Entity Name
-        ws.mergeCells('A6:I6'); ws.getCell('A6').value = 'We acknowledge receipt of cash shown opposite our name as full compensation for services rendered for the period covered.';
+        // Compress Row 7
+        ws.getRow(7).height = 3;
 
-        // Section 2 Payroll Table 
+        // Table
 
-        // Table Header Values and Column Merging
-        ws.mergeCells('A7:A9'); ws.getCell('A7').value = 'Seq No.';
-        ws.mergeCells('B7:C9'); ws.getCell('B7').value = 'Last Name';
-        ws.mergeCells('D7:D9'); ws.getCell('D7').value = 'First Name';
-        ws.mergeCells('E7:E9'); ws.getCell('E7').value = 'Position';
-        ws.mergeCells('F7:F9'); ws.getCell('F7').value = 'Monthly Rate';
-        ws.mergeCells('G7:G9'); ws.getCell('G7').value = 'With Sworn Declaration? (Y/N)';
-        ws.mergeCells('H7:H9'); ws.getCell('H7').value = 'Salaries/ Wages Earned';
-        ws.mergeCells('I7:I9'); ws.getCell('I7').value = 'Absence';
-        ws.mergeCells('J7:J9'); ws.getCell('J7').value = 'Late/ Undertime';
-        ws.mergeCells('K7:K9'); ws.getCell('K7').value = 'Adjustments from previous payroll, if any (Over)/Under Payments';
-        ws.mergeCells('L7:L9'); ws.getCell('L7').value = 'Total Gross Amount Earned';
-        ws.mergeCells('M7:M9'); ws.getCell('M7').value = 'SSS PREMIUM';
-        ws.mergeCells('N7:N9'); ws.getCell('N7').value = 'PHILHEALTH (CURRENT PAYROLL)';
-        ws.mergeCells('O7:O9'); ws.getCell('O7').value = 'PERCENTAGE TAX';
-        ws.mergeCells('P7:P9'); ws.getCell('P7').value = 'PHILHEALTH (PREVIOUS PAYROLL/S)';
-        ws.mergeCells('Q7:Q9'); ws.getCell('Q7').value = 'Total Deductions';
-        ws.mergeCells('R7:R9'); ws.getCell('R7').value = 'Net Amount Due';
-        ws.mergeCells('S7:S9'); ws.getCell('S7').value = 'Seq No.';
-        ws.mergeCells('T7:T9'); ws.getCell('T7').value = 'SUBJECT TO PHILHEALTH DEDUCTION';
+        // Header
 
-        // Table Body Merging
-        ws.mergeCells('B10:C10');
-        ws.mergeCells('B11:C11');
-        ws.mergeCells('B12:C12');
-        ws.mergeCells('B13:C13');
-        ws.mergeCells('B14:C14');
-        ws.mergeCells('B15:C15');
-        ws.mergeCells('B16:C16');
-        ws.mergeCells('B17:C17');
-        ws.mergeCells('B18:C18');
-        ws.mergeCells('B19:C19');
-        ws.mergeCells('B20:C20');
-        ws.mergeCells('B21:C21');
-        ws.mergeCells('B22:C22');
-        ws.mergeCells('B23:C23');
-        ws.mergeCells('B24:C24');
+        // Merge Cells
+        ws.mergeCells("A8:A10");
+        ws.mergeCells("B8:C10");
+        ws.mergeCells("D8:D10");
+        ws.mergeCells("E8:E10");
+        ws.mergeCells("F8:F10");
+        ws.mergeCells("G8:G10");
+        ws.mergeCells("H8:H10");
+        ws.mergeCells("I8:I10");
+        ws.mergeCells("J8:J10");
+        ws.mergeCells("K8:K10");
+        ws.mergeCells("L8:L10");
+        ws.mergeCells("M8:Q8");
+        ws.mergeCells("M9:M10");
+        ws.mergeCells("N9:N10");
+        ws.mergeCells("O9:O10");
+        ws.mergeCells("P9:P10");
+        ws.mergeCells("Q9:Q10");
+        ws.mergeCells("R8:R10");
+        ws.mergeCells("S8:S10");
+        ws.mergeCells("T8:T10");
+        ws.mergeCells("U8:V10");
+        ws.mergeCells("W8:X8");
+        ws.mergeCells("W9:W10");
+        ws.mergeCells("X9:X10");
+        ws.mergeCells("Y8:Y10");
 
-        // Style header cells
-        ws.getRow(7).height = 40;
-        for (let col = 1; col <= 20; col++) {
-          const cell = ws.getCell(7, col);
-          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-          cell.font = { bold: true };
-          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        // Header Height
+        ws.getRow(8).height = 25;
+        ws.getRow(9).height = 40;
+        ws.getRow(10).height = 40;
+
+        // Header Cells and Value
+        const tableHeader = {
+          A8: "Seq\nNo.",
+          B8: "Last Name",
+          D8: "First Name",
+          E8: "Position",
+          F8: "Monthly Rate",
+          G8: "With Sworn Declaration? (Y/N)",
+          H8: "Salaries/\nWages Earned",
+          I8: "Absence",
+          J8: "Late/\nUndertime",
+          K8: "Adjustments from Previous Payroll if any (Over)/\nUnder Payments",
+          L8: "Total Gross\nAmount Earned",
+          M8: "Deductions",
+          M9: "SSS PREMIUM",
+          N9: "PHILHEALTH\n(CURRENT\nPAYROLL)",
+          O9: "PERCENTAGE\nTAX",
+          P9: "EWT",
+          Q9: "PHILHEALTH\n(PREVIOUS\nPAYROLL/S)",
+          R8: "Total\nDeductions",
+          S8: "Net Amount Due",
+          T8: "Seq\nNo.",
+          U8: "Signature",
+          W8: "Please DO NOT INCLUDE these\ncolumns in printing",
+          W9: "Absence\n(Encode no, of\nday/s absent)",
+          X9: "LATE/\nUNDERTIME (Encode no. of\nminutes of\nlate/UT)",
+          Y8: "SUBJECT\nTO\nPHILHEALTH\nDEDUCTION\n(Y/N)"
         }
 
-        // Helper: split name into last/first using a simple heuristic
-        const splitName = (fullname) => {
-          if (!fullname) return { first: '', last: '' };
-          const parts = fullname.trim().split(/\s+/);
-          if (parts.length === 1) return { first: parts[0], last: '' };
-          const last = parts[parts.length - 1];
-          const first = parts.slice(0, -1).join(' ');
-          return { first, last };
-        };
-
-        let startRow = 10;
-        let index = 1;
-        let totals = {
-          wages: 0,
-          adjustments: 0,
-          gross: 0,
-          philhealth_curr: 0,
-          tax: 0,
-          philhealth_prev: 0,
-          deductions: 0,
-          net: 0,
-        };
-
-        // Borders for the row
-        const borderStyle = {
-          top:    { style: 'thin' },
-          left:   { style: 'thin' },
-          bottom: { style: 'thin' },
-          right:  { style: 'thin' }
-        };
-
-        // Apply border to fixed range (A10:S26)
-        for (let r = 10; r <= 24; r++) {
-          for (let c = 1; c <= 20; c++) {   // A=1, S=19
-            const cell = ws.getRow(r).getCell(c);
-            cell.border = borderStyle;
-            if (!cell.value) cell.value = ""; // keep blank cells visible
-          }
-        }
-
-        employees.forEach((e) => {
-          const name = splitName(e.fullname);
-          const monthlyRate = Number(e.salary || 0);
-          const wages = monthlyRate / 2; // half-month
-          const sworn = (e.tax_declaration || '').toString().toLowerCase() === 'yes' ? 'Y' : 'N';
-
-          const sums = (e.adjustments || []).reduce(
-            (acc, a) => {
-              const amt = Number(a.amount || 0);
-              if ((a.type || '').toLowerCase() === 'deduction') acc.deductions += Math.abs(amt);
-              else acc.income += amt;
-              return acc;
-            },
-            { income: 0, deductions: 0 }
-          );
-          const netAdjustments = sums.income
-          const gross = wages + Math.max(0, netAdjustments);
-          
-          let absence = e.adjustments.find(a => a.name === "Absent");
-          let late = e.adjustments.find(a => a.name === "Late");
-          let sss = e.adjustments.find(a => a.name === "SSS");
-
-          const absenceAmt = absence ? Number(absence.amount) : 0;
-          const lateAmt = late ? Number(late.amount) : 0;
-          const sssAmt = sss ? Number(sss.amount) : 0;
-          const income = sums.income;
-          const hasPhilHealth = (e.has_philhealth || '').toString().toLowerCase() === 'yes';
-          const philhealthCurr = Number(e.philhealth_current || 0);
-          const tax = Number(e.tax_amount || 0);
-          const philhealthPrev = Number(e.philhealth_previous || 0);
-
-          const totalDeductions = philhealthCurr + tax + philhealthPrev + absenceAmt + lateAmt + sssAmt - netAdjustments;
-          const netAmount = gross - totalDeductions;
-
-          const row = ws.getRow(startRow);
-          row.getCell('A').value = index;
-          row.getCell('B').value = name.last;
-          row.getCell('D').value = name.first;
-          row.getCell('E').value = e.position || '';
-          row.getCell('F').value = monthlyRate;
-          row.getCell('G').value = sworn;
-          row.getCell('H').value = gross;
-          row.getCell('I').value = (absenceAmt && Number(absenceAmt) !== 0) ? absenceAmt : '';
-          row.getCell('J').value = (lateAmt && Number(lateAmt) !== 0) ? lateAmt : '';
-          row.getCell('K').value = (income && Number(income) !== 0) ? income : '';
-          row.getCell('L').value = gross;
-          row.getCell('M').value = (sssAmt && Number(sssAmt) !== 0) ? sssAmt : '';
-          row.getCell('N').value = (philhealthCurr && Number(philhealthCurr) !== 0 ? philhealthCurr : '');
-          row.getCell('O').value = (tax && Number(tax) !== 0 ? tax :'');
-          row.getCell('P').value = (philhealthPrev && Number(philhealthPrev) !== 0 ? philhealthPrev : '');
-          row.getCell('Q').value = (totalDeductions && Number(totalDeductions) !== 0 ? totalDeductions : '');
-          row.getCell('R').value = (netAmount && Number(netAmount) !== 0 ? netAmount : '');
-          row.getCell('S').value = index;
-          row.getCell('T').value = hasPhilHealth ? 'Y' : 'N';
-
-          // Align/format numbers (apply numeric format only to numeric columns)
-          const numericCols = ['F','H','I','J','K','L','M','N','O','P','Q','R'];
-          numericCols.forEach((c) => {
-            row.getCell(c).numFmt = '#,##0.00';
-            row.getCell(c).alignment = { horizontal: 'right' };
-          });
-          // Align text columns
-          ['A','B','C','D','E','G','S','T'].forEach((c) => {
-            const align = (c === 'D' || c === 'E') ? 'left' : 'center';
-            row.getCell(c).alignment = { horizontal: align };
-          });
-          totals.wages += wages;
-          totals.adjustments += netAdjustments;
-          totals.gross += gross;
-          totals.philhealth_curr += philhealthCurr;
-          totals.tax += tax;
-          totals.philhealth_prev += philhealthPrev;
-          totals.deductions += totalDeductions;
-          totals.net += netAmount;
-
-          startRow += 1;
-          index += 1;
+        // Style Header Text and Border
+        Object.entries(tableHeader).forEach(([cell, value]) => {
+          ws.getCell(cell).value = value;
+          ws.getCell(cell).border = boxBorder;
+          ws.getCell(cell).font = { bold: true, size: 9 }
+          ws.getCell(cell).alignment = { horizontal: "center", vertical: "middle", wrapText: true }
         });
 
-        // Total row
-        const totalRow = ws.getRow(25);
-        ws.mergeCells('A25:I25');
-        totalRow.getCell('A').value = 'Total';
-        totalRow.getCell('J').value = totals.adjustments; totalRow.getCell('J').numFmt = '#,##0.00';
-        totalRow.getCell('K').value = totals.gross; totalRow.getCell('K').numFmt = '#,##0.00';
-        totalRow.getCell('L').value = totals.philhealth_curr; totalRow.getCell('L').numFmt = '#,##0.00';
-        totalRow.getCell('M').value = totals.tax; totalRow.getCell('M').numFmt = '#,##0.00';
-        totalRow.getCell('N').value = totals.philhealth_prev; totalRow.getCell('N').numFmt = '#,##0.00';
-        totalRow.getCell('O').value = totals.deductions; totalRow.getCell('O').numFmt = '#,##0.00';
-        totalRow.getCell('P').value = totals.net; totalRow.getCell('P').numFmt = '#,##0.00';
-        for (let col = 1; col <= 20; col++) {
-          totalRow.getCell(col).border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'double' }, right: { style: 'thin' } };
+        // Body
+
+        // Helper Function to split the Fullname properly
+        function splitName(fullname) {
+          if (!fullname) return { first: "", last: "", suffix: "" };
+
+          let suffixes = ["JR", "SR", "III", "IV", "JR.", "SR."];
+
+          // If there's a comma -> assume "Last, First"
+          if (fullname.includes(",")) {
+            let [last, firstPart] = fullname.split(",").map(s => s.trim());
+            let parts = firstPart.split(" ");
+            let suffix = "";
+
+            if (suffixes.includes(parts[parts.length - 1].toUpperCase())) {
+              suffix = parts.pop();
+            }
+
+            return {
+              first: last,                 
+              last: parts.join(" "),       
+              suffix
+            };
+          } else {
+            // Assume "First Middle Last"
+            let parts = fullname.split(" ").filter(Boolean);
+            let suffix = "";
+
+            if (suffixes.includes(parts[parts.length - 1].toUpperCase())) {
+              suffix = parts.pop();
+            }
+
+            let last = parts.pop() || "";
+            let first = parts.join(" ");
+
+            return {
+              first: last,         
+              last: first,                  
+              suffix
+            };
+          }
         }
 
-        // Certification blocks - Section A (Left side, top)
-        let certStartRow =  26
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'A. CERTIFIED: Services duly rendered as stated';
-        ws.getCell(`A${certStartRow}`).font = { bold: true };
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = ''; // Blank line for signature
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'JAN S. BAUTISTA';
-        ws.getCell(`A${certStartRow}`).font = { bold: true };
-        ws.getCell(`A${certStartRow}`).alignment = { horizontal: 'center' };
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'Chief, Administrative Division';
-        ws.getCell(`A${certStartRow}`).alignment = { horizontal: 'center' };
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'Date:';
-        ws.getCell(`A${certStartRow}`).alignment = { horizontal: 'center' };
-        
-        // Section B (Left side, bottom)
-        certStartRow += 2;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'B. CERTIFIED: Supporting documents complete and proper, and cash available in the amount of P';
-        ws.getCell(`A${certStartRow}`).font = { bold: true };
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = ''; // Blank line for signature
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'JAHYA M. CABAEL';
-        ws.getCell(`A${certStartRow}`).font = { bold: true };
-        ws.getCell(`A${certStartRow}`).alignment = { horizontal: 'center' };
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'OIC, Accounting Section';
-        ws.getCell(`A${certStartRow}`).alignment = { horizontal: 'center' };
-        
-        certStartRow += 1;
-        ws.mergeCells(`A${certStartRow}:F${certStartRow}`);
-        ws.getCell(`A${certStartRow}`).value = 'Date:';
-        ws.getCell(`A${certStartRow}`).alignment = { horizontal: 'center' };
-        
-        // Section C (Right side, top) - APPROVED FOR PAYMENT
-        const sectionCStartRow = certStartRow - 8; // Align with Section A
-        ws.mergeCells(`G${sectionCStartRow}:L${sectionCStartRow}`);
-        ws.getCell(`G${sectionCStartRow}`).value = 'C. APPROVED FOR PAYMENT:';
-        ws.getCell(`G${sectionCStartRow}`).font = { bold: true };
-        
-        const nameRow = sectionCStartRow + 4;
-        ws.mergeCells(`G${nameRow}:L${nameRow}`);
-        ws.getCell(`G${nameRow}`).value = 'ERLINDA O. DAQUIGAN';
-        ws.getCell(`G${nameRow}`).font = { bold: true };
-        ws.getCell(`G${nameRow}`).alignment = { horizontal: 'center' };
-        
-        const titleRow = nameRow + 1;
-        ws.mergeCells(`G${titleRow}:L${titleRow}`);
-        ws.getCell(`G${titleRow}`).value = 'OIC, Assistant Regional Director for Management Services';
-        ws.getCell(`G${titleRow}`).alignment = { horizontal: 'center' };
-        
-        const dateRow = titleRow + 1;
-        ws.mergeCells(`G${dateRow}:L${dateRow}`);
-        ws.getCell(`G${dateRow}`).value = 'Date:';
-        ws.getCell(`G${dateRow}`).alignment = { horizontal: 'center' };
-        
-        // Section D (Right side, middle) - CERTIFIED: Each employee has been paid
-        const sectionDStartRow = sectionCStartRow + 8; // Align with Section B
-        ws.mergeCells(`G${sectionDStartRow}:L${sectionDStartRow}`);
-        ws.getCell(`G${sectionDStartRow}`).value = 'D. CERTIFIED: Each employee whose name appears above has been paid the amount indicated opposite the amount indicate opposite on his/her name';
-        ws.getCell(`G${sectionDStartRow}`).font = { bold: true };
-        ws.getCell(`G${sectionDStartRow}`).alignment = { wrapText: true };
-        
-        const sectionDNameRow = sectionDStartRow + 2;
-        ws.mergeCells(`G${sectionDNameRow}:L${sectionDNameRow}`);
-        ws.getCell(`G${sectionDNameRow}`).value = 'MYRA H. RAMOS';
-        ws.getCell(`G${sectionDNameRow}`).font = { bold: true };
-        ws.getCell(`G${sectionDNameRow}`).alignment = { horizontal: 'center' };
-        
-        const sectionDTitleRow = sectionDNameRow + 1;
-        ws.mergeCells(`G${sectionDTitleRow}:L${sectionDTitleRow}`);
-        ws.getCell(`G${sectionDTitleRow}`).value = 'Disbursing Officer';
-        ws.getCell(`G${sectionDTitleRow}`).alignment = { horizontal: 'center' };
-        
-        const sectionDDateRow = sectionDTitleRow + 1;
-        ws.mergeCells(`G${sectionDDateRow}:L${sectionDDateRow}`);
-        ws.getCell(`G${sectionDDateRow}`).value = 'Date:';
-        ws.getCell(`G${sectionDDateRow}`).alignment = { horizontal: 'center' };
-        
-        // Section E (Right side, far right) - ORS and JEV details
-        const sectionEStartRow = sectionCStartRow + 4; // Align with the name row
-        ws.getCell(`N${sectionEStartRow}`).value = 'E.';
-        ws.getCell(`N${sectionEStartRow}`).font = { bold: true };
-        
-        const orsRow = sectionEStartRow + 1;
-        ws.getCell(`N${orsRow}`).value = 'ORS No.:';
-        ws.getCell(`N${orsRow}`).font = { bold: true };
-        ws.getCell(`O${orsRow}`).value = '2025-6-0279';
-        
-        const orsDateRow = orsRow + 1;
-        ws.getCell(`N${orsDateRow}`).value = 'Date:';
-        ws.getCell(`N${orsDateRow}`).font = { bold: true };
-        
-        const jevRow = orsDateRow + 1;
-        ws.getCell(`N${jevRow}`).value = 'JEV No.:';
-        ws.getCell(`N${jevRow}`).font = { bold: true };
-        
-        const jevDateRow = jevRow + 1;
-        ws.getCell(`N${jevRow}`).value = 'Date:';
-        ws.getCell(`N${jevDateRow}`).font = { bold: true };
-        
-        // Right-side totals label - aligned with the name row
-        ws.mergeCells(`Q${nameRow}:R${nameRow}`);
-        ws.getCell(`Q${nameRow}`).value = totals.net;
-        ws.getCell(`Q${nameRow}`).numFmt = '#,##0.00';
-        ws.getCell(`Q${nameRow}`).alignment = { horizontal: 'right' };
-        ws.getCell(`Q${nameRow}`).font = { bold: true };
-        
-        // Add borders to certification sections - only add borders to cells that aren't already merged
-        const addBorders = (startR, endR, startC, endC) => {
-          for (let r = startR; r <= endR; r++) {
-            for (let c = startC; c <= endC; c++) {
-              try {
-                const cell = ws.getCell(r, c);
-                if (!cell.border) cell.border = {};
-                cell.border.top = { style: 'thin' };
-                cell.border.left = { style: 'thin' };
-                cell.border.bottom = { style: 'thin' };
-                cell.border.right = { style: 'thin' };
-              } catch (e) {
-                // Skip if cell is already merged or has issues
-                console.log(`Skipping border for cell ${r},${c}: ${e.message}`);
-              }
-            }
-          }
-        };
-        
-        // Add borders to left side sections (A and B) - only for non-merged cells
-        for (let r = sectionCStartRow; r <= sectionCStartRow + 8; r++) {
-          for (let c = 1; c <= 6; c++) {
-            try {
-              const cell = ws.getCell(r, c);
-              if (!cell.border) cell.border = {};
-              cell.border.top = { style: 'thin' };
-              cell.border.left = { style: 'thin' };
-              cell.border.bottom = { style: 'thin' };
-              cell.border.right = { style: 'thin' };
-            } catch (e) {
-              // Skip merged cells
-            }
-          }
+        // Helper capitalize
+        function capitalize(str) {
+          return str.replace(/\b\w/g, c => c.toUpperCase());
         }
+
+        // Helper compute wages
+        function computeWage(monthlyRate) {
+          return monthlyRate / 2;
+        }
+
+        // Employee Rows
+        employees.forEach(e => {
+          const fullname = splitName(e.fullname);
+          const monthlyRate = Number(e.salary ? e.salary : '');
+          const wages = computeWage(monthlyRate);
         
-        // Add borders to right side sections (C and D) - only for non-merged cells
-        for (let r = sectionCStartRow; r <= sectionCStartRow + 8; r++) {
-          for (let c = 7; c <= 12; c++) {
-            try {
-              const cell = ws.getCell(r, c);
-              if (!cell.border) cell.border = {};
-              cell.border.top = { style: 'thin' };
-              cell.border.left = { style: 'thin' };
-              cell.border.bottom = { style: 'thin' };
-              cell.border.right = { style: 'thin' };
-            } catch (e) {
-              // Skip merged cells
-            }
-          }
-        }
-        
-        // Add borders to Section E - only for non-merged cells
-        for (let r = sectionEStartRow; r <= sectionEStartRow + 4; r++) {
-          for (let c = 14; c <= 15; c++) {
-            try {
-              const cell = ws.getCell(r, c);
-              if (!cell.border) cell.border = {};
-              cell.border.top = { style: 'thin' };
-              cell.border.left = { style: 'thin' };
-              cell.border.bottom = { style: 'thin' };
-              cell.border.right = { style: 'thin' };
-            } catch (e) {
-              // Skip merged cells
-            }
-          }
-        }
-        
-        // Set row heights for better spacing
-        for (let r = sectionCStartRow; r <= sectionCStartRow + 8; r++) {
-          ws.getRow(r).height = 20;
-        }
-        for (let r = sectionEStartRow; r <= sectionEStartRow + 4; r++) {
-          ws.getRow(r).height = 20;
-        }
+        });
+
+
+
+        // Set Global Font
+        ws.eachRow((row) => {
+          row.eachCell((cell) => {
+            cell.font = {
+              ...cell.font,
+              name: 'Aptos Narrow'     
+            };
+          });
+        });
 
         // File name
         const safeOffice = (assigned_office || 'OFFICE').toString().replace(/\W+/g, '_').toUpperCase();
