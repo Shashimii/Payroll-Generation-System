@@ -1869,7 +1869,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
             const cell = ws.getCell(`${col}${rowNumber}`);
             const border = {
               top: rowNumber === firstDataRow ? { style: 'medium' } : thinLine,
-              bottom: rowNumber === lastDataRow ? { style: 'medium' } : thinLine,
+              bottom: thinLine,
               left: col === firstCol ? { style: 'medium' } : thickLine,
               right: col === lastCol ? { style: 'medium' } : thickLine,
             };
@@ -1890,11 +1890,23 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
               top: staticRow === 26 ? { style: 'medium' } : thickLine,
               bottom: staticRow === 27 ? { style: 'medium' } : thinLine,
               left: col === firstCol ? { style: 'medium' } : thinLine,
-              right: col === lastCol ? { style: 'medium' } : thinLine,
+              right: col === lastCol ? { style: 'medium' } : thickLine,
             };
             cell.border = border;
           });
         });
+
+        // Explicit rule: set left border of X26 to medium, preserve other sides
+        (function() {
+          const cell = ws.getCell('X26');
+          const existing = cell.border || {};
+          cell.border = {
+            top: existing.top,
+            bottom: existing.bottom,
+            left: existing.left,
+            right: { style: 'medium' },
+          };
+        })();
         
         // Set Global Font
         ws.eachRow((row) => {
