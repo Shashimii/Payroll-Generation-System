@@ -1898,15 +1898,37 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
 
         // Explicit rule: set left border of X26 to medium, preserve other sides
         (function() {
-          const cell = ws.getCell('X26');
-          const existing = cell.border || {};
-          cell.border = {
+          const x26 = ws.getCell('X26');
+          const existing = x26.border || {};
+          x26.border = {
             top: existing.top,
             bottom: existing.bottom,
             left: existing.left,
             right: { style: 'medium' },
           };
         })();
+
+        ws.getCell('Y26').border ={ right: { style: 'medium' } };
+
+        // Explicit rules for Y27 and Y28 thick edges on totals area
+        (function() {
+          const y27 = ws.getCell('Y27');
+          y27.border = {
+            top: thickLine,
+            bottom: 'none',
+            left: 'none',
+            right: thickLine,
+          };
+
+          const y28 = ws.getCell('Y28');
+          y28.border = {
+            top: 'none',
+            bottom: thickLine,
+            left: 'none',
+            right: thickLine,
+          };
+        })();
+        
         
         // Set Global Font
         ws.eachRow((row) => {
