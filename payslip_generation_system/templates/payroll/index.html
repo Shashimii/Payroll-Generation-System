@@ -46,7 +46,7 @@
   <div class="card-body">
     <div style="display:flex; justify-content:space-between;">
       <div id="removeBatchBtn"></div>
-      <div style="">
+      <div>
         <h2 id="payrollTitle">General Payroll DENR-NCR</h2>
         <h5 style="text-align: right;" id="payrollCutoffInfo" class="text-muted"></h5>
       </div>
@@ -1642,18 +1642,15 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
 
         // Full Box Border Style
         const boxBorder = {
-          top: { style: "thick" },
-          left: { style: "thick" },
-          bottom: { style: "thick" },
-          right: { style: "thick" }
+          top: { style: "medium" },
+          left: { style: "medium" },
+          bottom: { style: "medium" },
+          right: { style: "medium" }
         };
 
-        const slimBorder = {
-          top: { style: 'thick' },
-          bottom: { style: 'thick' },
-          left: { style: 'medium' },
-          right: { style: 'medium' }
-        };
+        // Thin line for inner grid borders; outer edges will be medium
+        const thinLine = { style: 'thin' };
+        const thickLine = { style: 'medium' };
         
         // General Payroll information
 
@@ -1852,6 +1849,10 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         // Merge and Add borders to Employee rows
         const totalRows = Math.max(15, employees.length); // at least 15 rows, more if employees.length > 15
         const columnsToBorder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+        const firstDataRow = startRow;
+        const lastDataRow = startRow + totalRows - 1;
+        const firstCol = columnsToBorder[0];
+        const lastCol = columnsToBorder[columnsToBorder.length - 1];
 
         for (let i = 0; i < totalRows; i++) {
           const rowNumber = startRow + i;
@@ -1862,10 +1863,16 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           // Merge columns B and C for this row
           ws.mergeCells(`B${rowNumber}:C${rowNumber}`);
 
-          // Add borders
+          // Add borders thin inner grid, medium on outer box
           columnsToBorder.forEach(col => {
             const cell = ws.getCell(`${col}${rowNumber}`);
-            // cell.border = slimBorder;
+            const border = {
+              top: rowNumber === firstDataRow ? { style: 'medium' } : thinLine,
+              bottom: rowNumber === lastDataRow ? { style: 'medium' } : thinLine,
+              left: col === firstCol ? { style: 'medium' } : thickLine,
+              right: col === lastCol ? { style: 'medium' } : thickLine,
+            };
+            cell.border = border;
           })
         }
         
@@ -1905,38 +1912,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
     }
   });
 }
-
-
-    {% comment %} $.ajax({
-    url: `/employee/show/${employeeId}/`,
-    method: 'GET',
-    success: function (response) {
-      const emp = response.employee;
-
-      // Fill modal fields
-      $('#modalShowAdjustmentCutoff').val(cutoff);
-      $('#modalShowAdjustmentCutoffMonth').val(cutoffMonth);
-      $('#modalShowAdjustmentCutoffYear').val(cutoffYear);
-      $('#modalShowAdjustmentBatchNumber').val(batchNumber);
-      $('#modalShowAdjustmentEmployeeId').val(employeeId);
-      $('.modalFullname').text(emp.fullname);
-      $('.modalPosition').text(emp.position);
-      $('.modalSalary').text(emp.salary);
-      $('.modalCutoff').text(`${cutoffMonth} ${cutoff} Cutoff, ${cutoffYear} — Batch ${batchNumber}`);
-
-      // Second: Load adjustments for this employee
-
-
-      // Finally, show the modal
-      $('#showAdjustmentModal').modal('show');
-    },
-    error: function () {
-      alert('Failed to load employee data.');
-    }
-  }); {% endcomment %}
-
-
-
+  
 function sessionStorageLoad() {
   if (sessionStorage.getItem('batch_number')) $('#batch_number').val(sessionStorage.getItem('batch_number'));
   if (sessionStorage.getItem('cutoff')) $('#cutoff_period').val(sessionStorage.getItem('cutoff'));
