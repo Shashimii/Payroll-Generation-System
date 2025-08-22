@@ -1862,6 +1862,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
 
           // Merge columns B and C for this row
           ws.mergeCells(`B${rowNumber}:C${rowNumber}`);
+          ws.mergeCells(`U${rowNumber}:V${rowNumber}`);
 
           // Add borders thin inner grid, medium on outer box
           columnsToBorder.forEach(col => {
@@ -1875,6 +1876,25 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
             cell.border = border;
           })
         }
+
+        // Total Row
+        ws.mergeCells('A27:X28');
+        ws.getRow(26).height = 8;
+        ws.getRow(27).height = 11;
+        ws.getRow(28).height = 11;
+
+        [27].forEach(staticRow => {
+          columnsToBorder.forEach(col => {
+            const cell = ws.getCell(`${col}${staticRow}`);
+            const border = {
+              top: staticRow === 26 ? { style: 'medium' } : thickLine,
+              bottom: staticRow === 27 ? { style: 'medium' } : thinLine,
+              left: col === firstCol ? { style: 'medium' } : thinLine,
+              right: col === lastCol ? { style: 'medium' } : thinLine,
+            };
+            cell.border = border;
+          });
+        });
         
         // Set Global Font
         ws.eachRow((row) => {
