@@ -1642,10 +1642,17 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
 
         // Full Box Border Style
         const boxBorder = {
-          top: { style: "medium" },
-          left: { style: "medium" },
-          bottom: { style: "medium" },
-          right: { style: "medium" }
+          top: { style: "thick" },
+          left: { style: "thick" },
+          bottom: { style: "thick" },
+          right: { style: "thick" }
+        };
+
+        const slimBorder = {
+          top: { style: 'thick' },
+          bottom: { style: 'thick' },
+          left: { style: 'medium' },
+          right: { style: 'medium' }
         };
         
         // General Payroll information
@@ -1815,16 +1822,53 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           return monthlyRate / 2;
         }
 
+        // Helper format Y/N
+        function formatYN(string) {
+          return (string || '').toString().toLowerCase() === 'yes' ? 'Y' : 'N';
+        }
+        
+        // Starting Row
+        let startRow = 11;
+
         // Employee Rows
-        employees.forEach(e => {
+        employees.forEach((e, index) => {
+          // Holds Dynamic Row
+          const rowNumber = startRow + index;
+          const row = ws.getRow(rowNumber);
+
+          // Employee Data
           const fullname = splitName(e.fullname);
           const monthlyRate = Number(e.salary ? e.salary : '');
           const wages = computeWage(monthlyRate);
-        
+          const sworn = formatYN(e.tax_declaration); 
+          
+          // Insert Employee Data to Row Cells
+          row.getCell('A').value = index + 1;
+          row.getCell('B').value = fullname.last;
+          row.getCell('D').value = fullname.first;
+
         });
 
+        // Merge and Add borders to Employee rows
+        const totalRows = Math.max(15, employees.length); // at least 15 rows, more if employees.length > 15
+        const columnsToBorder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
 
+        for (let i = 0; i < totalRows; i++) {
+          const rowNumber = startRow + i;
 
+          // Set Employee Row Height
+          ws.getRow(`${rowNumber}`).height = 25;
+
+          // Merge columns B and C for this row
+          ws.mergeCells(`B${rowNumber}:C${rowNumber}`);
+
+          // Add borders
+          columnsToBorder.forEach(col => {
+            const cell = ws.getCell(`${col}${rowNumber}`);
+            // cell.border = slimBorder;
+          })
+        }
+        
         // Set Global Font
         ws.eachRow((row) => {
           row.eachCell((cell) => {
