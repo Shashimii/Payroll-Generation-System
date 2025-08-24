@@ -1613,12 +1613,12 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         
         // Column keys
         ws.columns = [
-          { key: "seqFirst", width: 4 },
-          { key: "lastName", width: 8 },
-          { key: "lastNameMerged", width: 10 },
-          { key: "firstName", width: 20 },
-          { key: "position", width: 14 },
-          { key: "monthlyRate", width: 12 },
+          { key: "seqFirst", width: 5 },
+          { key: "lastName", width: 9 },
+          { key: "lastNameMerged", width: 20 },
+          { key: "firstName", width: 24 },
+          { key: "position", width: 16 },
+          { key: "monthlyRate", width: 13 },
           { key: "hasTax", width: 9 },
           { key: "salary", width: 12 },
           { key: "absence", width: 11 },
@@ -1651,7 +1651,8 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         // Thin line for inner grid borders; outer edges will be medium
         const thinLine = { style: 'thin' };
         const thickLine = { style: 'medium' };
-        
+        const double = { style: 'double' };
+
         // General Payroll information
 
         // Merge
@@ -1725,9 +1726,9 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         ws.mergeCells("Y8:Y10");
 
         // Header Height
-        ws.getRow(8).height = 25;
-        ws.getRow(9).height = 40;
-        ws.getRow(10).height = 40;
+        ws.getRow(8).height = 21;
+        ws.getRow(9).height = 36;
+        ws.getRow(10).height = 36;
 
         // Header Cells and Value
         const tableHeader = {
@@ -1841,14 +1842,17 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           
           // Insert Employee Data to Row Cells
           row.getCell('A').value = index + 1;
-          row.getCell('B').value = fullname.last;
-          row.getCell('D').value = fullname.first;
+          row.getCell('B').value = fullname.first;
+          row.getCell('D').value = fullname.last;
 
         });
 
         // Merge and Add borders to Employee rows
         const totalRows = Math.max(15, employees.length); // at least 15 rows, more if employees.length > 15
-        const columnsToBorder = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'];
+        let columnsToBorder = [
+          'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 
+          'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y'
+        ];
         const firstDataRow = startRow;
         const lastDataRow = startRow + totalRows - 1;
         const firstCol = columnsToBorder[0];
@@ -1875,67 +1879,379 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
             };
             cell.border = border;
           })
-        }
+        };
+
+        
+        startRow += totalRows                           // 26
 
         // Total Row
-        ws.mergeCells('A27:X28');
-        ws.getRow(26).height = 8;
-        ws.getRow(27).height = 11;
-        ws.getRow(28).height = 11;
+        const totalAreaColumns = [
+          'A','B','C','D','E','F','G','H','I','J','K',
+          'L','M','N','O','P','Q','R','S','T','U','W','X'
+        ];
 
-        [27].forEach(staticRow => {
-          columnsToBorder.forEach(col => {
-            const cell = ws.getCell(`${col}${staticRow}`);
-            const border = {
-              top: staticRow === 26 ? { style: 'medium' } : thickLine,
-              bottom: staticRow === 27 ? { style: 'medium' } : thinLine,
-              left: col === firstCol ? { style: 'medium' } : thinLine,
-              right: col === lastCol ? { style: 'medium' } : thickLine,
+        totalAreaColumns.forEach(col => {
+          const cell = ws.getCell(`${col}${startRow}`);
+          const existing = cell.border || {};
+          let border;
+
+          if (col === 'B') {
+            border = {
+              top: thinLine,
+              bottom: thickLine,
+              left: 'none',
+              right: 'none',
+            }
+          } else if ( col === 'C') {
+            border = {
+              top: thinLine,
+              bottom: thickLine,
+              left: 'none',
+              right: 'none',
             };
-            cell.border = border;
-          });
+          } else if ( col === 'U') {
+            border = {
+              top: thinLine,
+              bottom: thickLine,
+              left: thickLine,
+              right: 'none',
+            };
+          } else if ( col === 'V') {
+            border = {
+              top: thinLine,
+              bottom: thickLine,
+              left: 'none',
+              right: thickLine,
+            };
+          } else {
+            border = {
+              ...existing,
+              left: thickLine,
+              right: thickLine,
+            };
+          }
+
+          cell.border = border;
+        })
+
+        ws.getRow(startRow).height = 8;
+        ws.getRow(++startRow).height = 11;              // 27
+
+        const totalStartRow = startRow;
+        const totalTextRow = startRow;
+        const totalEndRow = ++startRow;                 // 28
+
+        totalAreaColumns.forEach(col => {
+          if (col != 'U') {
+            ws.mergeCells(`${col}${totalStartRow}:${col}${totalEndRow}`);
+          } else {
+            ws.mergeCells(`${col}${totalStartRow}:V${totalEndRow}`);
+          }
         });
 
-        // Explicit rule: set left border of X26 to medium, preserve other sides
-        (function() {
-          const x26 = ws.getCell('X26');
-          const existing = x26.border || {};
-          x26.border = {
-            top: existing.top,
-            bottom: existing.bottom,
-            left: existing.left,
-            right: { style: 'medium' },
-          };
-        })();
+        ws.getRow(startRow).height = 11;
 
-        ws.getCell('Y26').border ={ right: { style: 'medium' } };
+        startRow -= 1;                                  // 27
 
-        // Explicit rules for Y27 and Y28 thick edges on totals area
-        (function() {
-          const y27 = ws.getCell('Y27');
-          y27.border = {
-            top: thickLine,
-            bottom: 'none',
-            left: 'none',
-            right: thickLine,
-          };
+        totalAreaColumns.forEach(col => {
+          const cell = ws.getCell(`${col}${startRow}`);
+          let border;
 
-          const y28 = ws.getCell('Y28');
-          y28.border = {
+          if (col === 'B') {
+            border = {
+              top: thickLine,
+              bottom: thickLine,
+              left: 'none',
+              right: 'none',
+            }
+          } else if ( col === 'C') {
+            border = {
+              top: thickLine,
+              bottom: thickLine,
+              left: 'none',
+              right: 'none',
+            };
+          } else {
+            border = {
+              top: thickLine,
+              bottom: thickLine,
+              left: thickLine,
+              right: thickLine,
+            };
+          }
+
+          cell.border = border;
+        });
+
+        startRow -= 1;                                   // 26
+
+        ws.getCell(`X${startRow}`).border = { 
+          right: thickLine
+        };
+        ws.getCell(`Y${startRow}`).border = {
+          right: thickLine
+        };
+        ws.getCell(`Y${++startRow}`).border = {           // 27
+          top: thickLine,
+          bottom: 'none',
+          left: 'none',
+          right: thickLine,
+        };
+        ws.getCell(`Y${++startRow}`).border = {           // 28
+          top: 'none',
+          bottom: thickLine,
+          left: 'none',
+          right: thickLine,
+        };
+
+
+        // Total Text
+        ws.getCell(`B${totalTextRow}`).value = {
+          richText: [
+            { text: 'Total', font: { bold: true } }
+          ]
+        };
+
+        ws.getCell(`B${totalTextRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        // Certification
+
+        // Used in Merging Dynamic Rows & Lines
+
+        // Row
+        startRow += 1;                                    // 29
+        // Column
+        columnLine = startRow;
+        textRow = startRow;
+        // Row Merging and Create Lines
+
+        ws.mergeCells(`A${startRow}:F${startRow}`);
+        ws.mergeCells(`J${++startRow}:R${startRow}`);     // 30
+
+        // Explicit line border on Row 30
+        ws.getCell(`J${startRow}`).border = { bottom: thinLine, }
+        ws.getCell(`S${startRow}`).border = { bottom: double, } 
+
+        ws.mergeCells(`S${startRow}:V${startRow}`);       
+        ws.mergeCells(`A${startRow += 3}:F${startRow}`);  // 33
+        ws.mergeCells(`M${startRow}:P${startRow}`);
+        ws.mergeCells(`A${++startRow}:F${startRow}`);     // 34
+        ws.mergeCells(`M${startRow}:P${startRow}`);
+        ws.mergeCells(`A${++startRow}:F${startRow}`);     // 35
+        ws.mergeCells(`M${startRow}:P${startRow}`);
+        ws.mergeCells(`A${++startRow}:F${startRow}`);     // 36
+        ws.mergeCells(`M${startRow}:P${startRow}`);
+
+        columnsToBorder = [
+          'A', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+          'N', 'Q', 'R', 'S', 'T', 'U', 'V'
+        ];
+
+        columnsToBorder.forEach(col => {
+          const cell = ws.getCell(`${col}${startRow}`);
+          const border = {
             top: 'none',
             bottom: thickLine,
             left: 'none',
-            right: thickLine,
-          };
-        })();
+            right: 'none',
+          }
+          
+          cell.border = border;
+        });
         
+        startRow += 2;
+        ws.mergeCells(`T${startRow}:U${startRow}`);       // 38
+
+        // Explicit line border in row 38
+        ws.getCell(`T${startRow}`).border = { bottom: thinLine, }
+
+        startRow += 2;
+        ws,ws.mergeCells(`T${startRow}:U${startRow}`);    // 40
+
+        // Explicit line border in row 40
+        ws.getCell(`T${startRow}`).border = { bottom: thinLine, }
+
+        startRow += 2;
+        ws,ws.mergeCells(`T${startRow}:U${startRow}`);    // 42
+
+        // Explicit line border in row 42
+        ws.getCell(`T${startRow}`).border = { bottom: thinLine, }
+
+        ws.mergeCells(`A${++startRow}:F${startRow}`);     // 43
+        ws.mergeCells(`A${++startRow}:F${startRow}`);     // 44
+
         
+        // Explicit line border in row 44
+        ws.getCell(`T${startRow}`).border = { bottom: thinLine, }
+        ws.getCell(`U${startRow}`).border = { bottom: thinLine, }
+
+        ws.mergeCells(`M${startRow}:O${startRow}`); 
+        ws.mergeCells(`A${++startRow}:F${startRow}`);     // 45
+        ws.mergeCells(`M${startRow}:O${startRow}`);
+
+        columnsToBorder = ['A', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'];
+
+        columnsToBorder.forEach(col => {
+          const cell = ws.getCell(`${col}${startRow}`);
+          const border = {
+            top: 'none',
+            bottom: thickLine,
+            left: 'none',
+            right: 'none',
+          }
+          
+          cell.border = border;
+        });
+
+        // Column Lines
+        columnsToBorder = ['I', 'V'];
+        
+        for (let i = 0; i < 8; i++) {
+          columnsToBorder.forEach(col => {
+            const cell = ws.getCell(`${col}${columnLine}`);
+            const existing = cell.border || {};
+            const border = {
+              ...existing,
+              right: thickLine,
+            }
+
+            cell.border = border;
+          })
+          
+          columnLine++;
+        }
+
+        columnsToBorder = ['I', 'R', 'V'];
+
+        for (let i = 0; i < 9; i++) {
+          columnsToBorder.forEach(col => {
+            const cell = ws.getCell(`${col}${columnLine}`);
+            const existing = cell.border || {};
+            const border = {
+              ...existing,
+              right: thickLine
+            }
+
+            cell.border = border;
+          })
+
+          columnLine++;
+        }
+
+
+        // Texts
+        ws.getCell(`A${textRow}`).value = {
+          richText: [
+            { text: 'A. CERTIFIED', font: { bold: true } },
+            { text: ': Services duly rendered as stated', font: { bold: false } }
+          ] 
+        }
+
+        ws.getCell(`J${textRow}`).value = 'C. APPROVED FOR PAYMENT:';
+        ws.getCell(`J${textRow}`).font = { bold: true };
+
+        textRow += 1;
+
+        ws.getCell(`J${textRow}`).value =  '#NAME';
+        ws.getCell(`J${textRow}`).font = { bold: true };
+        ws.getCell(`J${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        textRow += 3;
+
+        ws.getCell(`A${textRow}`).value = 'JAN S. BAUTISTA';
+        ws.getCell(`A${textRow}`).font = { bold: true, underline: true};
+        ws.getCell(`A${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        
+        ws.getCell(`N${textRow}`).value = 'ERLINDA O. DAQUIGAN';
+        ws.getCell(`N${textRow}`).font = { bold: true, underline: true};
+        ws.getCell(`N${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        textRow += 1;
+        
+        ws.getCell(`A${textRow}`).value = 'Chief, Administrative Division';
+        ws.getCell(`A${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        ws.getCell(`N${textRow}`).value = 'OIC, Assistant Regional Director for';
+        ws.getCell(`N${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        textRow += 1;
+         
+        ws.getCell(`N${textRow}`).value = 'Management Services';
+        ws.getCell(`N${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        textRow += 1; 
+
+        ws.getCell(`A${textRow}`).value = 'Date: _____________________';
+        ws.getCell(`A${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        ws.getCell(`N${textRow}`).value = 'Date: _____________________';
+        ws.getCell(`N${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        textRow += 1;
+
+        ws.getCell(`A${textRow}`).value = {
+          richText: [
+            { text: 'B. CERTIFIED', font: { bold: true } },
+            { text: ': Supporting documents complete and proper, and cash available in' }
+          ]
+        };
+
+        ws.getCell(`J${textRow}`).value = 'D. CERTIFIED: Each employee whose';
+        ws.getCell(`S${textRow}`).value = 'E.';
+
+        textRow += 1;
+
+        ws.getCell(`A${textRow}`).value = '                          in the amount of P ____________________';
+        ws.getCell(`J${textRow}`).value = 'name appears above has been paid the amount indicated opposite';
+        ws.getCell(`S${textRow}`).value = 'ORS No.:';
+        
+        textRow += 1;
+
+        ws.getCell(`J${textRow}`).value = 'the amount indicate opposite on';
+
+        textRow += 1;
+
+        ws.getCell(`J${textRow}`).value = 'his/her name';
+        ws.getCell(`S${textRow}`).value = '     Date:'
+
+        textRow += 2;
+
+        ws.getCell(`S${textRow}`).value = '       JEV No.:';
+
+        textRow += 1;
+
+        ws.getCell(`A${textRow}`).value = 'JAHYA M. CABAEL';
+        ws.getCell(`A${textRow}`).font = { bold: true, underline: true};
+        ws.getCell(`A${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getCell(`N${textRow}`).value = '   MYRA H. RAMOS   ';
+        ws.getCell(`N${textRow}`).font = { bold: true, underline: true};
+        ws.getCell(`N${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        textRow += 1;
+
+        ws.getCell(`A${textRow}`).value = 'OIC,  Accounting Section';
+        ws.getCell(`A${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getCell(`M${textRow}`).value = 'Disbursing Officer';
+        ws.getCell(`M${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getCell(`S${textRow}`).value = '       Date:';
+
+        textRow += 1;
+
+        ws.getCell(`A${textRow}`).value = 'Date: _________________';
+        ws.getCell(`A${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.getCell(`M${textRow}`).value = 'Date: _________________';
+        ws.getCell(`M${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        
+
         // Set Global Font
         ws.eachRow((row) => {
           row.eachCell((cell) => {
             cell.font = {
               ...cell.font,
-              name: 'Aptos Narrow'     
+              name: 'Aptos Narrow',
+              size: 10     
             };
           });
         });
