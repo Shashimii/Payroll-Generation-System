@@ -1610,16 +1610,29 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         // Workbook
         const workbook = new ExcelJS.Workbook();
         const ws = workbook.addWorksheet('GENERAL PAYROLL');
+        ws.pageSetup = {
+          paperSize: 9,         // A4
+          orientation: 'landscape', 
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 0,       // unlimited height
+          printArea: 'A:V',
+          margins: {
+            left: 0.2, right: 0.2,
+            top: 0.5, bottom: 0.5,
+            header: 0.3, footer: 0.3
+          }
+        };
         
         // Column keys
         ws.columns = [
           { key: "seqFirst", width: 5 },
           { key: "lastName", width: 9 },
-          { key: "lastNameMerged", width: 20 },
+          { key: "lastNameMerged", width: 16 },
           { key: "firstName", width: 24 },
           { key: "position", width: 16 },
           { key: "monthlyRate", width: 13 },
-          { key: "hasTax", width: 9 },
+          { key: "hasTax", width: 10 },
           { key: "salary", width: 12 },
           { key: "absence", width: 11 },
           { key: "late", width: 9 },
@@ -1633,7 +1646,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           { key: "totalDeduction", width: 12 },
           { key: "netAmountDue", width: 14 },
           { key: "seqSecond", width: 4 },
-          { key: "signature", width: 10 },
+          { key: "signature", width: 6 },
           { key: "signatureMerged", width: 4},
           { key: "absenceDoNot", width: 13 },
           { key: "lateDoNot", width: 13 },
@@ -1665,8 +1678,8 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         ws.mergeCells('S6:T6');
 
         // Text
-        ws.getCell('A1').value = "GENERAL PAYROLL";
-        ws.getCell('A2').value = "DENR-NCR";
+        ws.getCell('A1').value = "                                                    GENERAL PAYROLL";
+        ws.getCell('A2').value = "                                                  DENR-NCR";
         ws.getCell('H3').value = "JULY-16-31, 2025";
         ws.getCell('A5').value = "Entity Name: ";
         ws.getCell('C5').value = "Pasig River Coordinating and Management Office - EED Cluster 2-1";
@@ -1828,6 +1841,20 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         // Starting Row
         let startRow = 11;
 
+        // Total Variables
+        let totalAbsence = 0;
+        let totalLate = 0;
+        let totalIncome = 0;
+        let totalWages = 0;
+        let totalGrossAll = 0;
+        let totalSSS = 0;
+        let totalPhilhealthCurrent = 0;
+        let totalPhilhealthPrevious = 0;
+        let totalTax = 0;
+        let totalDeductionAll = 0;
+        let totalNet = 0;
+
+
         // Employee Rows
         employees.forEach((e, index) => {
           // Holds Dynamic Row
@@ -1836,14 +1863,77 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
 
           // Employee Data
           const fullname = splitName(e.fullname);
+          const position = e.position;
           const monthlyRate = Number(e.salary ? e.salary : '');
           const wages = computeWage(monthlyRate);
-          const sworn = formatYN(e.tax_declaration); 
+          const sworn = formatYN(e.tax_declaration);
+          const absence = e.adjustments.find(adj => adj.name === 'Absence' && adj.type === 'Deduction'); 
+          const late = e.adjustments.find(adj => adj.name === 'Late' && adj.type === 'Deduction'); 
+          const income = e.adjustments.find(adj =>adj.type === 'Income');
+          const totalGross = wages + (income?.amount || 0) - (absence?.amount || 0) - (late?.amount || 0);
+          const sss = e.adjustments.find(adj => adj.name === 'SSS' && adj.type === 'Deduction');
+          const philhealthCurrent = e.philhealth_current;
+          const tax = e.tax_amount;
+          const philhealthPrevious = e.philhealth_previous
+          const totalDeduction = (sss?.amount || 0) + philhealthCurrent + tax + philhealthPrevious;
+          const netAmountDue = totalGross - totalDeduction;
+          const subjectPhilhealth = e.has_philhealth;
           
           // Insert Employee Data to Row Cells
           row.getCell('A').value = index + 1;
           row.getCell('B').value = fullname.first;
           row.getCell('D').value = fullname.last;
+          row.getCell('E').value = position;
+          row.getCell('F').value = monthlyRate;
+          row.getCell('G').value = sworn;
+          row.getCell('H').value = wages;
+          row.getCell('I').value = absence?.amount || '-';
+          row.getCell('J').value = late?.amount || '-';
+          row.getCell('K').value = income?.amount || '-';
+          row.getCell('L').value = totalGross;
+          row.getCell('M').value = sss?.amount || '-';
+          row.getCell('N').value = !philhealthCurrent ? '-' : philhealthCurrent;
+          row.getCell('O').value = !tax ? '-' : tax;
+          row.getCell('Q').value = !philhealthPrevious ? '-' : philhealthPrevious;
+          row.getCell('R').value = !totalDeduction ? '-' : totalDeduction;
+          row.getCell('S').value = netAmountDue;
+          row.getCell('T').value = index + 1;
+          row.getCell('Y').value = subjectPhilhealth === 'yes' ? 'Y' : 'N';
+
+          ['A', 'E', 'G', 'T', 'Y'].forEach(col => {
+            const cell = row.getCell(col);
+            cell.alignment = { horizontal: 'center', vertical: 'middle'  };
+          });
+          
+          ['B', 'C'].forEach(col => {
+            const cell = row.getCell(col);
+            cell.alignment = { vertical: 'middle'  };
+          });
+
+          ['F', 'H'].forEach(col => {
+            const cell = row.getCell(col);
+            cell.numFmt = '#,##0.00';
+            cell.alignment = { vertical: 'middle'  };
+          });
+
+          ['I','J','K','L','M','N','O','Q','R','S'].forEach(col => {
+            const cell = row.getCell(col);
+            cell.numFmt = '#,##0.00';
+            cell.font = { bold: true };
+            cell.alignment = { vertical: 'middle'  };
+          });
+
+          totalAbsence += absence?.amount || 0;
+          totalLate += late?.amount || 0;
+          totalIncome += income?.amount || 0;
+          totalWages += wages;
+          totalGrossAll += totalGross;
+          totalSSS += sss?.amount || 0;
+          totalPhilhealthCurrent += !philhealthCurrent ? 0 : philhealthCurrent;
+          totalPhilhealthPrevious += !philhealthPrevious ? 0 : philhealthPrevious;
+          totalTax += !tax ? 0 : tax;
+          totalDeductionAll += !totalDeduction ? 0 : totalDeduction;
+          totalNet += netAmountDue;
 
         });
 
@@ -1885,6 +1975,27 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         startRow += totalRows                           // 26
 
         // Total Row
+        const row = ws.getRow(startRow + 1);
+
+        row.getCell('H').value = totalWages === 0 ? '-' : totalWages;
+        row.getCell('I').value = totalAbsence === 0 ? '-' : totalAbsence;
+        row.getCell('J').value = totalLate === 0 ? '-' : totalLate;
+        row.getCell('K').value = totalIncome === 0 ? '-' : totalIncome;
+        row.getCell('L').value = totalGrossAll === 0 ? '-' : totalGrossAll;
+        row.getCell('M').value = totalSSS === 0 ? '-' : totalSSS;
+        row.getCell('N').value = totalPhilhealthCurrent === 0 ? '-' : totalPhilhealthCurrent;
+        row.getCell('O').value = totalTax === 0 ? '-' : totalTax;
+        row.getCell('Q').value = totalPhilhealthPrevious === 0 ? '-' : totalPhilhealthPrevious;
+        row.getCell('R').value = totalDeductionAll === 0 ? '-' : totalDeductionAll;
+        row.getCell('S').value = totalNet === 0 ? '-' : totalNet;
+
+        ['H','I','J','K','L','M','N','O','Q','R','S'].forEach(col => {
+          const cell = row.getCell(col);
+          cell.numFmt = '#,##0.00';
+          cell.font = { bold: true };
+          cell.alignment = { vertical: 'middle'  };
+        });
+
         const totalAreaColumns = [
           'A','B','C','D','E','F','G','H','I','J','K',
           'L','M','N','O','P','Q','R','S','T','U','W','X'
@@ -2029,9 +2140,15 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         ws.mergeCells(`J${++startRow}:R${startRow}`);     // 30
 
         // Explicit line border on Row 30
-        ws.getCell(`J${startRow}`).border = { bottom: thinLine, }
-        ws.getCell(`S${startRow}`).border = { bottom: double, } 
+        ws.getCell(`J${startRow}`).border = { bottom: thinLine, };
 
+        const netAmtCellCert = ws.getCell(`S${startRow}`);
+        netAmtCellCert.border = { bottom: double, };
+        netAmtCellCert.value = totalNet; 
+        netAmtCellCert.alignment = { horizontal: 'center', vertical: 'middle' }; 
+        netAmtCellCert.font = { bold: true };
+        netAmtCellCert.numFmt = '"₱"#,##0.00';
+        
         ws.mergeCells(`S${startRow}:V${startRow}`);       
         ws.mergeCells(`A${startRow += 3}:F${startRow}`);  // 33
         ws.mergeCells(`M${startRow}:P${startRow}`);
@@ -2104,40 +2221,42 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         });
 
         // Column Lines
-        columnsToBorder = ['I', 'V'];
-        
+        columnsToBorder = ['A', 'I', 'V'];
+
         for (let i = 0; i < 8; i++) {
           columnsToBorder.forEach(col => {
             const cell = ws.getCell(`${col}${columnLine}`);
             const existing = cell.border || {};
+
+            // Apply left border if column is 'A', otherwise right border
             const border = {
               ...existing,
-              right: thickLine,
-            }
+              ...(col === 'A' ? { left: thickLine } : { right: thickLine }),
+            };
 
             cell.border = border;
-          })
-          
+          });
+
           columnLine++;
         }
 
-        columnsToBorder = ['I', 'R', 'V'];
+        columnsToBorder = ['A', 'I', 'R', 'V'];
 
         for (let i = 0; i < 9; i++) {
           columnsToBorder.forEach(col => {
             const cell = ws.getCell(`${col}${columnLine}`);
             const existing = cell.border || {};
+
             const border = {
               ...existing,
-              right: thickLine
-            }
+              ...(col === 'A' ? { left: thickLine } : { right: thickLine }),
+            };
 
             cell.border = border;
-          })
+          });
 
           columnLine++;
         }
-
 
         // Texts
         ws.getCell(`A${textRow}`).value = {
@@ -2146,14 +2265,15 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
             { text: ': Services duly rendered as stated', font: { bold: false } }
           ] 
         }
+        ws.getCell(`A${textRow}`).font = { size: 9 };
 
         ws.getCell(`J${textRow}`).value = 'C. APPROVED FOR PAYMENT:';
-        ws.getCell(`J${textRow}`).font = { bold: true };
+        ws.getCell(`J${textRow}`).font = { bold: true, size: 9};
 
         textRow += 1;
 
         ws.getCell(`J${textRow}`).value =  '#NAME';
-        ws.getCell(`J${textRow}`).font = { bold: true };
+        ws.getCell(`J${textRow}`).font = { bold: true, size: 11 };
         ws.getCell(`J${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
         textRow += 3;
@@ -2197,27 +2317,36 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
           ]
         };
 
+        ws.getCell(`A${textRow}`).font = { size: 9 };
+
         ws.getCell(`J${textRow}`).value = 'D. CERTIFIED: Each employee whose';
+        ws.getCell(`J${textRow}`).font = { size: 9 };
         ws.getCell(`S${textRow}`).value = 'E.';
+        ws.getCell(`S${textRow}`).font = { bold: true, size: 9 };
 
         textRow += 1;
 
         ws.getCell(`A${textRow}`).value = '                          in the amount of P ____________________';
         ws.getCell(`J${textRow}`).value = 'name appears above has been paid the amount indicated opposite';
-        ws.getCell(`S${textRow}`).value = 'ORS No.:';
+        ws.getCell(`J${textRow}`).font = { size: 9 };
+        ws.getCell(`S${textRow}`).value = '       ORS No.:';
+        ws.getCell(`S${textRow}`).font = { bold: true, size: 9 };
         
         textRow += 1;
 
         ws.getCell(`J${textRow}`).value = 'the amount indicate opposite on';
-
+        ws.getCell(`J${textRow}`).font = { size: 9 };
         textRow += 1;
 
         ws.getCell(`J${textRow}`).value = 'his/her name';
+        ws.getCell(`J${textRow}`).font = { size: 9 };
         ws.getCell(`S${textRow}`).value = '     Date:'
-
+        ws.getCell(`S${textRow}`).font = { bold: true, size: 10 };
+        
         textRow += 2;
 
         ws.getCell(`S${textRow}`).value = '       JEV No.:';
+        ws.getCell(`S${textRow}`).font = { bold: true, size: 11 };
 
         textRow += 1;
 
@@ -2235,6 +2364,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
         ws.getCell(`M${textRow}`).value = 'Disbursing Officer';
         ws.getCell(`M${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
         ws.getCell(`S${textRow}`).value = '       Date:';
+        ws.getCell(`S${textRow}`).font = { bold: true, size: 11 };
 
         textRow += 1;
 
@@ -2251,7 +2381,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, a
             cell.font = {
               ...cell.font,
               name: 'Aptos Narrow',
-              size: 10     
+              size: cell.font?.size ?? 10     
             };
           });
         });
