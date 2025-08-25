@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from datetime import datetime
 from payslip_generation_system.models import BatchAssignment, Adjustment  
 from decimal import Decimal
+from datetime import datetime
+import calendar
 
 from django.contrib.auth.decorators import login_required
 
@@ -18,6 +20,24 @@ def data(request):
         batch_number = request.POST.get('batch_number')
         philhealth_current = Decimal('0.00')
         tax_amount = Decimal('0.00')
+
+        # Excel File Date
+        number_cutoff_month = datetime.strptime(cutoff_month, "%B").month
+        number_cutoff_year = int(cutoff_year)
+        last_day = calendar.monthrange(number_cutoff_year, number_cutoff_month)[1]
+
+        # ranges
+        excel_cutoff_ranges = {
+            "first": f"{cutoff_month}-1-15,{cutoff_year}",
+            "second": f"{cutoff_month}-16-{last_day},{cutoff_year}"
+        }
+
+        if cutoff == '1st':
+            excel_cutoff_range = excel_cutoff_ranges['first']
+        elif cutoff == '2nd':
+            excel_cutoff_range = excel_cutoff_ranges["second"]
+        else:
+            excel_cutoff_range = 'Cutoff Range'
 
         # Find the Employees on the Current Payroll
         batch_assignments = BatchAssignment.objects.filter(
@@ -87,6 +107,18 @@ def data(request):
                 'adjustments': adjustments_data
             })
 
-        return JsonResponse({'employees': employees_data})
+            # System Date of Generation
+            systemNow = datetime.now()
+
+            try:
+                formatted = systemNow.strftime("%-m-%-d-%Y %I:%M %p")  # Linux/Unix
+            except ValueError:
+                formatted = systemNow.strftime("%#m-%#d-%Y %I:%M %p")  # Windows
+
+        return JsonResponse({
+            'excel_cutoff_range': excel_cutoff_range, 
+            'employees': employees_data,
+            'systemNow' : formatted,
+        })
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
