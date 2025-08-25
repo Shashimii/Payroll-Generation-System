@@ -33,6 +33,23 @@
             <td colspan="12" class="text-center text-muted">Loading...</td>
         </tr>
     </tbody>
+    
+    <!-- Totals Row -->
+    <tfoot class="table-dark text-center align-middle">
+        <tr>
+            <th colspan="3" class="text-center">TOTALS</th>
+            <th class="text-end">₱ <span id="totalSalary">0.00</span></th>
+            <th class="text-end">₱ <span id="totalTax">0.00</span></th>
+            <th class="text-end">₱ <span id="totalPhilhealth">0.00</span></th>
+            <th class="text-end">₱ <span id="totalPreviousPhilhealth">0.00</span></th>
+            <th class="text-end">₱ <span id="totalSSS">0.00</span></th>
+            <th class="text-end">₱ <span id="totalLate">0.00</span></th>
+            <th class="text-end">₱ <span id="totalAbsent">0.00</span></th>
+            <th class="text-end text-success">₱ <span id="totalIncome">0.00</span></th>
+            <th class="text-end text-danger">₱ <span id="totalDeductions">0.00</span></th>
+            <th class="text-end">₱ <span id="totalNetPay">0.00</span></th>
+        </tr>
+    </tfoot>
 </table>
 
 <input type="hidden" id="cutoff" name="cutoff">
@@ -141,6 +158,20 @@ function formatMoney(amount) {
     });
 }
 
+// Function to update totals row
+function updateTotalsRow(totals) {
+    $('#totalSalary').text(formatMoney(totals.salary));
+    $('#totalTax').text(formatMoney(totals.tax));
+    $('#totalPhilhealth').text(formatMoney(totals.philhealth));
+    $('#totalPreviousPhilhealth').text(formatMoney(totals.previous_philhealth));
+    $('#totalSSS').text(formatMoney(totals.sss));
+    $('#totalLate').text(formatMoney(totals.late));
+    $('#totalAbsent').text(formatMoney(totals.absent));
+    $('#totalIncome').text(formatMoney(totals.income));
+    $('#totalDeductions').text(formatMoney(totals.deductions));
+    $('#totalNetPay').text(formatMoney(totals.net_pay));
+}
+
 $(document).ready(function () {
     $('#backBtn').click(function() {
         window.location.href = "{% url 'payroll_pending' %}";
@@ -193,7 +224,33 @@ $(document).ready(function () {
         const tbody = $('#employeeTableBody');
         tbody.empty();
             if (response.employees.length > 0) {
+                // Initialize totals
+                let totals = {
+                    salary: 0,
+                    tax: 0,
+                    philhealth: 0,
+                    previous_philhealth: 0,
+                    sss: 0,
+                    late: 0,
+                    absent: 0,
+                    income: 0,
+                    deductions: 0,
+                    net_pay: 0
+                };
+                
                 response.employees.forEach((emp, i) => {
+                    // Add to totals
+                    totals.salary += parseFloat(emp.salary) || 0;
+                    totals.tax += parseFloat(emp.tax_deduction) || 0;
+                    totals.philhealth += parseFloat(emp.philhealth) || 0;
+                    totals.previous_philhealth += parseFloat(emp.previous_philhealth) || 0;
+                    totals.sss += parseFloat(emp.sss) || 0;
+                    totals.late += parseFloat(emp.late_amount) || 0;
+                    totals.absent += parseFloat(emp.absent_amount) || 0;
+                    totals.income += parseFloat(emp.income) || 0;
+                    totals.deductions += parseFloat(emp.other_deductions) || 0;
+                    totals.net_pay += parseFloat(emp.net_salary) || 0;
+                
                 const row = $(`
                     <tr class="employee-row" style="cursor: pointer;" data-employee='${JSON.stringify(emp)}' title="Click to view detailed breakdown">
                     <td>${i + 1}</td>
@@ -225,8 +282,16 @@ $(document).ready(function () {
                 
                 tbody.append(row);
                 });
+                
+                // Update totals row
+                updateTotalsRow(totals);
             } else {
                 tbody.append('<tr><td colspan="12" class="text-center text-muted">No employees found.</td></tr>');
+                // Reset totals to zero
+                updateTotalsRow({
+                    salary: 0, tax: 0, philhealth: 0, previous_philhealth: 0,
+                    sss: 0, late: 0, absent: 0, income: 0, deductions: 0, net_pay: 0
+                });
             }
         },
         error: function () {
@@ -525,6 +590,17 @@ th, td {
     .employee-row::after {
         display: none;
     }
+}
+
+/* Totals row styling */
+tfoot th {
+    font-weight: bold;
+    background-color: #343a40 !important;
+    color: white !important;
+}
+
+tfoot th.text-end {
+    text-align: right !important;
 }
 </style>
 {% endblock %}
