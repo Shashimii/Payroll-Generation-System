@@ -36,7 +36,7 @@ def create(request):
     denrncrprcmo = 'denr_ncr_prcmo'
     meos = 'meo_s'
     meoe = 'meo_e'
-    meow = 'moe_w'
+    meow = 'meo_w'
     meon = 'meo_n'
     
     # Data
@@ -379,7 +379,7 @@ def employee_data(request):
     denrncrprcmo = 'denr_ncr_prcmo'
     meos = 'meo_s'
     meoe = 'meo_e'
-    meow = 'moe_w'
+    meow = 'meo_w'
     meon = 'meo_n'
 
     OFFICE_NAME_MAP = {
