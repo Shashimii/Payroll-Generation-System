@@ -1931,7 +1931,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const monthlyRate = Number(e.salary ? e.salary : '');
           const wages = computeWage(monthlyRate);
           const sworn = formatYN(e.tax_declaration);
-          const absence = e.adjustments.find(adj => adj.name === 'Absence' && adj.type === 'Deduction'); 
+          const absence = e.adjustments.find(adj => adj.name === 'Absent' && adj.type === 'Deduction'); 
           const late = e.adjustments.find(adj => adj.name === 'Late' && adj.type === 'Deduction'); 
           const income = e.adjustments.find(adj =>adj.type === 'Income');
           const totalGross = wages + (income?.amount || 0) - (absence?.amount || 0) - (late?.amount || 0);
