@@ -1630,7 +1630,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
 
         // Workbook
         const workbook = new ExcelJS.Workbook();
-        const ws = workbook.addWorksheet('GENERAL PAYROLL');
+        const ws = workbook.addWorksheet(batch_name);
         ws.pageSetup = {
           paperSize: 9,         // A4
           orientation: 'landscape', 
@@ -1970,10 +1970,10 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
 
           ['A', 'E', 'G', 'T', 'Y'].forEach(col => {
             const cell = row.getCell(col);
-            cell.alignment = { horizontal: 'center', vertical: 'middle'  };
+            cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true  };
           });
           
-          ['B', 'C'].forEach(col => {
+          ['B', 'D'].forEach(col => {
             const cell = row.getCell(col);
             cell.alignment = { vertical: 'middle'  };
           });
