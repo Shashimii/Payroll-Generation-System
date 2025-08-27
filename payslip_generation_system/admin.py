@@ -8,6 +8,7 @@ admin.site.register(UserRole)
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = ('fullname', 'birthdate', 'user')
+    search_fields = ('fullname', 'user__username') 
     actions = ['generate_user_accounts']
 
     def generate_user_accounts(self, request, queryset):
