@@ -46,7 +46,7 @@ def data(request):
             cutoff_year=cutoff_year,
             assigned_office=assigned_office,
             batch_number=batch_number
-        )
+        ).select_related("employee").order_by("employee__fullname")
         
         # Fetch Employee Info
         employees_data = []
