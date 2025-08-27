@@ -427,7 +427,7 @@ $('#batch_number, #cutoff_period, #cutoff_month, #cutoff_year').on('change', fun
 });
 
 // onclick
-$('#exportExcelBtn').on('click', function () {
+$(document).on('click', '#exportExcelBtn', function () {
   const officeNames = {
       denr_ncr_nec: "DENR NCR National Ecology Center (NEC)",
       denr_ncr_prcmo: "DENR NCR PRCMO",
