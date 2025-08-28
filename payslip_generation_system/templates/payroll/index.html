@@ -1933,8 +1933,23 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const sworn = formatYN(e.tax_declaration);
           const absence = e.adjustments.find(adj => adj.name === 'Absent' && adj.type === 'Deduction'); 
           const late = e.adjustments.find(adj => adj.name === 'Late' && adj.type === 'Deduction'); 
-          const income = e.adjustments.find(adj =>adj.type === 'Income');
-          const totalGross = wages + (income?.amount || 0) - (absence?.amount || 0) - (late?.amount || 0);
+
+          const income = e.adjustments
+          .filter(adj => adj.type === 'Income')
+          .reduce((sum, adj) => sum + (adj.amount || 0), 0);
+
+          const deduction = e.adjustments
+          .filter(
+              adj => 
+              adj.type === 'Deduction' && 
+              adj.name != 'Absent' && 
+              adj.name != 'Late' && 
+              adj.name != 'SSS' && 
+              !adj.name.toLowerCase().includes('philhealth')
+            )
+            .reduce((sum, adj) => sum + (adj.amount || 0), 0);
+          
+          const totalGross = wages + (income || 0) - (absence?.amount || 0) - (late?.amount || 0);
           const sss = e.adjustments.find(adj => adj.name === 'SSS' && adj.type === 'Deduction');
           const philhealthCurrent = e.philhealth_current;
           const tax = e.tax_amount;
@@ -1942,6 +1957,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const totalDeduction = (sss?.amount || 0) + philhealthCurrent + tax + philhealthPrevious;
           const netAmountDue = totalGross - totalDeduction;
           const subjectPhilhealth = e.has_philhealth;
+
           
           // Insert Employee Data to Row Cells
           row.getCell('A').value = index + 1;
@@ -1953,7 +1969,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           row.getCell('H').value = wages;
           row.getCell('I').value = absence?.amount || '-';
           row.getCell('J').value = late?.amount || '-';
-          row.getCell('K').value = income?.amount || '-';
+          row.getCell('K').value = income || '-';
           row.getCell('L').value = totalGross;
           row.getCell('M').value = sss?.amount || '-';
           row.getCell('N').value = !philhealthCurrent ? '-' : philhealthCurrent;
