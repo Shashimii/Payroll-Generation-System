@@ -589,7 +589,7 @@ def batch_data(request):
             absent_adjustments.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
         )
 
-        total_gross_amount = abs(basic_salary_cutoff - total_adjustment_income - total_adjustment_deduction - total_adjustment_late - total_adjustment_absent)
+        total_gross_amount = abs(basic_salary_cutoff - total_adjustment_late - total_adjustment_absent - total_adjustment_deduction + total_adjustment_income)
 
         # TAX DEDUCTION 
         if (employee.tax_declaration == "yes"):
