@@ -15,17 +15,19 @@
         <tr>
             <th>Seq No.</th>
             <th>Full Name</th>
-            <th>Position</th>
             <th>Salary</th>
-            <th>Tax</th>
-            <th>Philhealth</th>
-            <th>Previous Philhealth</th>
-            <th>SSS</th>
-            <th>Late</th>
+            <th>Salary Wage</th>
             <th>Absent</th>
-            <th class="text-success">Adjustment Income</th>
-            <th class="text-danger">Adjustment Deduction</th>
-            <th>Net Pay</th>
+            <th>Late</th>
+            <th class="text-success">Adj Income</th>
+            <th class="text-danger">Adj Deduction</th>
+            <th>Total Gross</th>
+            <th>SSS</th>
+            <th>Philhealth Current</th>
+            <th>Tax Percentage</th>
+            <th>Philhealth Previous</th>
+            <th>Total Deduction</th>
+            <th>Net Amount</th>
         </tr>
         </thead>
         <tbody id="employeeTableBody">
@@ -37,17 +39,20 @@
     <!-- Totals Row -->
     <tfoot class="table-dark text-center align-middle">
         <tr>
-            <th colspan="3" class="text-center">TOTALS</th>
-            <th class="text-end">₱ <span id="totalSalary">0.00</span></th>
-            <th class="text-end">₱ <span id="totalTax">0.00</span></th>
-            <th class="text-end">₱ <span id="totalPhilhealth">0.00</span></th>
-            <th class="text-end">₱ <span id="totalPreviousPhilhealth">0.00</span></th>
-            <th class="text-end">₱ <span id="totalSSS">0.00</span></th>
-            <th class="text-end">₱ <span id="totalLate">0.00</span></th>
-            <th class="text-end">₱ <span id="totalAbsent">0.00</span></th>
-            <th class="text-end text-success">₱ <span id="totalIncome">0.00</span></th>
-            <th class="text-end text-danger">₱ <span id="totalDeductions">0.00</span></th>
-            <th class="text-end">₱ <span id="totalNetPay">0.00</span></th>
+            <th colspan="2" class="text-center">TOTALS</th>
+            <th class="text-end"><span id="totalSalary">0.00</span></th>
+            <th class="text-end"><span id="salaryWage">0.00</span></th>
+            <th class="text-end"><span id="totalAbsent">0.00</span></th>
+            <th class="text-end"><span id="totalLate">0.00</span></th>
+            <th class="text-end text-success"><span id="totalIncome">0.00</span></th>
+            <th class="text-end text-danger"><span id="totalDeductions">0.00</span></th>
+            <th class="text-end"><span id="totalGross">0.00</span></th>
+            <th class="text-end"><span id="totalSSS">0.00</span></th>
+            <th class="text-end"><span id="totalPhilhealth">0.00</span></th>
+            <th class="text-end"><span id="totalTax">0.00</span></th>
+            <th class="text-end"><span id="totalPreviousPhilhealth">0.00</span></th>
+            <th class="text-end"><span id="totalDeduction">0.00</span></th>
+            <th class="text-end"><span id="totalNetPay">0.00</span></th>
         </tr>
     </tfoot>
 </table>
@@ -71,49 +76,104 @@
 
 <!-- Employee Breakdown Modal -->
 <div class="modal fade" id="employeeBreakdownModal" tabindex="-1" aria-labelledby="employeeBreakdownModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="employeeBreakdownModalLabel">Employee Breakdown Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content shadow-lg rounded-3">
+      
+      <!-- Header -->
+    <div class="modal-header bg-success text-white">
+    <h5 class="modal-title text-bold" id="employeeBreakdownModalLabel">
+        <i class="bi bi-person-badge"></i> Employee Breakdown Details
+    </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+      <!-- Body -->
       <div class="modal-body">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6 class="text-muted">Employee Information</h6>
-            <p><strong>Name:</strong> <span id="modalEmployeeName"></span></p>
-            <p><strong>Position:</strong> <span id="modalEmployeePosition"></span></p>
-            <p><strong>Base Salary:</strong> ₱<span id="modalEmployeeSalary"></span></p>
-          </div>
-          <div class="col-md-6">
-            <h6 class="text-muted">Summary</h6>
-            <p><strong>Total Income:</strong> ₱<span id="modalTotalIncome"></span></p>
-            <p><strong>Total Deductions:</strong> ₱<span id="modalTotalDeductions"></span></p>
-            <p><strong>Net Pay:</strong> ₱<span id="modalNetPay"></span></p>
-          </div>
-        </div>
         
-        <div class="row">
-          <div class="col-md-6">
-            <h6 class="text-success">Income Breakdown</h6>
-            <div id="modalIncomeBreakdown">
-              <!-- Income items will be populated here -->
+        <!-- Employee Information & Summary -->
+        <div class="row mb-4">
+            <!-- Employee Information -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-lg">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-primary text-bold">Employee Information</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <p class="mb-2"><strong>Name:</strong> <span id="modalEmployeeName" class="text-dark"></span></p>
+                        <p class="mb-2"><strong>Position:</strong> <span id="modalEmployeePosition" class="text-dark"></span></p>
+                        <p class="mb-2"><strong>Tax Declared?</strong> <span id="modalTaxDeclaration" class="badge bg-info text-dark"></span></p>
+                        <p class="mb-2"><strong>With Philhealth?</strong> <span id="modalHasPhilhealth" class="badge bg-success"></span></p>
+                        <p class="mb-0"><strong>Base Salary:</strong> <span class="text-bold text-success">₱<span id="modalEmployeeSalary"></span></span></p>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="col-md-6">
-            <h6 class="text-danger">Deductions Breakdown</h6>
-            <div id="modalDeductionsBreakdown">
-              <!-- Deduction items will be populated here -->
+
+            <!-- Summary -->
+            <div class="col-md-6">
+                <div class="card shadow-sm border-0 rounded-lg">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0 text-primary text-bold">Summary</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <p class="mb-2"><strong>Salary Wage:</strong> ₱<span id="modalSalaryWage" class="text-semibold text-dark"></span></p>
+                        <p class="mb-2"><strong>Total Gross Amount:</strong> ₱<span id="modalTotalGross" class="text-semibold text-dark"></span></p>
+                        <p class="mb-2"><strong>Total Deductions:</strong> ₱<span id="modalTotalDeductions" class="text-semibold"></span></p>
+                        {% comment %}<p class="mb-2"><strong>Total Income:</strong> ₱<span id="modalTotalIncome"></span></p>{% endcomment %}
+                        <p class="mb-0"><strong>Net Amount:</strong> <span class="text-bold text-success">₱<span id="modalNetPay"></span></span></p>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
+
+        <!-- Breakdown Sections -->
+        <div class="row">
+          <!-- Income Adjustments -->
+          <div class="col-md-4">
+            <h6 class="text-success text-bold border-bottom pb-2">Adjustment Income</h6>
+            <div id="modalAdjustmentIncomes" class="small">
+              <!-- Income items populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Deduction Adjustments -->
+          <div class="col-md-4">
+            <h6 class="text-danger text-bold border-bottom pb-2">Adjustment Deductions</h6>
+            <div id="modalAdjustmentDeductions" class="small">
+              <!-- Income items populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Late & Absent -->
+          <div class="col-md-4">
+            <h6 class="text-danger text-bold border-bottom pb-2">Late & Absent</h6>
+            <div id="modalLateAbsent" class="small">
+              <!-- Late and Absent items populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Deductions Breakdown -->
+          <div class="col-md-4">
+            <h6 class="text-danger text-bold border-bottom pb-2">Deductions Breakdown</h6>
+            <div id="modalDeductionsBreakdown" class="small">
+              <!-- Deduction items populated dynamically -->
+            </div>
+          </div>
+
+        </div>
+
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+      <!-- Footer -->
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Close
+        </button>
       </div>
+
     </div>
   </div>
 </div>
+
 
 <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -161,6 +221,7 @@ function formatMoney(amount) {
 // Function to update totals row
 function updateTotalsRow(totals) {
     $('#totalSalary').text(formatMoney(totals.salary));
+    $('#salaryWage').text(formatMoney(totals.salaryWage));
     $('#totalTax').text(formatMoney(totals.tax));
     $('#totalPhilhealth').text(formatMoney(totals.philhealth));
     $('#totalPreviousPhilhealth').text(formatMoney(totals.previous_philhealth));
@@ -169,6 +230,8 @@ function updateTotalsRow(totals) {
     $('#totalAbsent').text(formatMoney(totals.absent));
     $('#totalIncome').text(formatMoney(totals.income));
     $('#totalDeductions').text(formatMoney(totals.deductions));
+    $('#totalGross').text(formatMoney(totals.totalGross));
+    $('#totalDeduction').text(formatMoney(totals.totalDeduction));
     $('#totalNetPay').text(formatMoney(totals.net_pay));
 }
 
@@ -227,45 +290,53 @@ $(document).ready(function () {
                 // Initialize totals
                 let totals = {
                     salary: 0,
-                    tax: 0,
-                    philhealth: 0,
-                    previous_philhealth: 0,
-                    sss: 0,
-                    late: 0,
+                    salaryWage: 0,
                     absent: 0,
+                    late: 0,
                     income: 0,
                     deductions: 0,
+                    totalGross: 0,
+                    sss: 0,
+                    philhealth: 0,
+                    tax: 0,
+                    previous_philhealth: 0,
+                    totalDeduction: 0,
                     net_pay: 0
                 };
                 
                 response.employees.forEach((emp, i) => {
                     // Add to totals
                     totals.salary += parseFloat(emp.salary) || 0;
-                    totals.tax += parseFloat(emp.tax_deduction) || 0;
-                    totals.philhealth += parseFloat(emp.philhealth) || 0;
-                    totals.previous_philhealth += parseFloat(emp.previous_philhealth) || 0;
-                    totals.sss += parseFloat(emp.sss) || 0;
-                    totals.late += parseFloat(emp.late_amount) || 0;
+                    totals.salaryWage += parseFloat(emp.basic_salary_cutoff) || 0;
                     totals.absent += parseFloat(emp.absent_amount) || 0;
+                    totals.late += parseFloat(emp.late_amount) || 0;
                     totals.income += parseFloat(emp.income) || 0;
                     totals.deductions += parseFloat(emp.other_deductions) || 0;
+                    totals.totalGross += parseFloat(emp.total_gross_amount) || 0;
+                    totals.sss += parseFloat(emp.sss) || 0;
+                    totals.philhealth += parseFloat(emp.philhealth) || 0;
+                    totals.tax += parseFloat(emp.tax_deduction) || 0;
+                    totals.previous_philhealth += parseFloat(emp.previous_philhealth) || 0;
+                    totals.totalDeduction += parseFloat(emp.total_deductions) || 0;
                     totals.net_pay += parseFloat(emp.net_salary) || 0;
                 
                 const row = $(`
                     <tr class="employee-row" style="cursor: pointer;" data-employee='${JSON.stringify(emp)}' title="Click to view detailed breakdown">
                     <td>${i + 1}</td>
                     <td>${emp.fullname}</td>
-                    <td>${emp.position}</td>
-                    <td>₱ ${formatMoney(emp.salary)}</td>
-                    <td>₱ ${formatMoney(emp.tax_deduction)}</td>
-                    <td>₱ ${formatMoney(emp.philhealth)}</td>
-                    <td>₱ ${formatMoney(emp.previous_philhealth)}</td>
-                    <td>₱ ${formatMoney(emp.sss)}</td>
-                    <td>₱ ${formatMoney(emp.late_amount)}</td>
-                    <td>₱ ${formatMoney(emp.absent_amount)}</td>
-                    <td>₱ ${formatMoney(emp.income)}</td>
-                    <td>₱ ${formatMoney(emp.other_deductions)}</td>
-                    <td>₱ ${formatMoney(emp.net_salary)}</td>
+                    <td>${formatMoney(emp.salary)}</td>
+                    <td>${formatMoney(emp.basic_salary_cutoff)}</td>
+                    <td>${formatMoney(emp.absent_amount)}</td>
+                    <td>${formatMoney(emp.late_amount)}</td>
+                    <td>${formatMoney(emp.income)}</td>
+                    <td>${formatMoney(emp.other_deductions)}</td>
+                    <td>${formatMoney(emp.total_gross_amount)}</td>
+                    <td>${formatMoney(emp.sss)}</td>
+                    <td>${formatMoney(emp.philhealth)}</td>
+                    <td>${formatMoney(emp.tax_deduction)}</td>
+                    <td>${formatMoney(emp.previous_philhealth)}</td>
+                    <td>${formatMoney(emp.total_deductions)}</td>
+                    <td>${formatMoney(emp.net_salary)}</td>
                     </tr>
                 `);
                 
@@ -289,8 +360,19 @@ $(document).ready(function () {
                 tbody.append('<tr><td colspan="12" class="text-center text-muted">No employees found.</td></tr>');
                 // Reset totals to zero
                 updateTotalsRow({
-                    salary: 0, tax: 0, philhealth: 0, previous_philhealth: 0,
-                    sss: 0, late: 0, absent: 0, income: 0, deductions: 0, net_pay: 0
+                    salary: 0,
+                    salaryWage: 0,
+                    absent: 0,
+                    late: 0,
+                    income: 0,
+                    deductions: 0,
+                    totalGross: 0,
+                    sss: 0,
+                    philhealth: 0,
+                    tax: 0,
+                    previous_philhealth: 0,
+                    totalDeduction: 0,
+                    net_pay: 0
                 });
             }
         },
@@ -342,13 +424,17 @@ function showEmployeeBreakdown(employee) {
     // Populate employee information
     $('#modalEmployeeName').text(employee.fullname);
     $('#modalEmployeePosition').text(employee.position);
+    $('#modalTaxDeclaration').text(employee.tax_declaration);
+    $('#modalHasPhilhealth').text(employee.has_philhealth);
     $('#modalEmployeeSalary').text(formatMoney(employee.salary));
-    $('#modalTotalIncome').text(formatMoney(employee.income));
+
+    $('#modalSalaryWage').text(formatMoney(employee.basic_salary_cutoff));
+    $('#modalTotalGross').text(formatMoney(employee.total_gross_amount));
     $('#modalTotalDeductions').text(formatMoney(employee.total_deductions));
     $('#modalNetPay').text(formatMoney(employee.net_salary));
     
-    // Populate income breakdown
-    const incomeBreakdown = $('#modalIncomeBreakdown');
+    // Adjustment Incomes
+    const incomeBreakdown = $('#modalAdjustmentIncomes');
     incomeBreakdown.empty();
     
     if (employee.incomes && employee.incomes.length > 0) {
@@ -357,82 +443,106 @@ function showEmployeeBreakdown(employee) {
             incomeBreakdown.append(`
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                     <span class="text-success">${income.name}${details}</span>
-                    <span class="text-success fw-bold">₱${formatMoney(income.amount)}</span>
+                    <span class="text-success text-bold">₱${formatMoney(income.amount)}</span>
                 </div>
             `);
         });
     } else {
         incomeBreakdown.append('<p class="text-muted">No additional income</p>');
     }
+
+    // Adjustment Deductions
+    const adjustmentDeductionBreakdown = $('#modalAdjustmentDeductions');
+    adjustmentDeductionBreakdown.empty();
     
-    // Populate deductions breakdown
-    const deductionsBreakdown = $('#modalDeductionsBreakdown');
-    deductionsBreakdown.empty();
-    
-    // Add fixed deductions
-    if (employee.tax_deduction && parseFloat(employee.tax_deduction) > 0) {
-        deductionsBreakdown.append(`
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                <span class="text-danger">TAX</span>
-                <span class="text-danger fw-bold">₱${formatMoney(employee.tax_deduction)}</span>
-            </div>
-        `);
-    }
-    
-    if (employee.philhealth && parseFloat(employee.philhealth) > 0) {
-        deductionsBreakdown.append(`
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                <span class="text-danger">Philhealth</span>
-                <span class="text-danger fw-bold">₱${formatMoney(employee.philhealth)}</span>
-            </div>
-        `);
-    }
-    
-    if (employee.sss && parseFloat(employee.sss) > 0) {
-        deductionsBreakdown.append(`
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                <span class="text-danger">SSS</span>
-                <span class="text-danger fw-bold">₱${formatMoney(employee.sss)}</span>
-            </div>
-        `);
-    }
-    
-    if (employee.late_amount && parseFloat(employee.late_amount) > 0) {
-        const lateDetails = employee.late_minutes ? ` (${employee.late_minutes} minutes)` : '';
-        deductionsBreakdown.append(`
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                <span class="text-danger">Late${lateDetails}</span>
-                <span class="text-danger fw-bold">₱${formatMoney(employee.late_amount)}</span>
-            </div>
-        `);
-    }
-    
-    if (employee.absent_amount && parseFloat(employee.absent_amount) > 0) {
-        const absentDetails = employee.absent_minutes ? ` (${employee.absent_minutes} days)` : '';
-        deductionsBreakdown.append(`
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                <span class="text-danger">Absent${absentDetails}</span>
-                <span class="text-danger fw-bold">₱${formatMoney(employee.absent_amount)}</span>
-            </div>
-        `);
-    }
-    
-    // Add dynamic deductions
     if (employee.deductions && employee.deductions.length > 0) {
         employee.deductions.forEach(deduction => {
             const details = deduction.details ? ` (${deduction.details})` : '';
-            deductionsBreakdown.append(`
+            adjustmentDeductionBreakdown.append(`
                 <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                     <span class="text-danger">${deduction.name}${details}</span>
-                    <span class="text-danger fw-bold">₱${formatMoney(deduction.amount)}</span>
+                    <span class="text-danger text-bold">₱${formatMoney(deduction.amount)}</span>
                 </div>
             `);
         });
+    } else {
+        adjustmentDeductionBreakdown.append('<p class="text-muted">No adjustment deductions</p>');
+    }
+    
+    // Deductions Breakdown
+    const deductionsBreakdown = $('#modalDeductionsBreakdown');
+    deductionsBreakdown.empty();
+    
+    let hasFixedDeductions = false;
+
+    if (employee.tax_deduction && parseFloat(employee.tax_deduction) > 0) {
+        hasFixedDeductions = true;
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">TAX</span>
+                <span class="text-danger text-bold">₱${formatMoney(employee.tax_deduction)}</span>
+            </div>
+        `);
+    }
+    if (employee.philhealth && parseFloat(employee.philhealth) > 0) {
+        hasFixedDeductions = true;
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Philhealth</span>
+                <span class="text-danger text-bold">₱${formatMoney(employee.philhealth)}</span>
+            </div>
+        `);
+    }
+    if (employee.sss && parseFloat(employee.sss) > 0) {
+        hasFixedDeductions = true;
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">SSS</span>
+                <span class="text-danger text-bold">₱${formatMoney(employee.sss)}</span>
+            </div>
+        `);
+    }
+
+    if (!hasFixedDeductions) {
+        deductionsBreakdown.append('<p class="text-muted">No standard deductions</p>');
+    }
+
+    // Attendance Breakdown (Late & Absent)
+    const attendanceBreakdown = $('#modalLateAbsent');
+    attendanceBreakdown.empty();
+
+    let hasAttendanceDeductions = false;
+
+    if (employee.late_amount && parseFloat(employee.late_amount) > 0) {
+        hasAttendanceDeductions = true;
+        const lateDetails = employee.late_minutes ? ` (${employee.late_minutes} minutes)` : '';
+        attendanceBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Late${lateDetails}</span>
+                <span class="text-danger text-bold">₱${formatMoney(employee.late_amount)}</span>
+            </div>
+        `);
+    }
+
+    if (employee.absent_amount && parseFloat(employee.absent_amount) > 0) {
+        hasAttendanceDeductions = true;
+        const absentDetails = employee.absent_days ? ` (${employee.absent_days} days)` : '';
+        attendanceBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Absent${absentDetails}</span>
+                <span class="text-danger text-bold">₱${formatMoney(employee.absent_amount)}</span>
+            </div>
+        `);
+    }
+
+    if (!hasAttendanceDeductions) {
+        attendanceBreakdown.append('<p class="text-muted">No late or absent deductions</p>');
     }
     
     // Show the modal
     $('#employeeBreakdownModal').modal('show');
 }
+
 
 $('#approvePayrollBtn').click(function () {
     let data = {

@@ -505,74 +505,38 @@ def batch_data(request):
     for assignment in assignments:
         employee = assignment.employee
 
+        # Adjustment Deductions
+        other_deductions = Adjustment.objects.filter(
+            employee=employee,
+            type="Deduction",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        ).exclude(
+            Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth")
+        )
+        if url_assigned_office:
+            other_deductions = other_deductions.filter(assigned_office=url_assigned_office)
+        total_other_deductions = other_deductions.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+        # Adjustment Incomes
+        incomes = Adjustment.objects.filter(
+            employee=employee,
+            type="Income",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        if url_assigned_office:
+            incomes = incomes.filter(assigned_office=url_assigned_office)
+        total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
         # Base salary
         basic_salary = employee.salary
         basic_salary_annual = basic_salary * 12
         basic_salary_cutoff = basic_salary / 2
-
-        # Tax - use TAX adjustment as percentage for salary-based computation
-        # tax_adjustments = Adjustment.objects.filter(
-        #     employee=employee,
-        #     name="TAX",
-        #     month=cutoff_month,
-        #     cutoff=cutoff,
-        #     cutoff_year=cutoff_year,
-        #     status__in=["Pending", "Approved", "Credited"]
-        # )
-        # if url_assigned_office:
-        #     tax_adjustments = tax_adjustments.filter(assigned_office=url_assigned_office)
-        # tax_percentage = tax_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-        
-        # TAX DEDUCTION 
-        if (employee.tax_declaration == "yes"):
-                tax_deduction = Decimal('0.00')
-        else:
-            tax_deduction = basic_salary_cutoff * Decimal('0.03') # TAX
-
-        # Philhealth - fetch from Philhealth adjustments
-        # philhealth_adjustments = Adjustment.objects.filter(
-        #     employee=employee,
-        #     name="Philhealth",
-        #     month=cutoff_month,
-        #     cutoff=cutoff,
-        #     cutoff_year=cutoff_year,
-        #     status__in=["Pending", "Approved", "Credited"]
-        # )
-        # if url_assigned_office:
-        #     philhealth_adjustments = philhealth_adjustments.filter(assigned_office=url_assigned_office)
-        # philhealth = philhealth_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-
-        # PHILHEALTH DEDUCTION 
-        if employee.has_philhealth == "yes":
-            philhealth = basic_salary_cutoff * Decimal('0.05')
-        else:
-            philhealth = Decimal('0')
-
-        # PREVIOUS PHILHEALTH
-        philhealth_previous = Adjustment.objects.filter(
-            employee=employee,
-            name__icontains="Philhealth",  # Matches any name containing "Philhealth"
-            month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year,
-            status__in=["Pending", "Approved", "Credited"]
-        )
-        if url_assigned_office:
-            philhealth_previous = philhealth_previous.filter(assigned_office=url_assigned_office)
-        additional_philhealth = philhealth_previous.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-
-        # SSS - fetch from SSS adjustments
-        sss_adjustments = Adjustment.objects.filter(
-            employee=employee,
-            name="SSS",
-            month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year,
-            status__in=["Pending", "Approved", "Credited"]
-        )
-        if url_assigned_office:
-            sss_adjustments = sss_adjustments.filter(assigned_office=url_assigned_office)
-        sss = sss_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Late adjustments
         late_adjustments = Adjustment.objects.filter(
@@ -603,39 +567,71 @@ def batch_data(request):
         absent_amt_total = absent_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         absent_min_total = absent_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
 
-        # Other deductions
-        other_deductions = Adjustment.objects.filter(
-            employee=employee,
-            type="Deduction",
-            month=cutoff_month,
-            cutoff=cutoff,
-            cutoff_year=cutoff_year,
-            status__in=["Pending", "Approved", "Credited"]
-        ).exclude(name__in=["Late", "Absent", "TAX", "Philhealth", "SSS"])
-        if url_assigned_office:
-            other_deductions = other_deductions.filter(assigned_office=url_assigned_office)
-        total_other_deductions = other_deductions.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        # Get detailed incomes and deductions for breakdown
+        detailed_incomes = list(incomes.values('name', 'amount', 'details'))
+        detailed_deductions = list(other_deductions.values('name', 'amount', 'details'))
 
-        # Incomes
-        incomes = Adjustment.objects.filter(
+        # Total Gross Amount
+        # Convert to Decimal Sum
+        total_adjustment_deduction = (
+            other_deductions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        )
+
+        total_adjustment_income = (
+            incomes.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        )
+
+        total_adjustment_late = (
+            late_adjustments.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        )
+
+        total_adjustment_absent = (
+            absent_adjustments.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+        )
+
+        total_gross_amount = abs(basic_salary_cutoff - total_adjustment_income - total_adjustment_deduction - total_adjustment_late - total_adjustment_absent)
+
+        # TAX DEDUCTION 
+        if (employee.tax_declaration == "yes"):
+                tax_deduction = Decimal('0.00')
+        else:
+            tax_deduction = total_gross_amount * Decimal('0.03') # TAX
+
+        # PHILHEALTH DEDUCTION 
+        if employee.has_philhealth == "yes":
+            philhealth = total_gross_amount * Decimal('0.05')
+        else:
+            philhealth = Decimal('0')
+
+        # PREVIOUS PHILHEALTH
+        philhealth_previous = Adjustment.objects.filter(
             employee=employee,
-            type="Income",
+            name__icontains="Philhealth",  # Matches any name containing "Philhealth"
             month=cutoff_month,
             cutoff=cutoff,
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         )
         if url_assigned_office:
-            incomes = incomes.filter(assigned_office=url_assigned_office)
-        total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+            philhealth_previous = philhealth_previous.filter(assigned_office=url_assigned_office)
+        additional_philhealth = philhealth_previous.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
-        # Get detailed incomes and deductions for breakdown
-        detailed_incomes = list(incomes.values('name', 'amount', 'details'))
-        detailed_deductions = list(other_deductions.values('name', 'amount', 'details'))
+        # SSS - fetch from SSS adjustments
+        sss_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name="SSS",
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        if url_assigned_office:
+            sss_adjustments = sss_adjustments.filter(assigned_office=url_assigned_office)
+        sss = sss_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Final calculation
-        total_deductions = tax_deduction + philhealth + sss + late_amt_total + absent_amt_total + total_other_deductions
-        net_salary = basic_salary_cutoff - total_deductions + total_income
+        total_deductions = sss + philhealth + tax_deduction + additional_philhealth
+        net_salary = abs(total_gross_amount - total_deductions)
 
         # Check if the employee's previous batch has been submitted (for removed employees)
         previous_batch = assignment.previous_batch
@@ -666,7 +662,7 @@ def batch_data(request):
 
         # Build data
         emp_data = model_to_dict(employee, fields=[
-            'id', 'employee_number', 'fullname', 'position', 'salary', 'tax_declaration'
+            'id', 'employee_number', 'fullname', 'position', 'salary', 'tax_declaration', 'has_philhealth'
         ])
         emp_data['late_assigned'] = assignment.late_assigned
         emp_data['removed'] = assignment.removed
@@ -685,6 +681,7 @@ def batch_data(request):
         emp_data['other_deductions'] = f"{total_other_deductions:.2f}"
         emp_data['total_deductions'] = f"{total_deductions:.2f}"
         emp_data['income'] = f"{total_income:.2f}"
+        emp_data['total_gross_amount'] = f"{total_gross_amount:.2f}"
         emp_data['net_salary'] = f"{net_salary:.2f}"
         emp_data['incomes'] = detailed_incomes
         emp_data['deductions'] = detailed_deductions
