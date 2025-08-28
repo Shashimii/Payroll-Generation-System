@@ -1958,7 +1958,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const netAmountDue = totalGross - totalDeduction;
           const subjectPhilhealth = e.has_philhealth;
 
-          
+          console.log(e)
           // Insert Employee Data to Row Cells
           row.getCell('A').value = index + 1;
           row.getCell('B').value = fullname.first;
