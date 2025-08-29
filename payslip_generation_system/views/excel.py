@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.db import connection
 from django.http import JsonResponse
+from django.db.models import Q, Sum
 from datetime import datetime
 from payslip_generation_system.models import BatchAssignment, Adjustment  
 from decimal import Decimal
@@ -79,13 +80,65 @@ def data(request):
                 for adj in adjustments
             ]
 
+            # Adjustment Deductions 
+            adjustment_deductions = Adjustment.objects.filter(
+                employee=assignment.employee,
+                type="Deduction",
+                month=cutoff_month,
+                cutoff=cutoff,
+                cutoff_year=cutoff_year,
+            ).exclude(
+                Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth")
+            )
+
+            adjustment_income = Adjustment.objects.filter(
+                employee=assignment.employee,
+                type="Income",
+                month=cutoff_month,
+                cutoff=cutoff,
+                cutoff_year=cutoff_year,
+            )
+
+            # Late Adjustments
+            late_adjustments = Adjustment.objects.filter(
+                employee=assignment.employee,
+                name="Late",
+                month=cutoff_month,
+                cutoff=cutoff,
+                cutoff_year=cutoff_year
+            )
+
+            # Absent Adjustments
+            absent_adjustments = Adjustment.objects.filter(
+                employee=assignment.employee,
+                name="Absent",
+                month=cutoff_month,
+                cutoff=cutoff,
+                cutoff_year=cutoff_year
+            )
+
+            total_adjustment_deduction = (
+                adjustment_deductions.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+            )
+            total_adjustment_income = (
+                adjustment_income.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+            )
+            total_adjustment_late = (
+                late_adjustments.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+            )
+            total_adjustment_absent = (
+                absent_adjustments.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+            )
+
+            total_gross_amount = abs(basic_salary_cutoff - total_adjustment_late - total_adjustment_absent - total_adjustment_deduction + total_adjustment_income)
+
             # Tax
             if emp.tax_declaration == "no":
-                tax_amount = (basic_salary_cutoff * Decimal('0.03')).quantize(Decimal('0.01'))
+                tax_amount = (total_gross_amount * Decimal('0.03')).quantize(Decimal('0.01'))
 
             # Philhealth Current
             if emp.has_philhealth == "yes":
-                philhealth_current = (basic_salary_cutoff * Decimal('0.05')).quantize(Decimal('0.01'))
+                philhealth_current = (total_gross_amount * Decimal('0.05')).quantize(Decimal('0.01'))
 
             # Philhealth Previous
             philhealth_previous = sum(
@@ -93,13 +146,17 @@ def data(request):
                 Decimal('0.00')
             ).quantize(Decimal('0.01'))
 
-
             employees_data.append({
                 'employee_id': emp.id,
                 'fullname': emp.fullname,
                 'position': getattr(emp, 'position', ''),
                 'salary': float(getattr(emp, 'salary', 0)),
                 'tax_declaration': getattr(emp, 'tax_declaration', ''),
+                'absent': total_adjustment_absent,
+                'late': total_adjustment_late,
+                'adjustment_deductions': total_adjustment_deduction,
+                'adjustment_income': total_adjustment_income,
+                'total_gross': total_gross_amount,
                 'has_philhealth': getattr(emp, 'has_philhealth', ''),
                 'tax_amount': float(tax_amount.quantize(Decimal('0.01'))),
                 'philhealth_current': float(philhealth_current.quantize(Decimal('0.01'))),

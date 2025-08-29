@@ -1931,25 +1931,11 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const monthlyRate = Number(e.salary ? e.salary : '');
           const wages = computeWage(monthlyRate);
           const sworn = formatYN(e.tax_declaration);
-          const absence = e.adjustments.find(adj => adj.name === 'Absent' && adj.type === 'Deduction'); 
-          const late = e.adjustments.find(adj => adj.name === 'Late' && adj.type === 'Deduction'); 
-
-          const income = e.adjustments
-          .filter(adj => adj.type === 'Income')
-          .reduce((sum, adj) => sum + (adj.amount || 0), 0);
-
-          const deduction = e.adjustments
-          .filter(
-              adj => 
-              adj.type === 'Deduction' && 
-              adj.name != 'Absent' && 
-              adj.name != 'Late' && 
-              adj.name != 'SSS' && 
-              !adj.name.toLowerCase().includes('philhealth')
-            )
-            .reduce((sum, adj) => sum + (adj.amount || 0), 0);
-          
-          const totalGross = wages + (income || 0) - (absence?.amount || 0) - (late?.amount || 0);
+          const absence = e.absent;
+          const late = e.late;
+          const adjustment_deduction = e.adjustment_deductions;
+          const adjustment_income = e.adjustment_income;   
+          const totalGross = e.total_gross;
           const sss = e.adjustments.find(adj => adj.name === 'SSS' && adj.type === 'Deduction');
           const philhealthCurrent = e.philhealth_current;
           const tax = e.tax_amount;
@@ -1958,7 +1944,6 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const netAmountDue = totalGross - totalDeduction;
           const subjectPhilhealth = e.has_philhealth;
 
-          console.log(e)
           // Insert Employee Data to Row Cells
           row.getCell('A').value = index + 1;
           row.getCell('B').value = fullname.first;
@@ -1967,9 +1952,14 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           row.getCell('F').value = monthlyRate;
           row.getCell('G').value = sworn;
           row.getCell('H').value = wages;
-          row.getCell('I').value = absence?.amount || '-';
-          row.getCell('J').value = late?.amount || '-';
-          row.getCell('K').value = income || '-';
+          row.getCell('I').value = absence > 0 ? absence : '-';
+          row.getCell('J').value = late > 0 ? late : '-';
+          row.getCell('K').value =
+            adjustment_income > 0
+              ? adjustment_income
+              : adjustment_deduction > 0
+                ? `(${adjustment_deduction})`
+                : '-';
           row.getCell('L').value = totalGross;
           row.getCell('M').value = sss?.amount || '-';
           row.getCell('N').value = !philhealthCurrent ? '-' : philhealthCurrent;
@@ -2007,17 +1997,17 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
             cell.alignment = { vertical: 'middle'  };
           });
 
-          totalAbsence += absence?.amount || 0;
-          totalLate += late?.amount || 0;
-          totalIncome += income?.amount || 0;
-          totalWages += wages;
-          totalGrossAll += totalGross;
-          totalSSS += sss?.amount || 0;
-          totalPhilhealthCurrent += !philhealthCurrent ? 0 : philhealthCurrent;
-          totalPhilhealthPrevious += !philhealthPrevious ? 0 : philhealthPrevious;
-          totalTax += !tax ? 0 : tax;
-          totalDeductionAll += !totalDeduction ? 0 : totalDeduction;
-          totalNet += netAmountDue;
+          totalAbsence += Number(absence) > 0 ? Number(absence) : 0;
+          totalLate += Number(late) > 0 ? Number(late) : 0;
+          totalIncome += Number(adjustment_income) - Number(adjustment_deduction);
+          totalWages += Number(wages);
+          totalGrossAll += Number(totalGross);
+          totalSSS += Number(sss?.amount) || 0;
+          totalPhilhealthCurrent += Number(philhealthCurrent) || 0;
+          totalPhilhealthPrevious += Number(philhealthPrevious) || 0;
+          totalTax += Number(tax) || 0;
+          totalDeductionAll += Number(totalDeduction) || 0;
+          totalNet += Number(netAmountDue);
 
         });
 
