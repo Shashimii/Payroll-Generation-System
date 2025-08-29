@@ -24,7 +24,7 @@
 <div class="main-container">
     <div class="content">
         <div class="section-header">
-            <div>
+            <div class="hide-payslip-header">
                 <h2>Payslip</h2>
                 <p>Generated payslip based on the adjustments and deductions.</p>
             </div>
@@ -79,11 +79,23 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Basic Salary Gross ({{ selected_cutoff }} cutoff)</td>
+                                <td>Monthly Rate</td>
+                                <td>₱{{ monthly_rate|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Salaries Wages/Earned ({{ selected_cutoff }} cutoff)</td>
                                 <td>₱{{ basic_salary_cutoff|floatformat:2|intcomma }}</td>
                             </tr>
                             <tr>
-                                <td>Net Pay</td>
+                                <td>Total Gross Amount</td>
+                                <td>₱{{ total_gross|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Deductions</td>
+                                <td>₱{{ total_deductions|floatformat:2|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-bold">Net Amount Due</td>
                                 <td><b>₱{{ net_pay|floatformat:2|intcomma }}</b></td>
                             </tr>
                         </tbody>
@@ -98,17 +110,8 @@
                         <tbody>
                             <tr><td>TAX</td><td>₱{{ tax_deduction|floatformat:2|intcomma }}</td></tr>
                             <tr><td>Philhealth</td><td>₱{{ philhealth|floatformat:2|intcomma }}</td></tr>
-                            <tr><td>Late ({{ late_min_total }} minutes)</td><td>₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
-                            <tr><td>Absences ({{ absent_day_total }} days)</td><td>₱{{ absent_amt_total|floatformat:2|intcomma }}</td></tr>
-                            <tr><td>Adjustments 
-                                <ul>
-                                    {% for adjustment in all_adjustment_minus %}
-                                        <li>{{ adjustment.name }} - ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
-                                    {% empty %}
-                                        <li>No adjustments</li>
-                                    {% endfor %}
-                                </ul>
-                            </td><td>₱{{ total_adjustment_amount_minus|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>Previous Philhealth</td><td>₱{{ philhealth_previous|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>SSS</td><td>₱{{ sss|floatformat:2|intcomma }}</td></tr>
                             <tr><td><strong>Total Deductions</strong></td><td><strong>₱{{ total_deductions|floatformat:2|intcomma }}</strong></td></tr>
                         </tbody>
                     </table>
@@ -120,29 +123,41 @@
                             <tr><th colspan="2" class="text-center">Adjustments</th></tr>
                         </thead>
                         <tbody>
+                            <tr><td>Late ({{ late_min_total }} minutes)</td><td>-₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>Absences ({{ absent_day_total }} days)</td><td>-₱{{ absent_amt_total|floatformat:2|intcomma }}</td></tr>
                             <tr>
-                                <td> 
+                                <td>
+                                    Adjustments 
                                     <ul>
-                                        {% for adjustment in all_adjustment_plus %}
-                                            <li>{{ adjustment.name }}</li>
-                                        {% empty %}
+                                        {% if all_adjustment_minus or all_adjustment_plus %}
+                                            {% for adjustment in all_adjustment_minus %}
+                                                <li>{{ adjustment.name }} (₱{{ adjustment.amount|floatformat:2|intcomma }})</li>
+                                            {% endfor %}
+                                            {% for adjustment in all_adjustment_plus %}
+                                                <li>{{ adjustment.name }} (₱{{ adjustment.amount|floatformat:2|intcomma }})</li>
+                                            {% endfor %}
+                                        {% else %}
                                             <li>No adjustments</li>
-                                        {% endfor %}
+                                        {% endif %}
                                     </ul>
                                 </td>
-                                <td> 
-                                    <ul style='list-style-type: none; margin: 0; padding: 0;'>
-                                        {% for adjustment in all_adjustment_plus %}
-                                            <li> ₱{{ adjustment.amount|floatformat:2|intcomma }}</li>
-                                        {% empty %}
-                                            <li>No adjustments</li>
-                                        {% endfor %}
-                                    </ul>
+                                <td>
+                                    {% if total_adjustment_amount_minus or total_adjustment_amount_plus %}
+                                        {% if total_adjustment_amount_minus %}
+                                            -₱{{total_adjustment_amount_minus|floatformat:2|intcomma }}
+                                        {% endif %}
+                                        {% if total_adjustment_amount_plus %}
+                                            {% if total_adjustment_amount_minus %} + {% endif %}
+                                            +₱{{total_adjustment_amount_plus|floatformat:2|intcomma }}
+                                        {% endif %}
+                                    {% else %}
+                                        ₱ 0.00
+                                    {% endif %}
                                 </td>
                             </tr>
                             <tr>
                                 <td>
-                                    <strong>Total Adjustment</strong></td><td><strong>₱{{ total_add|floatformat:2|intcomma }}</strong>
+                                    <strong>Total Gross Amount</strong></td><td><strong>₱{{ total_gross|floatformat:2|intcomma }}</strong>
                                 </td>
                             </tr>
                         </tbody>
@@ -151,13 +166,13 @@
             </div>
 
             <div class="payslip-disclaimer">
-                <p><strong>Disclaimer:</strong> This payslip is computer-generated and does not require a signature.</p>
-                <p>The details presented are provisional and intended for internal review purposes only.</p>
-                <p>Final figures are subject to verification and may be revised accordingly.</p>
+                <p><strong>Notice:</strong> This payslip is an official document generated by the system and does not require a physical signature.</p>
+                <p>The details presented herein are accurate records of your pay and deductions based on company payroll data.</p>
+                <p>This document is valid for all official and personal reference purposes. For any inquiries, please contact the HR Department.</p>
             </div>
 
             <p class="payslip-footer-note">
-                Generated on DENR NCR PayGeS. For any inquiries, please contact the HR Department.
+                Generated on DENR NCR Payslip Generation System @ {{ current_month }} {{ current_year }}. 
             </p>
         </div>
     </div>
@@ -336,55 +351,58 @@ ul li {
 
 /* Print View */
 @media print {
-    @page {
-        size: A5 landscape; /* or 'auto' for browser to decide best fit */
-        margin: 0.5rem;
-    }
+  @page {
+    size: A5 landscape; /* Fill A5 paper */
+    margin: 0; /* Remove margins to stretch */
+  }
 
-		*, *::before, *::after {
-			background: transparent !important;
-			background-image: none !important;
-		}
+  *, *::before, *::after {
+    background: transparent !important;
+    background-image: none !important;
+  }
 
-    .section-header {
-        display: none;
-    }
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
 
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 
-    html, body {
-        width: 100%;
-        margin: 0;
-        padding: 0;
-    }
+  .payslip-container {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    margin: 0;
+    padding: 0.5rem; /* optional inner spacing */
+    box-sizing: border-box;
+  }
 
-		body {
-			background: #fff !important;
-			-webkit-print-color-adjust: auto;
-			print-color-adjust: economy;
-		}
+  .table, .table td, .table th {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
 
-    .payslip-container {
-        transform: scale(0.85);
-        transform-origin: top center;
-        width: 100%;
-        max-width: 100%;
-        padding: 0;
-        box-sizing: border-box;
-    }
+  .hide-payslip-header {
+    display: none;
+  }
 
-    .table, .table td, .table th {
-        font-size: 10px; /* smaller text */
-        padding: 4px 6px;
-    }
+  h2 {
+    font-size: 16px;
+  }
 
-    h2 {
-        font-size: 16px;
-    }
-
-    .no-print, .btn, nav, footer {
-        display: none !important;
-    }
+  .no-print, .btn, nav, footer {
+    display: none !important;
+  }
 }
+
+
 
 </style>
 

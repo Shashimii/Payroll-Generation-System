@@ -153,42 +153,46 @@ def generate(request):
             else:
                 messages.warning(request, 'Payslip in process.')
                 return redirect('payslip_create')
-
-
+            
         # Basic Salary
         basic_salary = employee.salary
         # Annual Salary
         basic_salary_annual = basic_salary * 12
         # Cutoff Salary
-        basic_salary_cutoff = basic_salary / 2  
+        basic_salary_cutoff = basic_salary / 2 
 
-        # Deduction Conditions
-        # if (employee.tax_declaration == "yes"):
-        #         tax_deduction = Decimal('0.00')
-        # else:
-        #     if (basic_salary_annual >= 250000):
-        #         tax_deduction = basic_salary_cutoff * Decimal('0.027')
-        #     else:
-        #         tax_deduction = basic_salary_cutoff * Decimal('0.00')
-        
-        # TAX DEDUCTION
-        if (employee.tax_declaration == "yes"):
-                tax_deduction = Decimal('0.00')
-        else:
-            tax_deduction = basic_salary_cutoff * Decimal('0.03') # TAX
-        
-        # PHILHEALTH DEDUCTION 
-        if employee.has_philhealth == "yes":
-            philhealth = basic_salary_cutoff * Decimal('0.05')
-        else:
-            philhealth = Decimal('0')
+        # Adjustment Deduction
+        all_adjustment_minus = Adjustment.objects.filter(
+            employee=employee,
+            type="Deduction",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            cutoff_year=current_year,
+            status__in=["Pending", "Approved", "Credited"]
+            # Adjusted condition to match selected month
+        ).exclude(
+            Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth")
+        )
+
+        # Adjustment Income
+        all_adjustment_plus = Adjustment.objects.filter(
+            employee=employee,
+            type="Income",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            cutoff_year=current_year,
+            status__in=["Pending", "Approved", "Credited"]
+            # Adjusted condition to match selected month
+        )
 
         # LATE DEDUCTION
         late_adjustments = Adjustment.objects.filter(
             employee=employee,
             name="Late",
+            type="Deduction",
             month=selected_month,
             cutoff=selected_cutoff,
+            cutoff_year=current_year,
             status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         )
@@ -197,69 +201,96 @@ def generate(request):
         absent_adjustments = Adjustment.objects.filter(
             employee=employee,
             name="Absent",
+            type="Deduction",
             month=selected_month,
             cutoff=selected_cutoff,
+            cutoff_year=current_year,
             status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         )
-        
+
+
+        # Total Adjustment Deduction & Income
+        total_adjustment_amount_minus = all_adjustment_minus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        total_adjustment_amount_plus = all_adjustment_plus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
         # Fomat the Late and Absent amount and minutes/days
         late_amt_total = late_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         late_min_total = late_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
         absent_amt_total = absent_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         absent_day_total = absent_adjustments.aggregate(Sum('details'))['details__sum'] or Decimal('0.00')
 
-        # Format the salary period
-        salary_period = f"{selected_month} {current_year} - {selected_cutoff} Cutoff"
+        # Total Gross Amount
+        total_gross_amount = abs(basic_salary_cutoff - late_amt_total - absent_amt_total - total_adjustment_amount_minus + total_adjustment_amount_plus) 
+
+        # TAX DEDUCTION
+        if (employee.tax_declaration == "yes"):
+                tax_deduction = Decimal('0.00')
+        else:
+            tax_deduction = total_gross_amount * Decimal('0.03') # TAX
         
-        # OTHER ADJUSTMENTS DEDUCTIONS
-        all_adjustment_minus = Adjustment.objects.filter(
+        # PHILHEALTH DEDUCTION 
+        if employee.has_philhealth == "yes":
+            philhealth = total_gross_amount * Decimal('0.05')
+        else:
+            philhealth = Decimal('0')
+        
+        # PHILHEALTH PREVIOUS
+        philhealth_previous_queryset = Adjustment.objects.filter(
             employee=employee,
+            name__icontains="Philhealth",  # Matches any name containing "Philhealth"
             type="Deduction",
             month=selected_month,
             cutoff=selected_cutoff,
+            cutoff_year=current_year,
             status__in=["Pending", "Approved", "Credited"]
-            # Adjusted condition to match selected month
-        ).exclude(name__in=["Late", "Absent"])
-        
-        # TOTAL DEDUCTIONS
-        total_adjustment_amount_minus = all_adjustment_minus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-        total_deductions = tax_deduction + philhealth + late_amt_total + absent_amt_total + total_adjustment_amount_minus
+        )
 
-        # OTHER ADJUSTMENTS INCOME
-        all_adjustment_plus = Adjustment.objects.filter(
+        philhealth_previous = philhealth_previous_queryset.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
+        # SSS
+        sss_queryset = Adjustment.objects.filter(
             employee=employee,
-            type="Income",
+            name="SSS",
+            type="Deduction",
             month=selected_month,
             cutoff=selected_cutoff,
+            cutoff_year=current_year,
             status__in=["Pending", "Approved", "Credited"]
-            # Adjusted condition to match selected month
         )
+
+        sss = sss_queryset.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+    
+        # Format the salary period
+        salary_period = f"{selected_month} {current_year} - {selected_cutoff} Cutoff"
         
-        # TOTAL ADJUSTMENTS INCOME
-        total_adjustment_amount_plus = all_adjustment_plus.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-        total_add = total_adjustment_amount_plus
         
+        # TOTAL DEDUCTIONS
+        total_deductions = tax_deduction + philhealth + philhealth_previous + sss
+
         context = {
             'employee_no': employee.employee_number,
             'employee_name': employee.fullname,
             'position': employee.position,
-            'salary_period': salary_period,
-            'selected_cutoff': selected_cutoff,
+            'monthly_rate': employee.salary,
             'basic_salary_cutoff': basic_salary_cutoff,
-            'tax_deduction': tax_deduction,
-            'philhealth': philhealth,
-            'late_amt_total': late_amt_total,
-            'late_min_total': late_min_total,
             'absent_amt_total': absent_amt_total,
             'absent_day_total': absent_day_total,
-            'total_adjustment_amount_minus': total_adjustment_amount_minus,
+            'late_amt_total': late_amt_total,
+            'late_min_total': late_min_total,
             'all_adjustment_minus': all_adjustment_minus,
-            'total_adjustment_amount_plus': total_adjustment_amount_plus,
+            'total_adjustment_amount_minus': total_adjustment_amount_minus,
             'all_adjustment_plus': all_adjustment_plus,
+            'total_adjustment_amount_plus': total_adjustment_amount_plus,
+            'total_gross': total_gross_amount,
+            'sss': sss,
+            'philhealth': philhealth,
+            'tax_deduction': tax_deduction,
+            'philhealth_previous': philhealth_previous,
             'total_deductions' : total_deductions,
-            'total_add': total_add,
-            'net_pay': basic_salary_cutoff - total_deductions + total_add,
+            'net_pay': total_gross_amount - total_deductions,
+            'salary_period': salary_period,
+            'selected_cutoff': selected_cutoff,
             'month_choices': month_choices,
             'current_month': current_month,
             'current_year' : current_year,
