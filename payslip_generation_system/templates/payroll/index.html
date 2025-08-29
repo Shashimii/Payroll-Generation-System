@@ -939,6 +939,13 @@ function showAdjustment(employeeId, cutoff, cutoffMonth, cutoffYear, batchNumber
   sss_edit_id = null;
   tax_edit_id = null;
 
+  // Fixed the Button being disabled even the Adjustment is not Saved not until Refesh
+  $('#addAdjLateRowBtn').prop('disabled', false);
+  $('#addAdjAbsentRowBtn').prop('disabled', false);
+  $('#addAdjPhilhealthRowBtn').prop('disabled', false);
+  $('#addAdjSSSRowBtn').prop('disabled', false);
+  $('#addAdjTAXRowBtn').prop('disabled', false);
+
   // Get Employee Info
   $.ajax({
     url: `/employee/show/${employeeId}/`,
