@@ -394,7 +394,7 @@ $(document).ready(function () {
             csrfmiddlewaretoken: '{{ csrf_token }}',
         };
 
-        console.log(formData) // Debug
+        // console.log(formData) // Debug
 
         $.ajax({
             url: "{% url 'payroll_reject' %}",
@@ -554,7 +554,7 @@ $('#approvePayrollBtn').click(function () {
         csrfmiddlewaretoken: '{{ csrf_token }}'
     };
 
-    console.log("Payroll approval data:", data); // Debug 
+    // console.log("Payroll approval data:", data); // Debug 
 
     Swal.fire({
         title: 'Approve Payroll?',

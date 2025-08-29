@@ -351,7 +351,7 @@ $(document).ready(function () {
       csrfmiddlewaretoken: '{{ csrf_token }}',
     };
 
-    console.log('Sending data:', data);
+    // console.log('Sending data:', data);
     $.ajax({
       type: 'POST',
       url: `/payroll/adjustment/create/${employeeId}/`,
@@ -375,7 +375,7 @@ $(document).ready(function () {
           text: 'Failed to submit adjustment.',
           confirmButtonColor: '#dc3545'
         });
-        console.log(xhr.responseText);
+        // console.log(xhr.responseText);
       }
     });
   });
@@ -387,7 +387,7 @@ const submitGenerateForm = (btn) => {
     const cutoff = $(btn).data('cutoff');
     const year = $(btn).data('year');
 
-    console.log(month, cutoff, year + 'shashimii@08092025'); // deubg - shashimii@08092025
+    // console.log(month, cutoff, year + 'shashimii@08092025'); // deubg - shashimii@08092025
 
     $.ajax({
         type: 'POST',
