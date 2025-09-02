@@ -130,6 +130,27 @@ def data(request):
                 absent_adjustments.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
             )
 
+
+            # Clean the Late/Absent minutes/days then sum it
+            lateAdjMinutes = late_adjustments.values_list("details", flat=True)
+            absentAdjDays = absent_adjustments.values_list("details", flat=True)
+
+            # late minutes
+            total_adjustment_late_minutes = 0
+            for a in lateAdjMinutes:
+                try:
+                    total_adjustment_late_minutes += int(float(a))
+                except (TypeError, ValueError):
+                    continue
+                
+            # Absent days
+            total_adjustment_absent_days = 0
+            for a in absentAdjDays:
+                try:
+                    total_adjustment_absent_days += int(float(a))
+                except (TypeError, ValueError):
+                    continue
+
             total_gross_amount = abs(basic_salary_cutoff - total_adjustment_late - total_adjustment_absent - total_adjustment_deduction + total_adjustment_income)
 
             # Tax
@@ -158,6 +179,8 @@ def data(request):
                 'adjustment_income': total_adjustment_income,
                 'total_gross': total_gross_amount,
                 'has_philhealth': getattr(emp, 'has_philhealth', ''),
+                'late_minutes': total_adjustment_late_minutes,
+                'absent_days': total_adjustment_absent_days,
                 'tax_amount': float(tax_amount.quantize(Decimal('0.01'))),
                 'philhealth_current': float(philhealth_current.quantize(Decimal('0.01'))),
                 'philhealth_previous': float(philhealth_previous.quantize(Decimal('0.01'))),

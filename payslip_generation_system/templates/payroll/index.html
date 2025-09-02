@@ -1724,6 +1724,12 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           color: { argb: '9c5700' }
         }
 
+        const redFont = {
+          bold: true, 
+          size: 9, 
+          color: { argb: 'FF0000' }
+        };
+
         // General Payroll information
 
         // Merge
@@ -1950,6 +1956,8 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const totalDeduction = (sss?.amount || 0) + philhealthCurrent + tax + philhealthPrevious;
           const netAmountDue = totalGross - totalDeduction;
           const subjectPhilhealth = e.has_philhealth;
+          const absentDays = e.absent_days;
+          const lateMinutes = e.late_minutes;
 
           // Insert Employee Data to Row Cells
           row.getCell('A').value = index + 1;
@@ -1975,13 +1983,17 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           row.getCell('R').value = !totalDeduction ? '-' : totalDeduction;
           row.getCell('S').value = netAmountDue;
           row.getCell('T').value = index + 1;
+          row.getCell('W').value = absentDays || '';
+          row.getCell('W').font = redFont;
           row.getCell('W').fill = yellowFill;
+          row.getCell('X').value = lateMinutes || '';
+          row.getCell('X').font = redFont;
           row.getCell('X').fill = yellowFill;
           row.getCell('Y').value = subjectPhilhealth === 'yes' ? 'Y' : 'N';
           row.getCell('Y').font = brownFont;
           row.getCell('Y').fill = brownFill;
 
-          ['A', 'E', 'G', 'T', 'Y'].forEach(col => {
+          ['A', 'E', 'G', 'T', 'W', 'X', 'Y'].forEach(col => {
             const cell = row.getCell(col);
             cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true  };
           });
