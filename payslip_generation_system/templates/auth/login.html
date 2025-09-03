@@ -14,7 +14,7 @@
           </div>
           <!-- Login Form Section -->
           <div class="form-container">
-            <div style='text-align:center'>
+            <div class="logo-container" style='text-align:center'>
               <img src="{% static 'assets/denr-logo.png' %}" width='150px' height='150px' alt="Logo" class="brand-image" />
             </div>
             <p style="text-align: center; color: green">Department of Environment and Natural Resources<br><span style="color: black">National Capital Region</span></p>
@@ -36,6 +36,25 @@
     </div>
   </div>
 </body>
+
+<style>
+
+  @media (max-width: 768px) {
+    .image-container {
+      display: none;
+    }
+    
+    .brand-image {
+      width: 100px;
+      height: 100px;
+    }
+
+    .logo-container {
+      margin-bottom: 1rem;
+    }
+  }
+
+</style>
 
 <script>
   function togglePasswordVisibility() {
