@@ -3,29 +3,53 @@
 {% block layout_content %}
 
 <div class="row">
-    <div class="col-12">
-        <h3><i class="fas fa-exclamation-circle text-warning"></i> Pending Payroll Batches/Clusters</h3>
-        <ul class="list-group mt-3" id="pendingBatchList">
-            <li class="list-group-item text-center text-muted">Loading...</li>
-        </ul>
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <!-- Left side: Heading -->
+      <h3 class="mb-0">
+        <i class="fas fa-exclamation-circle text-warning"></i> 
+        Pending Payroll Batches/Clusters
+      </h3>
+
+      <!-- Right side: Search bar -->
+      <div class="position-relative mt-2 mt-md-0" style="max-width: 300px; flex: 1 1 auto;">
+        <input 
+          type="text" 
+          id="batchSearch" 
+          class="form-control ps-5" 
+          placeholder="Search batches, office..."
+          aria-label="Search batches office"
+        >
+        <!-- Search Icon -->
+        <i class="fas fa-search text-muted search-icon"></i>
+      </div>
     </div>
+
+    <ul class="list-group mt-3" id="pendingBatchList">
+      <li class="list-group-item text-center text-muted">Loading...</li>
+    </ul>
+  </div>
 </div>
+
 
 <script>
 $(document).ready(function () {
+  // Function to fetch and render batches
+  function fetchBatches(search = "") {
     $.ajax({
-        url: '/payroll/data',
-        method: 'GET',
-        success: function (response) {
+      url: '/payroll/data',
+      method: 'GET',
+      data: { search: search }, // send search query
+      success: function (response) {
         const list = $('#pendingBatchList');
         list.empty();
 
         if (response.batches.length === 0) {
-            list.append('<li class="list-group-item text-center text-muted">No pending payroll batches/clusters.</li>');
+          list.append('<li class="list-group-item text-center text-muted">No pending payroll batches/clusters.</li>');
         } else {
-            response.batches.forEach(function (batch) {
+          response.batches.forEach(function (batch) {
             list.append(`
-            <li 
+              <li 
                 class="list-group-item d-flex justify-content-between align-items-center pending-batch-item"
                 data-cutoff="${batch.cutoff}" 
                 data-month="${batch.cutoff_month}" 
@@ -33,61 +57,102 @@ $(document).ready(function () {
                 data-batch="${batch.batch_number}"
                 data-batch-name="${batch.batch_name || 'Batch ' + batch.batch_number}"
                 data-assigned-office="${batch.assigned_office || ''}"
-            >
+              >
                 <div class="batch-text">
-                <span>${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span><br>
-                <strong>${batch.batch_name || 'Batch ' + batch.batch_number}</strong><br>
-                <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
+                  <span class="d-block fw-medium">${batch.cutoff_month} ${batch.cutoff} Cutoff ${batch.cutoff_year}</span>
+                  <strong class="d-block">${batch.batch_name || 'Batch ' + batch.batch_number}</strong>
+                  <small class="text-muted">${batch.formatted_office_name || 'N/A'}</small>
                 </div>
                 <div class="batch-status">
-                  ${batch.approval_status ? 
-                    `<span class="badge bg-success">${batch.approval_status}</span>` : 
-                    `<span class="badge bg-warning text-dark">Pending</span>`
-                  }
+                  ${batch.approval_status 
+                    ? `<span class="badge bg-success">${batch.approval_status}</span>` 
+                    : `<span class="badge bg-warning text-dark">Pending</span>`}
                 </div>
-            </li>
+              </li>
             `);
-            });
+          });
         }
-        },
-        error: function () {
-          $('#pendingBatchList').html('<li class="list-group-item text-center text-danger">Error loading data.</li>');
-        }
+      },
+      error: function () {
+        $('#pendingBatchList').html('<li class="list-group-item text-center text-danger">Error loading data.</li>');
+      }
     });
+  }
+
+  // Initial load
+  fetchBatches();
+
+  // Search input with debounce
+  let searchTimeout;
+  $('#batchSearch').on('keyup', function () {
+    clearTimeout(searchTimeout);
+    const searchValue = $(this).val();
+    searchTimeout = setTimeout(() => {
+      fetchBatches(searchValue);
+    }, 300); // wait 300ms before sending request
+  });
 });
 
+// Handle click event for dynamically generated items
 $('#pendingBatchList').on('click', '.pending-batch-item', function () {
-    const cutoff = $(this).data('cutoff');
-    const month = $(this).data('month');
-    const year = $(this).data('year');
-    const batch = $(this).data('batch');
-    const batchName = $(this).data('batch-name');
-    const assignedOffice = $(this).data('assigned-office');
+  const cutoff = $(this).data('cutoff');
+  const month = $(this).data('month');
+  const year = $(this).data('year');
+  const batch = $(this).data('batch');
+  const batchName = $(this).data('batch-name');
+  const assignedOffice = $(this).data('assigned-office');
 
-
-    const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}&batch_name=${encodeURIComponent(batchName || `Batch ${batch}`)}&assigned_office=${assignedOffice}`;
-    window.location.href = url;
+  const url = `/payroll/show?cutoff=${cutoff}&cutoff_month=${month}&cutoff_year=${year}&batch_number=${batch}&batch_name=${encodeURIComponent(batchName || `Batch ${batch}`)}&assigned_office=${assignedOffice}`;
+  window.location.href = url;
 });
 </script>
 
 <style>
   .list-group-item {
-    border-bottom: 1px solid #dee2e6;
-    transition: background-color 0.2s, color 0.2s;
+    border: 1px solid #dee2e6 !important; 
+    border-radius: 8px !important;     
+    margin-bottom: 8px;                  
+    padding: 12px 16px;
+    background-color: #fff;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+
+  .list-group-item:first-child,
+  .list-group-item:last-child {
+    border-radius: 8px !important; 
   }
 
   .pending-batch-item:hover {
     background-color: #4caf50 !important;
-    color: white !important;
+    color: #fff !important;
+    border: 1px solid #4caf50 !important; 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); 
+    cursor: pointer;
   }
 
+  .pending-batch-item:hover .batch-text span,
   .pending-batch-item:hover .batch-text strong,
   .pending-batch-item:hover .batch-text small {
-    color: white !important;
+    color: #fff !important;
   }
 
-  .list-group-item:last-child {
-    border-bottom: none;
+  .pending-batch-item:hover .badge {
+    background-color: #fff !important;   
+    color: #4caf50 !important;           
+    border: 1px solid #fff !important;
+  }
+
+  .search-icon {
+    position: absolute;
+    top: 50%;
+    left: 14px;             
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    pointer-events: none;    
+  }
+
+  #batchSearch {
+    padding-left: 2.2rem; 
   }
 </style>
 

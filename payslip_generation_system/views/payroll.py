@@ -1418,6 +1418,9 @@ def pending(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def data(request):
+    # Search query
+    search_query = request.GET.get("search", "").strip().lower()
+
     # Get user role and filter batches accordingly
     user_role = request.session.get('role', '')
     
@@ -1519,6 +1522,14 @@ def data(request):
             batch['formatted_office_name'] = get_formatted_office_name(batch['assigned_office'])
             batch['payroll_title'] = get_payroll_title(batch['assigned_office'])
             unique_batches.append(batch)
+    
+    if search_query:
+        unique_batches = [
+            batch for batch in unique_batches
+            if search_query in batch['batch_name'].lower()
+            or search_query in batch['formatted_office_name'].lower()
+        ]
+
 
     return JsonResponse({'batches': unique_batches}, status=200)
 
@@ -1559,6 +1570,9 @@ def approved_list(request):
 @login_required
 @restrict_roles(disallowed_roles=['employee'])
 def approve_data(request):
+    # Search query
+    search_query = request.GET.get("search", "").strip().lower()
+
     # Get approved batches with all needed Adjustment fields
     approved_adjustments = (
         Adjustment.objects.filter(status="Approved")
@@ -1588,6 +1602,13 @@ def approve_data(request):
 
         # Apply formatted office name
         batch['formatted_office_name'] = get_formatted_office_name(batch['batch_assigned_office'])
+
+    if search_query:
+        batch_list = [
+            b for b in batch_list
+            if search_query in b['batch_name'].lower()
+            or search_query in b['formatted_office_name'].lower()
+        ]
 
     return JsonResponse({
         'approved_batches': batch_list
