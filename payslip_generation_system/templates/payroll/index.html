@@ -2003,7 +2003,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
             cell.alignment = { vertical: 'middle'  };
           });
 
-          ['F', 'H'].forEach(col => {
+          ['F', 'H', 'L'].forEach(col => {
             const cell = row.getCell(col);
             cell.numFmt = '#,##0.00';
             cell.alignment = { vertical: 'middle'  };
