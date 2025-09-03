@@ -36,19 +36,35 @@
 
         <div class="payslip-container">
             <div class="payslip-header">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div class="logo-container">
-                        <img src="{% static 'assets/denr-logo.png' %}" alt="Logo">
+                <div class="payslip-header-item">
+                   <div class="payslip-header-item-logo sm">
+                        <div class="logo-container">
+                            <img src="{% static 'assets/denr-logo.png' %}" alt="Logo">
+                        </div>
+                        <div class="logo-container-bagong-ph sm">
+                            <img src="{% static 'assets/bagong-pilipinas.png' %}" alt="Logo">
+                        </div>
                     </div>
-                    <div>
+                    <div class="payslip-header-item-text sm">
                         <h2>Employee Payslip</h2>
                         <p>Department of Environment and Natural Resources</p>
                         <p>National Capital Region</p>
                     </div>
-                </div>
-
-                <div class="logo-container">
-                    <img src="{% static 'assets/bagong-pilipinas.png' %}" alt="Logo">
+                    <div class="payslip-wrapper lg">
+                        <div class="payslip-header-item-logo">
+                            <div class="logo-container">
+                                <img src="{% static 'assets/denr-logo.png' %}" alt="Logo">
+                            </div>
+                        </div>
+                        <div class="payslip-header-item-text">
+                            <h2>Employee Payslip</h2>
+                            <p>Department of Environment and Natural Resources</p>
+                            <p>National Capital Region</p>
+                        </div>
+                    </div>
+                    <div class="logo-container-bagong-ph lg">
+                        <img src="{% static 'assets/bagong-pilipinas.png' %}" alt="Logo">
+                    </div>
                 </div>
             </div>
 
@@ -59,11 +75,11 @@
                 </div>
                 <div class="payslip-employee-secondary">
                     <div class="payslip-employee-item">
-                        <p>Employee Number</p>
+                        <p class="text-bold">Employee Number</p>
                         <p class="employee-number-txt">{{ employee_no }}</p>
                     </div>
                     <div class="payslip-employee-item">
-                        <p>Salary Period</p>
+                        <p class="text-bold">Salary Period</p>
                         <p class="employee-period-txt">{{ salary_period }}</p>
                     </div>
                 </div>
@@ -183,11 +199,24 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f2f2f2;
+    overflow-x: hidden; /* prevent stray horizontal scroll */
 }
 
 p {
     margin: 0;
     padding: 0;
+}
+
+.sm {
+    display: none;
+}
+
+.lg {
+    display: block;
+}
+
+.text-bold {
+    font-weight: 700;
 }
 
 .main-container {
@@ -205,6 +234,20 @@ p {
 }
 
 /* Section Header */
+.payslip-header-item {
+    display: flex; 
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+}
+
+.payslip-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -238,6 +281,11 @@ p {
 
 .logo-container img {
     max-width: 6rem;
+    height: auto;
+}
+
+.logo-container-bagong-ph img {
+    max-width: 7rem;
     height: auto;
 }
 
@@ -347,6 +395,124 @@ ul li {
     font-style: italic;
     color: #6c757d;
     margin-top: 1.5rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .sm {
+        display: block;
+    }
+
+    .lg {
+        display: none;
+    }
+
+    .main-container {
+        padding: 0.5rem;
+    }
+
+    .payslip-header-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; 
+    }
+
+    .payslip-header-item-logo {
+        display: flex;
+        align-items: center;
+    }
+
+    .payslip-header-item-text {
+        padding-bottom: 1rem;
+    }
+
+  .payslip-header {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section-header {
+    display: none;
+  }
+
+  .logo-container img {
+    max-width: 4rem;
+  }
+
+  .logo-container-bagong-ph img {
+    max-width: 5rem;
+  }
+
+
+  .payslip-employee {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .payslip-employee-secondary {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .payslip-content {
+    flex-direction: column;
+  }
+
+  .payslip-summary,
+  .payslip-deductions,
+  .payslip-adjustments {
+    min-width: 100%;
+  }
+
+  .table {
+    display: table; /* keep native table layout for wrapping */
+    table-layout: auto;
+  }
+
+  .table thead th {
+    white-space: nowrap;
+  }
+
+  .table td:first-child {
+    white-space: normal; /* allow labels to wrap */
+  }
+
+  .table td:last-child {
+    white-space: nowrap; /* keep numbers compact */
+    text-align: right;
+  }
+
+  .table td, .table th {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .payslip-disclaimer {
+    font-size: 0.8rem;
+  }
+
+  .payslip-employee-primary .employee-name-txt {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .payslip-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .payslip-employee-primary .employee-name-txt {
+    font-size: 1.05rem;
+  }
+
+  .table td, .table th {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .logo-container img {
+    max-width: 3rem;
+  }
 }
 
 /* Print View */
