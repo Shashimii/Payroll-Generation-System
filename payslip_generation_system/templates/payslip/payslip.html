@@ -103,12 +103,18 @@
                                 <td>₱{{ basic_salary_cutoff|floatformat:2|intcomma }}</td>
                             </tr>
                             <tr>
-                                <td>Total Gross Amount</td>
-                                <td>₱{{ total_gross|floatformat:2|intcomma }}</td>
+                                <td>Total Adjustment</td>
+                                <td>
+                                    {% if total_adjustment_summary < 0 %}
+                                    -₱{{ total_adjustment_summary|stringformat:".2f"|slice:"1:"|intcomma }}
+                                    {% else %}
+                                    +₱{{ total_adjustment_summary|floatformat:2|intcomma }}
+                                    {% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <td>Total Deductions</td>
-                                <td>₱{{ total_deductions|floatformat:2|intcomma }}</td>
+                                <td>-₱{{ total_deductions|floatformat:2|intcomma }}</td>
                             </tr>
                             <tr>
                                 <td class="text-bold">Net Amount Due</td>
@@ -126,9 +132,10 @@
                         <tbody>
                             <tr><td>TAX</td><td>₱{{ tax_deduction|floatformat:2|intcomma }}</td></tr>
                             <tr><td>Philhealth</td><td>₱{{ philhealth|floatformat:2|intcomma }}</td></tr>
-                            <tr><td>Previous Philhealth</td><td>₱{{ philhealth_previous|floatformat:2|intcomma }}</td></tr>
                             <tr><td>SSS</td><td>₱{{ sss|floatformat:2|intcomma }}</td></tr>
-                            <tr><td><strong>Total Deductions</strong></td><td><strong>₱{{ total_deductions|floatformat:2|intcomma }}</strong></td></tr>
+                            <tr><td>Previous Philhealth</td><td>₱{{ philhealth_previous|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>EWT</td><td>₱{{ ewt|floatformat:2|intcomma }}</td></tr>
+                            <tr><td><strong>Total Deductions</strong></td><td><strong>-₱{{ total_deductions|floatformat:2|intcomma }}</strong></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -172,8 +179,15 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td><strong>Total Adjustment</strong></td>
                                 <td>
-                                    <strong>Total Gross Amount</strong></td><td><strong>₱{{ total_gross|floatformat:2|intcomma }}</strong>
+                                <strong>
+                                    {% if total_adjustment_summary < 0 %}
+                                    -₱{{ total_adjustment_summary|stringformat:".2f"|slice:"1:"|intcomma }}
+                                    {% else %}
+                                    +₱{{ total_adjustment_summary|floatformat:2|intcomma }}
+                                    {% endif %}
+                                </strong>
                                 </td>
                             </tr>
                         </tbody>
@@ -398,7 +412,7 @@ ul li {
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
     .sm {
         display: block;
     }
@@ -496,7 +510,7 @@ ul li {
   }
 }
 
-@media (max-width: 400px) {
+@media screen and (max-width: 400px) {
   .payslip-header h2 {
     font-size: 1.1rem;
   }

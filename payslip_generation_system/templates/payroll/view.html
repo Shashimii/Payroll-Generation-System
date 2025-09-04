@@ -24,7 +24,8 @@
             <th>Total Gross</th>
             <th>SSS</th>
             <th>Philhealth Current</th>
-            <th>Tax Percentage</th>
+            <th>Precentage Tax</th>
+            <th>EWT</th>
             <th>Philhealth Previous</th>
             <th>Total Deduction</th>
             <th>Net Amount</th>
@@ -50,6 +51,7 @@
             <th class="text-end"><span id="totalSSS">0.00</span></th>
             <th class="text-end"><span id="totalPhilhealth">0.00</span></th>
             <th class="text-end"><span id="totalTax">0.00</span></th>
+            <th class="text-end"><span id="totalEwt">0.00</span></th>
             <th class="text-end"><span id="totalPreviousPhilhealth">0.00</span></th>
             <th class="text-end"><span id="totalDeduction">0.00</span></th>
             <th class="text-end"><span id="totalNetPay">0.00</span></th>
@@ -223,6 +225,7 @@ function updateTotalsRow(totals) {
     $('#totalSalary').text(formatMoney(totals.salary));
     $('#salaryWage').text(formatMoney(totals.salaryWage));
     $('#totalTax').text(formatMoney(totals.tax));
+    $('#totalEwt').text(formatMoney(totals.ewt));
     $('#totalPhilhealth').text(formatMoney(totals.philhealth));
     $('#totalPreviousPhilhealth').text(formatMoney(totals.previous_philhealth));
     $('#totalSSS').text(formatMoney(totals.sss));
@@ -299,6 +302,7 @@ $(document).ready(function () {
                     sss: 0,
                     philhealth: 0,
                     tax: 0,
+                    ewt: 0,
                     previous_philhealth: 0,
                     totalDeduction: 0,
                     net_pay: 0
@@ -316,6 +320,7 @@ $(document).ready(function () {
                     totals.sss += parseFloat(emp.sss) || 0;
                     totals.philhealth += parseFloat(emp.philhealth) || 0;
                     totals.tax += parseFloat(emp.tax_deduction) || 0;
+                    totals.ewt += parseFloat(emp.ewt) || 0;
                     totals.previous_philhealth += parseFloat(emp.previous_philhealth) || 0;
                     totals.totalDeduction += parseFloat(emp.total_deductions) || 0;
                     totals.net_pay += parseFloat(emp.net_salary) || 0;
@@ -324,19 +329,20 @@ $(document).ready(function () {
                     <tr class="employee-row" style="cursor: pointer;" data-employee='${JSON.stringify(emp)}' title="Click to view detailed breakdown">
                     <td>${i + 1}</td>
                     <td>${emp.fullname}</td>
-                    <td>${formatMoney(emp.salary)}</td>
-                    <td>${formatMoney(emp.basic_salary_cutoff)}</td>
-                    <td>${formatMoney(emp.absent_amount)}</td>
-                    <td>${formatMoney(emp.late_amount)}</td>
-                    <td>${formatMoney(emp.income)}</td>
-                    <td>${formatMoney(emp.other_deductions)}</td>
-                    <td>${formatMoney(emp.total_gross_amount)}</td>
-                    <td>${formatMoney(emp.sss)}</td>
-                    <td>${formatMoney(emp.philhealth)}</td>
-                    <td>${formatMoney(emp.tax_deduction)}</td>
-                    <td>${formatMoney(emp.previous_philhealth)}</td>
-                    <td>${formatMoney(emp.total_deductions)}</td>
-                    <td>${formatMoney(emp.net_salary)}</td>
+                    <td class="text-end">${formatMoney(emp.salary)}</td>
+                    <td class="text-end">${formatMoney(emp.basic_salary_cutoff)}</td>
+                    <td class="text-end">${formatMoney(emp.absent_amount)}</td>
+                    <td class="text-end">${formatMoney(emp.late_amount)}</td>
+                    <td class="text-end">${formatMoney(emp.income)}</td>
+                    <td class="text-end">${formatMoney(emp.other_deductions)}</td>
+                    <td class="text-end">${formatMoney(emp.total_gross_amount)}</td>
+                    <td class="text-end">${formatMoney(emp.sss)}</td>
+                    <td class="text-end">${formatMoney(emp.philhealth)}</td>
+                    <td class="text-end">${formatMoney(emp.tax_deduction)}</td>
+                    <td class="text-end">${formatMoney(emp.ewt)}</td>
+                    <td class="text-end">${formatMoney(emp.previous_philhealth)}</td>
+                    <td class="text-end">${formatMoney(emp.total_deductions)}</td>
+                    <td class="text-end">${formatMoney(emp.net_salary)}</td>
                     </tr>
                 `);
                 
@@ -370,6 +376,7 @@ $(document).ready(function () {
                     sss: 0,
                     philhealth: 0,
                     tax: 0,
+                    ewt: 0,
                     previous_philhealth: 0,
                     totalDeduction: 0,
                     net_pay: 0
@@ -481,6 +488,15 @@ function showEmployeeBreakdown(employee) {
             <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
                 <span class="text-danger">TAX</span>
                 <span class="text-danger text-bold">₱${formatMoney(employee.tax_deduction)}</span>
+            </div>
+        `);
+    }
+    if (employee.ewt && parseFloat(employee.ewt) > 0) {
+        hasFixedDeductions = true;
+        deductionsBreakdown.append(`
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                <span class="text-danger">Expanded Withholding Tax (EWT)</span>
+                <span class="text-danger text-bold">₱${formatMoney(employee.ewt)}</span>
             </div>
         `);
     }
@@ -608,6 +624,14 @@ table {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.table-striped > tbody > tr.employee-row:hover {
+    background-color: #81c784 !important;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
 thead {
     background-color: #f1f1f1;
     font-weight: bold;
@@ -624,21 +648,8 @@ th, td {
     vertical-align: middle;
 }
 
-.table td:nth-child(4),
-.table td:nth-child(5),
-.table td:nth-child(6),
-.table td:nth-child(7),
-.table td:nth-child(8),
-.table td:nth-child(9),
-.table td:nth-child(10),
-.table td:nth-child(11),
-.table td:nth-child(12) {
-    text-align: right;
-}
-
 /* Hover effect for clickable rows */
 .employee-row:hover {
-    background-color: #f8f9fa !important;
     transform: scale(1.01);
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -709,8 +720,9 @@ tfoot th {
     color: white !important;
 }
 
-tfoot th.text-end {
+.text-end {
     text-align: right !important;
 }
+
 </style>
 {% endblock %}

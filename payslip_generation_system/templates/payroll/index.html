@@ -33,12 +33,14 @@
           </div>
 
           <div class="col-auto">
-              <select id="batch_number" class="form-control" name="batch_number">
-                  <option selected disabled>Batch</option>
-                  {% for b in batches %}
-                  <option value="{{ b.batch_number }}">{{ b.batch_name }} (#{% if b.batch_number %}{{ b.batch_number }}{% endif %})</option>
-                  {% endfor %}
-              </select>
+            <select id="batch_number" class="form-control" name="batch_number">
+              <option selected disabled>Batch</option>
+              {% for b in batches %}
+                <option value="{{ b.batch_number }}">
+                  {{ b.batch_name }} (#{% if b.batch_number %}{{ b.batch_number }}{% endif %})
+                </option>
+              {% endfor %}
+            </select>
           </div>
       </div>
   </div>
@@ -1928,6 +1930,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
         let totalPhilhealthCurrent = 0;
         let totalPhilhealthPrevious = 0;
         let totalTax = 0;
+        let totalEwt = 0;
         let totalDeductionAll = 0;
         let totalNet = 0;
 
@@ -1952,8 +1955,9 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           const sss = e.adjustments.find(adj => adj.name === 'SSS' && adj.type === 'Deduction');
           const philhealthCurrent = e.philhealth_current;
           const tax = e.tax_amount;
+          const ewt = e.ewt;
           const philhealthPrevious = e.philhealth_previous
-          const totalDeduction = (sss?.amount || 0) + philhealthCurrent + tax + philhealthPrevious;
+          const totalDeduction = (sss?.amount || 0) + philhealthCurrent + tax + ewt + philhealthPrevious;
           const netAmountDue = totalGross - totalDeduction;
           const subjectPhilhealth = e.has_philhealth;
           const absentDays = e.absent_days;
@@ -1979,6 +1983,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           row.getCell('M').value = sss?.amount || '-';
           row.getCell('N').value = !philhealthCurrent ? '-' : philhealthCurrent;
           row.getCell('O').value = !tax ? '-' : tax;
+          row.getCell('P').value = !ewt ? '-' : ewt;
           row.getCell('Q').value = !philhealthPrevious ? '-' : philhealthPrevious;
           row.getCell('R').value = !totalDeduction ? '-' : totalDeduction;
           row.getCell('S').value = netAmountDue;
@@ -2009,11 +2014,11 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
             cell.alignment = { vertical: 'middle'  };
           });
 
-          ['I','J','K','L','M','N','O','Q','R','S'].forEach(col => {
+          ['I','J','K','L','M','N','O','P','Q','R','S'].forEach(col => {
             const cell = row.getCell(col);
             cell.numFmt = '#,##0.00';
             cell.font = { bold: true };
-            cell.alignment = { vertical: 'middle'  };
+            cell.alignment = { vertical: 'middle', horizontal: 'right' };
           });
 
           totalAbsence += Number(absence) > 0 ? Number(absence) : 0;
@@ -2025,6 +2030,7 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
           totalPhilhealthCurrent += Number(philhealthCurrent) || 0;
           totalPhilhealthPrevious += Number(philhealthPrevious) || 0;
           totalTax += Number(tax) || 0;
+          totalEwt += Number(ewt) || 0;
           totalDeductionAll += Number(totalDeduction) || 0;
           totalNet += Number(netAmountDue);
 
@@ -2078,15 +2084,16 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
         row.getCell('M').value = totalSSS === 0 ? '-' : totalSSS;
         row.getCell('N').value = totalPhilhealthCurrent === 0 ? '-' : totalPhilhealthCurrent;
         row.getCell('O').value = totalTax === 0 ? '-' : totalTax;
+        row.getCell('P').value = totalEwt === 0 ? '-' : totalEwt;
         row.getCell('Q').value = totalPhilhealthPrevious === 0 ? '-' : totalPhilhealthPrevious;
         row.getCell('R').value = totalDeductionAll === 0 ? '-' : totalDeductionAll;
         row.getCell('S').value = totalNet === 0 ? '-' : totalNet;
 
-        ['H','I','J','K','L','M','N','O','Q','R','S'].forEach(col => {
+        ['H','I','J','K','L','M','N','O','P','Q','R','S'].forEach(col => {
           const cell = row.getCell(col);
           cell.numFmt = '#,##0.00';
           cell.font = { bold: true };
-          cell.alignment = { vertical: 'middle'  };
+          cell.alignment = { vertical: 'middle', horizontal: 'right' };
         });
 
         const totalAreaColumns = [
@@ -2466,10 +2473,11 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
         ws.getCell(`M${textRow}`).value = 'Date: _________________';
         ws.getCell(`M${textRow}`).alignment = { horizontal: 'center', vertical: 'middle' };
 
+        textRow += 5;
         
         // Print and Generation Info
-        ws.mergeCells(`W${--textRow}:Y${++textRow}`); 
-        const printInfoCell = ws.getCell(`W${textRow}`);
+        ws.mergeCells(`R${--textRow}:V${++textRow}`); 
+        const printInfoCell = ws.getCell(`S${textRow}`);
         printInfoCell.value = 'Generated on PayGes @ ' + systemDate + '\n Check the data Carefully.';
         printInfoCell.font = { bold: true, italic: true, size: 10, };
         printInfoCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
@@ -2523,6 +2531,13 @@ function generatePayrollExcel(cutoff, cutoff_month, cutoff_year, batch_number, b
     }
   });
 }
+
+$(document).ready(function() {
+  $('#batch_number').select2({
+    theme: 'bootstrap-5',
+    placeholder: "Select or search batch..",
+  });
+});
   
 function sessionStorageLoad() {
   if (sessionStorage.getItem('batch_number')) $('#batch_number').val(sessionStorage.getItem('batch_number'));

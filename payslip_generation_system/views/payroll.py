@@ -514,7 +514,7 @@ def batch_data(request):
             cutoff_year=cutoff_year,
             status__in=["Pending", "Approved", "Credited"]
         ).exclude(
-            Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth")
+            Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth") | Q(name__icontains="Expanded Withholding Tax")
         )
         if url_assigned_office:
             other_deductions = other_deductions.filter(assigned_office=url_assigned_office)
@@ -595,13 +595,13 @@ def batch_data(request):
         if (employee.tax_declaration == "yes"):
                 tax_deduction = Decimal('0.00')
         else:
-            tax_deduction = total_gross_amount * Decimal('0.03') # TAX
+            tax_deduction = total_gross_amount * Decimal('0.03').quantize(Decimal("0.01")) # TAX
 
         # PHILHEALTH DEDUCTION 
         if employee.has_philhealth == "yes":
-            philhealth = total_gross_amount * Decimal('0.05')
+            philhealth = (total_gross_amount * Decimal('0.05')).quantize(Decimal("0.01")) # Philhealth
         else:
-            philhealth = Decimal('0')
+            philhealth = Decimal("0.00")
 
         # PREVIOUS PHILHEALTH
         philhealth_previous = Adjustment.objects.filter(
@@ -615,6 +615,19 @@ def batch_data(request):
         if url_assigned_office:
             philhealth_previous = philhealth_previous.filter(assigned_office=url_assigned_office)
         additional_philhealth = philhealth_previous.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+        # EXPANDED WITHHOLDING TAX
+        ewt_adjustments = Adjustment.objects.filter(
+            employee=employee,
+            name__icontains="expanded withholding tax",  # Matches any name containing "expanded withholding tax"
+            month=cutoff_month,
+            cutoff=cutoff,
+            cutoff_year=cutoff_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+        if url_assigned_office:
+            ewt_adjustments = ewt_adjustments.filter(assigned_office=url_assigned_office)
+        ewt = ewt_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # SSS - fetch from SSS adjustments
         sss_adjustments = Adjustment.objects.filter(
@@ -630,7 +643,9 @@ def batch_data(request):
         sss = sss_adjustments.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         # Final calculation
-        total_deductions = sss + philhealth + tax_deduction + additional_philhealth
+        total_deductions = (sss + philhealth + tax_deduction + ewt + additional_philhealth).quantize(
+            Decimal("0.01")
+        )
         net_salary = abs(total_gross_amount - total_deductions)
 
         # Check if the employee's previous batch has been submitted (for removed employees)
@@ -671,6 +686,7 @@ def batch_data(request):
         emp_data['previous_batch_submitted'] = previous_batch_submitted
         emp_data['basic_salary_cutoff'] = f"{basic_salary_cutoff:.2f}"
         emp_data['tax_deduction'] = f"{tax_deduction:.2f}"
+        emp_data['ewt'] = f"{ewt:.2f}"
         emp_data['philhealth'] = f"{philhealth:.2f}"
         emp_data['previous_philhealth'] = f"{additional_philhealth}"
         emp_data['sss'] = f"{sss:.2f}"

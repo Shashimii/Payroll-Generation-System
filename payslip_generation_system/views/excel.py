@@ -88,7 +88,7 @@ def data(request):
                 cutoff=cutoff,
                 cutoff_year=cutoff_year,
             ).exclude(
-                Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth")
+                Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth") | Q(name__icontains="Expanded Withholding Tax")
             )
 
             adjustment_income = Adjustment.objects.filter(
@@ -167,6 +167,12 @@ def data(request):
                 Decimal('0.00')
             ).quantize(Decimal('0.01'))
 
+            # Expanded Withholding Tax
+            ewt = sum(
+                (adj.amount for adj in adjustments if "expanded withholding tax" in (adj.name or "").lower()),
+                Decimal('0.00')
+            ).quantize(Decimal('0.01'))
+
             employees_data.append({
                 'employee_id': emp.id,
                 'fullname': emp.fullname,
@@ -184,6 +190,7 @@ def data(request):
                 'tax_amount': float(tax_amount.quantize(Decimal('0.01'))),
                 'philhealth_current': float(philhealth_current.quantize(Decimal('0.01'))),
                 'philhealth_previous': float(philhealth_previous.quantize(Decimal('0.01'))),
+                'ewt': float(ewt.quantize(Decimal('0.01'))),
                 'adjustments': adjustments_data
             })
 

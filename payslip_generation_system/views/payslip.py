@@ -171,7 +171,7 @@ def generate(request):
             status__in=["Pending", "Approved", "Credited"]
             # Adjusted condition to match selected month
         ).exclude(
-            Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth")
+            Q(name__in=["Late", "Absent", "TAX", "SSS"]) | Q(name__icontains="Philhealth") | Q(name__icontains="Expanded Withholding Tax")
         )
 
         # Adjustment Income
@@ -248,6 +248,19 @@ def generate(request):
 
         philhealth_previous = philhealth_previous_queryset.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
+        # EXPANDED WITHHOLDING TAX
+        expanded_withholding_tax_queryset = Adjustment.objects.filter(
+            employee=employee,
+            name__icontains="Expanded Withholding Tax",  # Matches any name containing "Expanded Withholding Tax"
+            type="Deduction",
+            month=selected_month,
+            cutoff=selected_cutoff,
+            cutoff_year=current_year,
+            status__in=["Pending", "Approved", "Credited"]
+        )
+
+        ewt = expanded_withholding_tax_queryset.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+
         # SSS
         sss_queryset = Adjustment.objects.filter(
             employee=employee,
@@ -266,7 +279,15 @@ def generate(request):
         
         
         # TOTAL DEDUCTIONS
-        total_deductions = tax_deduction + philhealth + philhealth_previous + sss
+        total_deductions = tax_deduction + ewt + philhealth + philhealth_previous + sss
+
+        # TOTAL ADJUSTMENT
+        total_adjustment_summary = (
+            -Decimal(absent_amt_total)
+            - Decimal(late_amt_total)
+            - Decimal(total_adjustment_amount_minus)
+            + Decimal(total_adjustment_amount_plus)
+        ).quantize(Decimal("0.01"))
 
         context = {
             'employee_no': employee.employee_number,
@@ -286,8 +307,10 @@ def generate(request):
             'sss': sss,
             'philhealth': philhealth,
             'tax_deduction': tax_deduction,
+            'ewt': ewt,
             'philhealth_previous': philhealth_previous,
             'total_deductions' : total_deductions,
+            'total_adjustment_summary': (total_adjustment_summary),
             'net_pay': total_gross_amount - total_deductions,
             'salary_period': salary_period,
             'selected_cutoff': selected_cutoff,
