@@ -130,6 +130,8 @@
                             <tr><th colspan="2" class="text-center">Deductions</th></tr>
                         </thead>
                         <tbody>
+                            <tr><td>Late ({{ late_min_total }} minutes)</td><td>-₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
+                            <tr><td>Absences ({{ absent_day_total }} days)</td><td>-₱{{ absent_amt_total|floatformat:2|intcomma }}</td></tr>
                             <tr><td>TAX</td><td>₱{{ tax_deduction|floatformat:2|intcomma }}</td></tr>
                             <tr><td>Philhealth</td><td>₱{{ philhealth|floatformat:2|intcomma }}</td></tr>
                             <tr><td>SSS</td><td>₱{{ sss|floatformat:2|intcomma }}</td></tr>
@@ -146,8 +148,6 @@
                             <tr><th colspan="2" class="text-center">Adjustments</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>Late ({{ late_min_total }} minutes)</td><td>-₱{{ late_amt_total|floatformat:2|intcomma }}</td></tr>
-                            <tr><td>Absences ({{ absent_day_total }} days)</td><td>-₱{{ absent_amt_total|floatformat:2|intcomma }}</td></tr>
                             <tr>
                                 <td>
                                     Adjustments 
@@ -288,18 +288,18 @@ p {
 }
 
 .payslip-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 700;
     margin-bottom: 0.2rem;
 }
 
 .logo-container img {
-    max-width: 6rem;
+    max-width: 8rem;
     height: auto;
 }
 
 .logo-container-bagong-ph img {
-    max-width: 7rem;
+    max-width: 9rem;
     height: auto;
 }
 
@@ -340,7 +340,7 @@ p {
 }
 
 .payslip-employee-primary .employee-name-txt {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     font-weight: 700;
 }
 
@@ -360,7 +360,7 @@ p {
 
 .table td, .table th {
     padding: 12px 16px;
-    font-size: 14px;
+    font-size: 16px;
     white-space: normal; /* wrap content if needed */
 }
 
@@ -498,7 +498,7 @@ ul li {
 
   .table td, .table th {
     padding: 10px 12px;
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .payslip-disclaimer {
@@ -506,7 +506,7 @@ ul li {
   }
 
   .payslip-employee-primary .employee-name-txt {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
   }
 }
 
@@ -516,12 +516,12 @@ ul li {
   }
 
   .payslip-employee-primary .employee-name-txt {
-    font-size: 1.05rem;
+    font-size: 1.2rem;
   }
 
   .table td, .table th {
     padding: 8px 10px;
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .logo-container img {
@@ -532,7 +532,7 @@ ul li {
 /* Print View */
 @media print {
   @page {
-    size: A5 landscape; /* Fill A5 paper */
+    size: A5 portrait; /* Fill A5 paper */
     margin: 0; /* Remove margins to stretch */
   }
 
@@ -565,16 +565,12 @@ ul li {
   }
 
   .table, .table td, .table th {
-    font-size: 10px;
+    font-size: 12px;
     padding: 4px 6px;
   }
 
   .hide-payslip-header {
     display: none;
-  }
-
-  h2 {
-    font-size: 16px;
   }
 
   .no-print, .btn, nav, footer {
