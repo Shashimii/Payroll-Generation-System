@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from payslip_generation_system.models import Employee, Adjustment
 from payslip_generation_system.decorators import restrict_roles
@@ -227,11 +227,15 @@ def generate(request):
         if (employee.tax_declaration == "yes"):
                 tax_deduction = Decimal('0.00')
         else:
-            tax_deduction = total_gross_amount * Decimal('0.03') # TAX
+            tax_deduction = (total_gross_amount * Decimal("0.03")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
         
         # PHILHEALTH DEDUCTION 
         if employee.has_philhealth == "yes":
-            philhealth = total_gross_amount * Decimal('0.05')
+            philhealth = (total_gross_amount * Decimal("0.05")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
         else:
             philhealth = Decimal('0')
         
@@ -279,12 +283,10 @@ def generate(request):
         
         
         # TOTAL DEDUCTIONS
-        total_deductions = tax_deduction + ewt + philhealth + philhealth_previous + sss
+        total_deductions = tax_deduction + ewt + philhealth + philhealth_previous + sss + absent_amt_total + late_amt_total
 
         # TOTAL ADJUSTMENT
         total_adjustment_summary = (
-            -Decimal(absent_amt_total)
-            - Decimal(late_amt_total)
             - Decimal(total_adjustment_amount_minus)
             + Decimal(total_adjustment_amount_plus)
         ).quantize(Decimal("0.01"))
@@ -311,7 +313,7 @@ def generate(request):
             'philhealth_previous': philhealth_previous,
             'total_deductions' : total_deductions,
             'total_adjustment_summary': (total_adjustment_summary),
-            'net_pay': total_gross_amount - total_deductions,
+            'net_pay': basic_salary_cutoff - total_deductions + total_adjustment_summary,
             'salary_period': salary_period,
             'selected_cutoff': selected_cutoff,
             'month_choices': month_choices,

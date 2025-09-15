@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.db.models import Q, Sum
 from datetime import datetime
 from payslip_generation_system.models import BatchAssignment, Adjustment  
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 import calendar
 
@@ -155,11 +155,15 @@ def data(request):
 
             # Tax
             if emp.tax_declaration == "no":
-                tax_amount = (total_gross_amount * Decimal('0.03')).quantize(Decimal('0.01'))
+                tax_amount = (total_gross_amount * Decimal("0.03")).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
 
             # Philhealth Current
             if emp.has_philhealth == "yes":
-                philhealth_current = (total_gross_amount * Decimal('0.05')).quantize(Decimal('0.01'))
+                philhealth_current = (total_gross_amount * Decimal("0.05")).quantize(
+                    Decimal("0.01"), rounding=ROUND_HALF_UP
+                )
 
             # Philhealth Previous
             philhealth_previous = sum(

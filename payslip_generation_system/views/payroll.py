@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_date
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, F, Sum, Case, When, Value, IntegerField, Exists, OuterRef
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from payslip_generation_system.models import Employee, BatchAssignment, Adjustment, ReturnedAdjustment, ReturnRemark, Batch
 from payslip_generation_system.decorators import restrict_roles
@@ -595,11 +595,15 @@ def batch_data(request):
         if (employee.tax_declaration == "yes"):
                 tax_deduction = Decimal('0.00')
         else:
-            tax_deduction = total_gross_amount * Decimal('0.03').quantize(Decimal("0.01")) # TAX
+            tax_deduction = (total_gross_amount * Decimal("0.03")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
 
         # PHILHEALTH DEDUCTION 
         if employee.has_philhealth == "yes":
-            philhealth = (total_gross_amount * Decimal('0.05')).quantize(Decimal("0.01")) # Philhealth
+            philhealth = (total_gross_amount * Decimal("0.05")).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
         else:
             philhealth = Decimal("0.00")
 
