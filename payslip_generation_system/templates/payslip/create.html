@@ -65,6 +65,16 @@
     </div>
 </div>
 
+<script>
+    $(document).ready(function() {
+        $('#employeeSelect').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Select or search employee..",
+            allowClear: true
+        });
+    });
+</script>
+
 <style>
     .main-container {
         display:flex;
@@ -258,13 +268,13 @@
         }
 
         body {
-            -webkit-print-color-adjust: exact;
+            --webkit-print-color-adjust: exact;
             overflow: hidden !important;
         }
 
         .payslip-container {
             width: 100%;
-            {% comment %} height: 50vh; /* Half-page */ {% endcomment %}
+            height: 50vh; 
             page-break-after: always;
             overflow: hidden;
         }
